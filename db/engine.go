@@ -9,7 +9,7 @@ import (
 
 type DatabaseEngine struct {
 	DB     *gorm.DB
-	Models map[string]interface{}
+	models map[string]interface{}
 }
 
 var engine *DatabaseEngine = &DatabaseEngine{}
@@ -26,8 +26,8 @@ func GetDatabaseEngine() (*DatabaseEngine, error) {
 
 	engine.DB = db
 
-	engine.Models = map[string]interface{}{
-		"host_info": &HostInfo{},
+	engine.models = map[string]interface{}{
+		"host_info": &Host{},
 		"share":     &Share{},
 	}
 
@@ -35,8 +35,8 @@ func GetDatabaseEngine() (*DatabaseEngine, error) {
 }
 
 func (engine *DatabaseEngine) Migrate() error {
-	models := make([]interface{}, 0, len(engine.Models))
-	for _, model := range engine.Models {
+	models := make([]interface{}, 0, len(engine.models))
+	for _, model := range engine.models {
 		models = append(models, model)
 	}
 
@@ -47,10 +47,24 @@ func (engine *DatabaseEngine) Migrate() error {
 	return nil
 }
 
-// func (engine *DatabaseEngine) GetModel(modelName string) (interface{}, error) {
-// 	model, ok := engine.Models[modelName]
-// 	if !ok {
-// 		return nil, fmt.Errorf("table '%s' does not exist", modelName)
-// 	}
-// 	return model, nil
+func (engine *DatabaseEngine) Save(value interface{}) (tx *gorm.DB) {
+	return engine.DB.Save(value)
+}
+
+func (engine *DatabaseEngine) Delete(value interface{}, conds ...interface{}) (tx *gorm.DB) {
+	return engine.DB.Unscoped().Delete(value, conds...)
+}
+
+func (engine *DatabaseEngine) Find(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
+	return engine.DB.Find(dest, conds...)
+}
+
+// func (engine *DatabaseEngine) Where(query interface{}, args ...interface{}) (tx *DatabaseEngine) {
+// 	engine.DB = engine.DB.Where(query, args)
+// 	return engine
+// }
+
+// func (dngine *DatabaseEngine) First(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
+// 	engine.DB = engine.DB.First(dest, conds...)
+// 	return engine.DB
 // }

@@ -18,26 +18,23 @@ type HostRegisterInfo struct {
 	StorageType string `json:"storage_type"`
 }
 
-type HostInfoWithoutPassword struct {
-	Name        string `json:"name"`
-	Ip          string `json:"ip"`
-	Username    string `json:"user_name"`
-	StorageType string `json:"storage_type"`
-}
-
 type HostUnregisterInfo struct {
 	Name string `json:"name"`
 	Ip   string `json:"ip"`
 }
 
+type HostInfoWithoutPassword struct {
+	Name        string
+	Ip          string
+	Username    string
+	StorageType string
+}
+
 func hostRegistrationHandler(c *gin.Context) {
 	var register_info HostRegisterInfo
-
-	type HostInfoWithoutPassword struct {
-		Name        string
-		Ip          string
-		Username    string
-		StorageType string
+	if err := c.ShouldBindJSON(&register_info); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
 	}
 
 	hostInfo := HostInfoWithoutPassword{
@@ -47,17 +44,12 @@ func hostRegistrationHandler(c *gin.Context) {
 		StorageType: register_info.StorageType,
 	}
 
-	if err := c.ShouldBindJSON(&register_info); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return
-	}
-
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		panic(err)
 	}
 
-	hostInfoModel := db.HostInfo{
+	hostModel := db.Host{
 		Name:        register_info.Name,
 		Ip:          register_info.Ip,
 		Username:    register_info.Username,
@@ -65,7 +57,7 @@ func hostRegistrationHandler(c *gin.Context) {
 		StorageType: register_info.StorageType,
 	}
 
-	if err = hostInfoModel.Save(engine); err != nil {
+	if err = hostModel.Save(engine); err != nil {
 		if sqliteErr, ok := err.(sqlite3.Error); ok {
 			// Map SQLite ErrNo to specific error scenarios
 			switch sqliteErr.ExtendedCode {
@@ -90,10 +82,10 @@ func getRegisteredHostsHandler(c *gin.Context) {
 		panic(err)
 	}
 
-	hostInfoModel := db.HostInfo{}
-
 	if hostName == "" && hostIp == "" {
-		hosts, err := hostInfoModel.GetHosts(engine)
+		hostListModel := db.HostListModel{}
+
+		hosts, err := hostListModel.Get(engine)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered hosts."})
 			return
@@ -114,7 +106,8 @@ func getRegisteredHostsHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"Message": "Get the registered hosts successfully.", "RegisteredHosts": hostInfoList})
 		return
 	} else {
-		host, err := hostInfoModel.Get(engine, hostName, hostIp)
+		hostModel := db.Host{}
+		host, err := hostModel.Get(engine, hostName, hostIp)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host."})
 			return
@@ -133,7 +126,6 @@ func getRegisteredHostsHandler(c *gin.Context) {
 
 func hostUnregistrationHandler(c *gin.Context) {
 	var unregister_info HostUnregisterInfo
-
 	if err := c.ShouldBindJSON(&unregister_info); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
@@ -144,14 +136,14 @@ func hostUnregistrationHandler(c *gin.Context) {
 		panic(err)
 	}
 
-	hostInfoModel := db.HostInfo{}
-	hostInfo, err := hostInfoModel.Get(engine, unregister_info.Name, unregister_info.Ip)
+	hostInfoModel := db.Host{}
+	host, err := hostInfoModel.Get(engine, unregister_info.Name, unregister_info.Ip)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host."})
 		return
 	}
 
-	if err := hostInfo.Delete(engine); err != nil {
+	if err := host.Delete(engine); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to delete the registered host."})
 		return
 	}

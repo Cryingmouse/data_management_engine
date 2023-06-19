@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type HostInfo struct {
+type Host struct {
 	gorm.Model
 	ID          uint   `gorm:"primaryKey"`
 	Name        string `gorm:"uniqueIndex:idx_name_ip"`
@@ -15,17 +15,8 @@ type HostInfo struct {
 	StorageType string
 }
 
-func (host_info *HostInfo) GetHosts(engine *DatabaseEngine) ([]HostInfo, error) {
-	var hosts []HostInfo
-	result := engine.DB.Find(&hosts)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return hosts, nil
-}
-
-func (host_info *HostInfo) Get(engine *DatabaseEngine, name, ip string) (*HostInfo, error) {
-	host := &HostInfo{}
+func (hostModel *Host) Get(engine *DatabaseEngine, name, ip string) (*Host, error) {
+	host := &Host{}
 	query := engine.DB
 	query = query.Where("name = ? AND ip = ?", name, ip)
 	result := query.First(host)
@@ -35,24 +26,37 @@ func (host_info *HostInfo) Get(engine *DatabaseEngine, name, ip string) (*HostIn
 	return host, nil
 }
 
-func (host_info *HostInfo) Save(engine *DatabaseEngine) error {
-	encrypted_password, err := bcrypt.GenerateFromPassword([]byte(host_info.Password), bcrypt.DefaultCost)
+func (hostModel *Host) Save(engine *DatabaseEngine) error {
+	encrypted_password, err := bcrypt.GenerateFromPassword([]byte(hostModel.Password), bcrypt.DefaultCost)
 	if err != nil {
 		panic(err)
 	}
-	host_info.Password = string(encrypted_password)
+	hostModel.Password = string(encrypted_password)
 
-	result := engine.DB.Create(&host_info)
+	result := engine.Save(&hostModel)
 	if result.Error != nil {
 		return result.Error
 	}
 	return nil
 }
 
-func (hostInfo *HostInfo) Delete(engine *DatabaseEngine) error {
-	result := engine.DB.Delete(hostInfo)
+func (hostInfo *Host) Delete(engine *DatabaseEngine) error {
+	result := engine.Delete(&hostInfo)
 	if result.Error != nil {
 		return result.Error
 	}
 	return nil
+}
+
+type HostListModel struct {
+	HostList []Host
+}
+
+func (hostListModel *HostListModel) Get(engine *DatabaseEngine) ([]Host, error) {
+	var hosts []Host
+	result := engine.Find(&hosts)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return hosts, nil
 }
