@@ -1,13 +1,11 @@
-module main
+module github.com/cryingmouse/data_management_engine
 
 go 1.20
 
 require gorm.io/driver/sqlite v1.5.2 // indirect
 
-replace db => ./db
-
 require (
-	db v0.0.0-00010101000000-000000000000
+	github.com/cryingmouse/data_management_engine/ v0.0.1
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

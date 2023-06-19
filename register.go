@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"db"
+	"github.com/cryingmouse/data_management_engine/db"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mattn/go-sqlite3"
