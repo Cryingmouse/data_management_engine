@@ -47,10 +47,10 @@ func (engine *DatabaseEngine) Migrate() error {
 	return nil
 }
 
-func (engine *DatabaseEngine) GetModel(modelName string) (interface{}, error) {
-	model, ok := engine.Models[modelName]
-	if !ok {
-		return nil, fmt.Errorf("table '%s' does not exist", modelName)
-	}
-	return model, nil
-}
+// func (engine *DatabaseEngine) GetModel(modelName string) (interface{}, error) {
+// 	model, ok := engine.Models[modelName]
+// 	if !ok {
+// 		return nil, fmt.Errorf("table '%s' does not exist", modelName)
+// 	}
+// 	return model, nil
+// }
