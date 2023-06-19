@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/cryingmouse/data_management_engine/db"
 	"github.com/gin-gonic/gin"
-	"github.com/cryingmosue/data_management_engine/db"
 )
 
 type Credentials struct {
