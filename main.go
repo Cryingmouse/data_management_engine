@@ -28,7 +28,7 @@ func main() {
 
 	router.GET("/api/registered-hosts", getRegisteredHostsHandler)
 
-	// router.POST("/api/unregister-host", hostUnregistrationHandler)
+	router.POST("/api/unregister-host", hostUnregistrationHandler)
 
 	router.Run(":8080")
 

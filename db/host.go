@@ -49,8 +49,8 @@ func (host_info *HostInfo) Save(engine *DatabaseEngine) error {
 	return nil
 }
 
-func (host_info *HostInfo) Delete(engine *DatabaseEngine, name, ip string) error {
-	result := engine.DB.Delete(&host_info)
+func (hostInfo *HostInfo) Delete(engine *DatabaseEngine) error {
+	result := engine.DB.Delete(hostInfo)
 	if result.Error != nil {
 		return result.Error
 	}
