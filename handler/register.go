@@ -1,11 +1,10 @@
-package main
+package handler
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/cryingmouse/data_management_engine/db"
-
 	"github.com/gin-gonic/gin"
 	"github.com/mattn/go-sqlite3"
 )
@@ -24,24 +23,24 @@ type HostUnregisterInfo struct {
 }
 
 type HostInfoWithoutPassword struct {
-	Name        string
-	Ip          string
-	Username    string
-	StorageType string
+	Name        string `json:"name"`
+	Ip          string `json:"ip"`
+	Username    string `json:"user_name"`
+	StorageType string `json:"storage_type"`
 }
 
-func hostRegistrationHandler(c *gin.Context) {
-	var register_info HostRegisterInfo
-	if err := c.ShouldBindJSON(&register_info); err != nil {
+func HostRegistrationHandler(c *gin.Context) {
+	var registerInfo HostRegisterInfo
+	if err := c.ShouldBindJSON(&registerInfo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	hostInfo := HostInfoWithoutPassword{
-		Name:        register_info.Name,
-		Ip:          register_info.Ip,
-		Username:    register_info.Username,
-		StorageType: register_info.StorageType,
+		Name:        registerInfo.Name,
+		Ip:          registerInfo.Ip,
+		Username:    registerInfo.Username,
+		StorageType: registerInfo.StorageType,
 	}
 
 	engine, err := db.GetDatabaseEngine()
@@ -50,11 +49,11 @@ func hostRegistrationHandler(c *gin.Context) {
 	}
 
 	hostModel := db.Host{
-		Name:        register_info.Name,
-		Ip:          register_info.Ip,
-		Username:    register_info.Username,
-		Password:    register_info.Password,
-		StorageType: register_info.StorageType,
+		Name:        registerInfo.Name,
+		Ip:          registerInfo.Ip,
+		Username:    registerInfo.Username,
+		Password:    registerInfo.Password,
+		StorageType: registerInfo.StorageType,
 	}
 
 	if err = hostModel.Save(engine); err != nil {
@@ -73,7 +72,7 @@ func hostRegistrationHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"Message": "Register the host information successfully.", "HostRegisterInfo": hostInfo})
 }
 
-func getRegisteredHostsHandler(c *gin.Context) {
+func GetRegisteredHostsHandler(c *gin.Context) {
 	hostName := c.Query("name")
 	hostIp := c.Query("ip")
 
@@ -83,7 +82,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 	}
 
 	if hostName == "" && hostIp == "" {
-		hostListModel := db.HostListModel{}
+		hostListModel := db.HostList{}
 
 		hosts, err := hostListModel.Get(engine)
 		if err != nil {
@@ -124,7 +123,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 	}
 }
 
-func hostUnregistrationHandler(c *gin.Context) {
+func HostUnregistrationHandler(c *gin.Context) {
 	var unregister_info HostUnregisterInfo
 	if err := c.ShouldBindJSON(&unregister_info); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})

@@ -29,6 +29,7 @@ func GetDatabaseEngine() (*DatabaseEngine, error) {
 	engine.models = map[string]interface{}{
 		"host_info": &Host{},
 		"share":     &Share{},
+		"directory": &Directory{},
 	}
 
 	return engine, nil
@@ -46,25 +47,3 @@ func (engine *DatabaseEngine) Migrate() error {
 
 	return nil
 }
-
-func (engine *DatabaseEngine) Save(value interface{}) (tx *gorm.DB) {
-	return engine.DB.Save(value)
-}
-
-func (engine *DatabaseEngine) Delete(value interface{}, conds ...interface{}) (tx *gorm.DB) {
-	return engine.DB.Unscoped().Delete(value, conds...)
-}
-
-func (engine *DatabaseEngine) Find(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
-	return engine.DB.Find(dest, conds...)
-}
-
-// func (engine *DatabaseEngine) Where(query interface{}, args ...interface{}) (tx *DatabaseEngine) {
-// 	engine.DB = engine.DB.Where(query, args)
-// 	return engine
-// }
-
-// func (dngine *DatabaseEngine) First(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
-// 	engine.DB = engine.DB.First(dest, conds...)
-// 	return engine.DB
-// }

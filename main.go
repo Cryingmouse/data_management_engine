@@ -2,13 +2,9 @@ package main
 
 import (
 	"github.com/cryingmouse/data_management_engine/db"
+	"github.com/cryingmouse/data_management_engine/handler"
 	"github.com/gin-gonic/gin"
 )
-
-type Credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
 
 func main() {
 	engine, err := db.GetDatabaseEngine()
@@ -21,13 +17,17 @@ func main() {
 	router := gin.Default()
 
 	// 登录路由，验证用户凭证并生成JWT令牌
-	router.POST("/login", getTokenHandler)
+	// router.POST("/login", getTokenHandler)
 
-	router.POST("/api/register-host", hostRegistrationHandler)
+	router.POST("/api/hosts/register", handler.HostRegistrationHandler)
 
-	router.GET("/api/registered-hosts", getRegisteredHostsHandler)
+	router.GET("/api/hosts", handler.GetRegisteredHostsHandler)
 
-	router.POST("/api/unregister-host", hostUnregistrationHandler)
+	router.POST("/api/hosts/unregister", handler.HostUnregistrationHandler)
+
+	router.POST("/api/directory/create", handler.CreateDirectoryHandler)
+
+	router.POST("/agent/directory/create", handler.CreateDirectoryOnAgentHandler)
 
 	router.Run(":8080")
 

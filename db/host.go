@@ -33,7 +33,7 @@ func (hostModel *Host) Save(engine *DatabaseEngine) error {
 	}
 	hostModel.Password = string(encrypted_password)
 
-	result := engine.Save(&hostModel)
+	result := engine.DB.Save(&hostModel)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -41,20 +41,20 @@ func (hostModel *Host) Save(engine *DatabaseEngine) error {
 }
 
 func (hostInfo *Host) Delete(engine *DatabaseEngine) error {
-	result := engine.Delete(&hostInfo)
+	result := engine.DB.Unscoped().Delete(&hostInfo)
 	if result.Error != nil {
 		return result.Error
 	}
 	return nil
 }
 
-type HostListModel struct {
+type HostList struct {
 	HostList []Host
 }
 
-func (hostListModel *HostListModel) Get(engine *DatabaseEngine) ([]Host, error) {
+func (hostListModel *HostList) Get(engine *DatabaseEngine) ([]Host, error) {
 	var hosts []Host
-	result := engine.Find(&hosts)
+	result := engine.DB.Find(&hosts)
 	if result.Error != nil {
 		return nil, result.Error
 	}
