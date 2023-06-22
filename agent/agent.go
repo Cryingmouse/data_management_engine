@@ -15,6 +15,7 @@ type Agent interface {
 func GetAgent() Agent {
 	agents := map[string]Agent{
 		"windows": &WindowsAgent{},
+		"linux":   &LinuxAgent{},
 	}
 
 	agent, ok := agents[runtime.GOOS]
