@@ -65,11 +65,9 @@ func (hostInfo *Host) Delete(engine *DatabaseEngine) error {
 	return nil
 }
 
-type HostList struct {
-	HostList []Host
-}
+type HostList struct{}
 
-func (hostListModel *HostList) Get(engine *DatabaseEngine) ([]Host, error) {
+func (hl *HostList) Get(engine *DatabaseEngine) ([]Host, error) {
 	var hosts []Host
 	result := engine.DB.Find(&hosts)
 	if result.Error != nil {

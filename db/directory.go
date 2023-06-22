@@ -17,3 +17,40 @@ func (model *Directory) Save(engine *DatabaseEngine) error {
 	}
 	return nil
 }
+
+func (model *Directory) Get(engine *DatabaseEngine, name, hostIp string) (directory *Directory, err error) {
+	directory = &Directory{}
+	query := engine.DB
+
+	query = query.Where("name = ? AND host_ip = ?", name, hostIp)
+
+	result := query.First(directory)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return directory, nil
+}
+
+type DirectoryList struct{}
+
+func (dl *DirectoryList) Get(engine *DatabaseEngine, hostIp string) ([]Directory, error) {
+	var directories []Directory
+
+	if hostIp != "" {
+		conds := map[string]interface{}{
+			"host_ip": hostIp,
+		}
+		result := engine.DB.Find(&directories, conds)
+		if result.Error != nil {
+			return nil, result.Error
+		}
+	} else {
+		result := engine.DB.Find(&directories)
+		if result.Error != nil {
+			return nil, result.Error
+		}
+	}
+
+	return directories, nil
+}
