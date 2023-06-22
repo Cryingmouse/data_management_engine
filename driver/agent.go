@@ -12,23 +12,6 @@ import (
 type AgentDriver struct {
 }
 
-type Directory struct {
-	Name string
-}
-
-// func (driver *WindowsDriver) CreateDirectory(name, root_path string) error {
-// 	// TODO: Check if the root path and directory name is valid
-
-// 	// Create a new folder called `newFolderName` in the current working directory.
-// 	err := os.Mkdir(fmt.Sprintf("%s\\%s", root_path, name), os.ModePerm)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
 func (d *AgentDriver) CreateDirectory(hostContext context.HostContext, name string) (resp *http.Response, err error) {
 	restClient := client.GetRestClient(hostContext, "agent")
 

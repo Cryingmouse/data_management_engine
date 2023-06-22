@@ -1,15 +1,16 @@
 package db
 
 import (
-	"golang.org/x/crypto/bcrypt"
+	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/utils"
 	"gorm.io/gorm"
 )
 
 type Host struct {
 	gorm.Model
 	ID          uint   `gorm:"primaryKey"`
-	Name        string `gorm:"uniqueIndex:idx_name_ip"`
-	Ip          string `gorm:"uniqueIndex:idx_name_ip"`
+	Ip          string `gorm:"unique"`
+	Name        string
 	Username    string
 	Password    string
 	StorageType string
@@ -18,16 +19,32 @@ type Host struct {
 func (hostModel *Host) Get(engine *DatabaseEngine, name, ip string) (*Host, error) {
 	host := &Host{}
 	query := engine.DB
-	query = query.Where("name = ? AND ip = ?", name, ip)
+
+	switch {
+	case name != "" && ip != "":
+		query = query.Where("name = ? AND ip = ?", name, ip)
+	case ip == "":
+		query = query.Where("name = ?", name)
+	case name == "":
+		query = query.Where("ip = ?", ip)
+	}
+
 	result := query.First(host)
 	if result.Error != nil {
 		return nil, result.Error
 	}
+
+	password, err := utils.Decrypt(host.Password, context.SecurityKey)
+	if err != nil {
+		return nil, err
+	}
+	host.Password = password
+
 	return host, nil
 }
 
 func (hostModel *Host) Save(engine *DatabaseEngine) error {
-	encrypted_password, err := bcrypt.GenerateFromPassword([]byte(hostModel.Password), bcrypt.DefaultCost)
+	encrypted_password, err := utils.Encrypt(hostModel.Password, context.SecurityKey)
 	if err != nil {
 		panic(err)
 	}

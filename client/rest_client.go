@@ -36,8 +36,8 @@ func (c *RestClient) Get(url string, contentType string) (resp *http.Response, e
 		return nil, err
 	}
 
-	req.Header.Add("X-DME-username", "CustomValue")
-	req.Header.Add("Authorization", "Bearer YourAccessToken")
+	req.Header.Add("X-agent-username", c.hostContext.Username)
+	req.Header.Add("X-agent-password", c.hostContext.Password)
 
 	req.Header.Set("Content-Type", contentType)
 	return c.client.Do(req)
@@ -53,7 +53,7 @@ func (c *RestClient) Post(url, contentType string, body io.Reader) (resp *http.R
 	}
 
 	req.Header.Add("X-agent-username", c.hostContext.Username)
-	req.Header.Add("X-agent-username", c.hostContext.Password)
+	req.Header.Add("X-agent-password", c.hostContext.Password)
 
 	req.Header.Set("Content-Type", contentType)
 	return c.client.Do(req)
