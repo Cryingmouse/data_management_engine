@@ -1,6 +1,8 @@
 package db
 
 import (
+	"fmt"
+
 	"gorm.io/gorm"
 )
 
@@ -53,4 +55,24 @@ func (dl *DirectoryList) Get(engine *DatabaseEngine, hostIp string) ([]Directory
 	}
 
 	return directories, nil
+}
+
+func (dl *DirectoryList) Delete(engine *DatabaseEngine, names []string, hostIp string) (err error) {
+	var directories []Directory
+
+	query := engine.DB
+	if names != nil {
+		query = query.Where("name IN [?]", names)
+	}
+
+	if hostIp != "" {
+		query = query.Where("host_ip = ?", hostIp)
+	}
+
+	err = query.Unscoped().Delete(&directories).Error
+	if err != nil {
+		return fmt.Errorf("failed to delete hosts in database: %w", err)
+	}
+
+	return nil
 }

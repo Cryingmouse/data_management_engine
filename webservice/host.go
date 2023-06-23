@@ -77,10 +77,11 @@ func hostRegistrationHandler(c *gin.Context) {
 func getRegisteredHostsHandler(c *gin.Context) {
 	hostName := c.Query("name")
 	hostIp := c.Query("ip")
+	storageType := c.Query("storage_type")
 
 	if hostName == "" && hostIp == "" {
 		hostListModel := mgmtmodel.HostList{}
-		hosts, err := hostListModel.Get()
+		hosts, err := hostListModel.Get(storageType)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host.", "Error": err})
 		}

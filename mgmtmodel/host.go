@@ -39,10 +39,12 @@ func (h *Host) Unregister() error {
 		panic(err)
 	}
 
-	hostModel := db.Host{}
-	host, err := hostModel.Get(engine, h.Name, h.Ip)
-	if err != nil {
-		return err
+	dl := db.DirectoryList{}
+	dl.Delete(engine, nil, h.Ip)
+
+	host := db.Host{
+		Ip:   h.Ip,
+		Name: h.Name,
 	}
 
 	return host.Delete(engine)
@@ -60,6 +62,7 @@ func (h *Host) Get() (*Host, error) {
 		return nil, err
 	}
 
+	h.Ip = host.Ip
 	h.Name = host.Name
 	h.Username = host.Username
 	h.Password = host.Password
@@ -68,14 +71,14 @@ func (h *Host) Get() (*Host, error) {
 	return h, nil
 }
 
-func (hl *HostList) Get() ([]Host, error) {
+func (hl *HostList) Get(storageType string) ([]Host, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		panic(err)
 	}
 
 	hostListModel := db.HostList{}
-	hosts, err := hostListModel.Get(engine)
+	hosts, err := hostListModel.Get(engine, storageType)
 	if err != nil {
 		return nil, err
 	}

@@ -47,3 +47,8 @@ func (engine *DatabaseEngine) Migrate() error {
 
 	return nil
 }
+
+func (engine *DatabaseEngine) Get(dest interface{}) *gorm.DB {
+
+	return engine.DB.Where(dest).First(dest)
+}

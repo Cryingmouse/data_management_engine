@@ -26,11 +26,11 @@ func Start() {
 	// 登录路由，验证用户凭证并生成JWT令牌
 	// router.POST("/login", getTokenHandler)
 
-	router.POST("/api/hosts/register", hostRegistrationHandler)
+	router.POST("/api/host/register", hostRegistrationHandler)
 
 	router.GET("/api/hosts", getRegisteredHostsHandler)
 
-	router.POST("/api/hosts/unregister", hostUnregistrationHandler)
+	router.POST("/api/host/unregister", hostUnregistrationHandler)
 
 	router.POST("/api/directory/create", createDirectoryHandler)
 
