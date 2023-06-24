@@ -13,20 +13,13 @@ type Directory struct {
 	HostIp string `gorm:"uniqueIndex:idx_name_hostip"`
 }
 
-func (d *Directory) Get(engine *DatabaseEngine) (err error) {
+func (d *Directory) Get(engine *DatabaseEngine) error {
 	// The query information should be in the instance of Directory struct pointer 'd'
-	if err = engine.Get(d).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return engine.Get(d).Error
 }
 
-func (d *Directory) Save(engine *DatabaseEngine) (err error) {
-	if err = engine.DB.Save(d).Error; err != nil {
-		return err
-	}
-	return nil
+func (d *Directory) Save(engine *DatabaseEngine) error {
+	return engine.DB.Save(d).Error
 }
 
 func (d *Directory) Delete(engine *DatabaseEngine) error {
@@ -37,16 +30,12 @@ type DirectoryList struct {
 	Directories []Directory
 }
 
-func (dl *DirectoryList) Get(engine *DatabaseEngine, hostIp string) (directories []Directory, err error) {
+func (dl *DirectoryList) Get(engine *DatabaseEngine, hostIp string) error {
 	conds := map[string]interface{}{
 		"host_ip": hostIp,
 	}
 
-	if err = engine.DB.Find(&directories, conds).Error; err != nil {
-		return nil, err
-	}
-
-	return directories, nil
+	return engine.DB.Find(&dl.Directories, conds).Error
 }
 
 func (dl *DirectoryList) Create(engine *DatabaseEngine) (err error) {
@@ -58,6 +47,7 @@ func (dl *DirectoryList) Create(engine *DatabaseEngine) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to create directories in database: %w", err)
 	}
+
 	return nil
 }
 

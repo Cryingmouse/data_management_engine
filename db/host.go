@@ -24,11 +24,9 @@ func (h *Host) Get(engine *DatabaseEngine) (err error) {
 		return err
 	}
 
-	if h.Password, err = utils.Decrypt(h.Password, context.SecurityKey); err != nil {
-		return err
-	}
+	h.Password, err = utils.Decrypt(h.Password, context.SecurityKey)
 
-	return nil
+	return err
 }
 
 func (h *Host) Save(engine *DatabaseEngine) error {

@@ -26,8 +26,7 @@ func createDirectoryHandler(c *gin.Context) {
 		HostIp: directoryInfo.HostIp,
 	}
 
-	_, err := directoryModel.Create()
-	if err != nil {
+	if err := directoryModel.Create(); err != nil {
 		panic(err)
 	}
 

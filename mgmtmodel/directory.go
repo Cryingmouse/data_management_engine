@@ -11,86 +11,86 @@ type Directory struct {
 	HostIp string
 }
 
-func (d *Directory) Create() (*Directory, error) {
+func (d *Directory) Create() (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	dbHost := db.Host{Ip: d.HostIp}
-	if err = dbHost.Get(engine); err != nil {
-		panic(err)
+	host := db.Host{Ip: d.HostIp}
+	if err = host.Get(engine); err != nil {
+		return err
 	}
 
 	hostContext := context.HostContext{
-		IP:       dbHost.Ip,
-		Username: dbHost.Username,
-		Password: dbHost.Password,
+		IP:       host.Ip,
+		Username: host.Username,
+		Password: host.Password,
 	}
 
-	driver := driver.GetDriver(dbHost.StorageType)
+	driver := driver.GetDriver(host.StorageType)
 	driver.CreateDirectory(hostContext, d.Name)
 
-	directoryModel := db.Directory{
+	directory := db.Directory{
 		Name:   d.Name,
-		HostIp: dbHost.Ip,
+		HostIp: host.Ip,
 	}
 
-	if err = directoryModel.Save(engine); err != nil {
-		return nil, err
+	if err = directory.Save(engine); err != nil {
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
 
-func (d *Directory) Delete() (*Directory, error) {
+func (d *Directory) Delete() (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	dbHost := db.Host{Ip: d.HostIp}
-	if err = dbHost.Get(engine); err != nil {
-		panic(err)
+	host := db.Host{Ip: d.HostIp}
+	if err = host.Get(engine); err != nil {
+		return err
 	}
 
 	hostContext := context.HostContext{
-		IP:       dbHost.Ip,
-		Username: dbHost.Username,
-		Password: dbHost.Password,
+		IP:       host.Ip,
+		Username: host.Username,
+		Password: host.Password,
 	}
 
-	driver := driver.GetDriver(dbHost.StorageType)
+	driver := driver.GetDriver(host.StorageType)
 	driver.DeleteDirectory(hostContext, d.Name)
 
-	directoryModel := db.Directory{
+	directory := db.Directory{
 		Name:   d.Name,
-		HostIp: dbHost.Ip,
+		HostIp: host.Ip,
 	}
 
-	if err = directoryModel.Delete(engine); err != nil {
-		return nil, err
+	if err = directory.Delete(engine); err != nil {
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (d *Directory) Get() (*Directory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
-		panic(err)
-	}
-
-	dbDirectory := db.Directory{
-		Name:   d.Name,
-		HostIp: d.HostIp,
-	}
-	if err = dbDirectory.Get(engine); err != nil {
 		return nil, err
 	}
 
-	d.Name = dbDirectory.Name
-	d.HostIp = dbDirectory.HostIp
+	directory := db.Directory{
+		Name:   d.Name,
+		HostIp: d.HostIp,
+	}
+	if err = directory.Get(engine); err != nil {
+		return nil, err
+	}
+
+	d.Name = directory.Name
+	d.HostIp = directory.HostIp
 
 	return d, nil
 }
@@ -102,16 +102,16 @@ type DirectoryList struct {
 func (dl *DirectoryList) Get(hostIp string) ([]Directory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	directoryListModel := db.DirectoryList{}
-	directories, err := directoryListModel.Get(engine, hostIp)
+	directoryList := db.DirectoryList{}
+	err = directoryList.Get(engine, hostIp)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, _directory := range directories {
+	for _, _directory := range directoryList.Directories {
 		directory := Directory{
 			Name:   _directory.Name,
 			HostIp: _directory.HostIp,

@@ -56,7 +56,6 @@ func TestDirectory_Save_Get_Delete(t *testing.T) {
 }
 
 func TestDirectoryListGet(t *testing.T) {
-
 	engine, err := GetDatabaseEngine()
 	if err != nil {
 		panic(err)
@@ -65,12 +64,7 @@ func TestDirectoryListGet(t *testing.T) {
 	directoryList := DirectoryList{}
 
 	// Get the Directory object from the database.
-	result, err := directoryList.Get(engine, "127.0.0.1")
-
-	// Check if the error is nil and the Directory objects are equal.
-	if err != nil {
+	if err = directoryList.Get(engine, "127.0.0.1"); err != nil {
 		t.Errorf("Error getting Directory: %v", err)
-	} else {
-		t.Log(result)
 	}
 }

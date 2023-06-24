@@ -35,8 +35,8 @@ func (h *Host) Unregister() error {
 		panic(err)
 	}
 
-	dl := db.DirectoryList{}
-	dl.Delete(engine, nil, h.Ip)
+	directoryList := db.DirectoryList{}
+	directoryList.Delete(engine, nil, h.Ip)
 
 	host := db.Host{
 		Ip:   h.Ip,
@@ -49,22 +49,22 @@ func (h *Host) Unregister() error {
 func (h *Host) Get() (*Host, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
-		panic(err)
-	}
-
-	dbHost := db.Host{
-		Name: h.Name,
-		Ip:   h.Ip,
-	}
-	if err = dbHost.Get(engine); err != nil {
 		return nil, err
 	}
 
-	h.Ip = dbHost.Ip
-	h.Name = dbHost.Name
-	h.Username = dbHost.Username
-	h.Password = dbHost.Password
-	h.StorageType = dbHost.StorageType
+	host := db.Host{
+		Name: h.Name,
+		Ip:   h.Ip,
+	}
+	if err = host.Get(engine); err != nil {
+		return nil, err
+	}
+
+	h.Ip = host.Ip
+	h.Name = host.Name
+	h.Username = host.Username
+	h.Password = host.Password
+	h.StorageType = host.StorageType
 
 	return h, nil
 }
@@ -79,12 +79,12 @@ func (hl *HostList) Get(storageType string) ([]Host, error) {
 		panic(err)
 	}
 
-	dbHostList := db.HostList{}
-	if err := dbHostList.Get(engine, storageType); err != nil {
+	hostList := db.HostList{}
+	if err := hostList.Get(engine, storageType); err != nil {
 		return nil, err
 	}
 
-	for _, _host := range dbHostList.Hosts {
+	for _, _host := range hostList.Hosts {
 		host := Host{
 			Ip:          _host.Ip,
 			Name:        _host.Name,

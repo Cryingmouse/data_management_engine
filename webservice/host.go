@@ -27,8 +27,8 @@ type HostRegisterInfo struct {
 }
 
 type HostUnregisterInfo struct {
-	Name string `json:"name"`
 	Ip   string `json:"ip" binding:"required"`
+	Name string `json:"name"`
 }
 
 func hostRegistrationHandler(c *gin.Context) {
@@ -80,6 +80,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 	storageType := c.Query("storage_type")
 
 	if hostName == "" && hostIp == "" {
+		// Using mgmtmodel.HostList, to get the list of the host.
 		hostListModel := mgmtmodel.HostList{}
 		hosts, err := hostListModel.Get(storageType)
 		if err != nil {
@@ -101,6 +102,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"Message": "Get the registered hosts successfully.", "RegisteredHosts": hostInfoList})
 		return
 	} else {
+		// Using mgmtmodel.Host, to get the host.
 		hostModel := mgmtmodel.Host{
 			Ip:   hostIp,
 			Name: hostName,
@@ -131,8 +133,8 @@ func hostUnregistrationHandler(c *gin.Context) {
 	}
 
 	hostModel := mgmtmodel.Host{
-		Name: unregister_info.Name,
 		Ip:   unregister_info.Ip,
+		Name: unregister_info.Name,
 	}
 
 	if err := hostModel.Unregister(); err != nil {
