@@ -110,7 +110,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 
 		host, err := hostModel.Get()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host."})
+			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host.", "Error": err})
 			return
 		}
 

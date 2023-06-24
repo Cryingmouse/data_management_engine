@@ -45,12 +45,11 @@ func deleteDirectoryHandler(c *gin.Context) {
 		HostIp: directoryInfo.HostIp,
 	}
 
-	_, err := directoryModel.Delete()
-	if err != nil {
-		panic(err)
+	if err := directoryModel.Delete(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to delete the directory.", "Error": err})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"Message": "Create the directory successfully."})
+	c.JSON(http.StatusOK, gin.H{"Message": "Delete the directory successfully."})
 }
 
 func getDirectoryHandler(c *gin.Context) {
@@ -75,7 +74,7 @@ func getDirectoryHandler(c *gin.Context) {
 
 		directory, err := directoryModel.Get()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the directory."})
+			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the directory.", "Error": err})
 			return
 		}
 
