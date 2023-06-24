@@ -19,22 +19,16 @@ type Host struct {
 	StorageType string
 }
 
-func (hostModel *Host) Get(engine *DatabaseEngine, name, ip string) (*Host, error) {
-	host := Host{
-		Name: name,
-		Ip:   ip,
+func (h *Host) Get(engine *DatabaseEngine) (err error) {
+	if err = engine.Get(h).Error; err != nil {
+		return err
 	}
 
-	err := engine.Get(&host).Error
-	if err != nil {
-		return nil, err
+	if h.Password, err = utils.Decrypt(h.Password, context.SecurityKey); err != nil {
+		return err
 	}
 
-	if host.Password, err = utils.Decrypt(host.Password, context.SecurityKey); err != nil {
-		return nil, err
-	}
-
-	return &host, nil
+	return nil
 }
 
 func (h *Host) Save(engine *DatabaseEngine) error {
@@ -47,7 +41,7 @@ func (h *Host) Save(engine *DatabaseEngine) error {
 
 	encrypted_password, err := utils.Encrypt(h.Password, context.SecurityKey)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	host.Password = string(encrypted_password)
 
@@ -62,17 +56,25 @@ type HostList struct {
 	Hosts []Host
 }
 
-func (hl *HostList) Get(engine *DatabaseEngine, storageType string) ([]Host, error) {
-	var hosts []Host
+func (hl *HostList) Get(engine *DatabaseEngine, storageType string) (err error) {
 	conds := Host{
 		StorageType: storageType,
 	}
 
-	err := engine.DB.Find(&hosts, conds).Error
-	if err != nil {
-		return nil, err
+	if err = engine.DB.Find(&hl.Hosts, conds).Error; err != nil {
+		return err
 	}
-	return hosts, nil
+
+	for i := range hl.Hosts {
+		decryptedPassword, err := utils.Decrypt(hl.Hosts[i].Password, context.SecurityKey)
+		if err != nil {
+			return err
+		}
+
+		hl.Hosts[i].Password = decryptedPassword
+	}
+
+	return nil
 }
 
 func (hl *HostList) Create(engine *DatabaseEngine) (err error) {
@@ -95,10 +97,13 @@ func (hl *HostList) Create(engine *DatabaseEngine) (err error) {
 	return nil
 }
 
-func (hl *HostList) Delete(engine *DatabaseEngine, storageType string, names, ips []string) (err error) {
-	var hosts []Host
+func (hl *HostList) Delete(engine *DatabaseEngine, storageType string, names, ips []string) error {
+	var host Host
 
-	query := engine.DB.Where("storage_type = ?", storageType)
+	query := engine.DB.Where("1 = 1")
+	if storageType != "" {
+		query = engine.DB.Where("storage_type = ?", storageType)
+	}
 	if names != nil {
 		query.Where("name IN [?]", names)
 	}
@@ -107,9 +112,5 @@ func (hl *HostList) Delete(engine *DatabaseEngine, storageType string, names, ip
 		query.Where("ip IN [?]", ips)
 	}
 
-	err = query.Unscoped().Delete(&hosts).Error
-	if err != nil {
-		return fmt.Errorf("failed to delete hosts in database: %w", err)
-	}
-	return nil
+	return query.Unscoped().Delete(&host).Error
 }

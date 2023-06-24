@@ -21,6 +21,17 @@ func (agent *WindowsAgent) CreateDirectory(hostContext context.HostContext, name
 	return dirPath, nil
 }
 
+func (agent *WindowsAgent) DeleteDirectory(hostContext context.HostContext, name string) (dirPath string, err error) {
+	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
+
+	err = os.Remove(dirPath)
+	if err != nil {
+		return "", err
+	}
+
+	return dirPath, nil
+}
+
 func (agent *WindowsAgent) CreateShare(hostContext context.HostContext, name string) (shareName string, err error) {
 	// TODO: Check if the root path and directory name is valid
 

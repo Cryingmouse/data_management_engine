@@ -34,7 +34,9 @@ func TestHost_Unregister(t *testing.T) {
 		Password:    "password",
 		StorageType: "s3",
 	}
-	err := host.Register()
+	if err := host.Register(); err != nil {
+		t.Errorf("Failed to register host: %v", err)
+	}
 
 	engine, _ := db.GetDatabaseEngine()
 	directory1 := db.Directory{
@@ -49,10 +51,7 @@ func TestHost_Unregister(t *testing.T) {
 	directory2.Save(engine)
 
 	// Act
-	err = host.Unregister()
-
-	// Assert
-	if err != nil {
+	if err := host.Unregister(); err != nil {
 		t.Errorf("Failed to unregister host: %v", err)
 	}
 }

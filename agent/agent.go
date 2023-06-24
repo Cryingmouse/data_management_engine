@@ -9,6 +9,7 @@ import (
 type Agent interface {
 	// The area method returns the area of the shape.
 	CreateDirectory(hostContext context.HostContext, name string) (dirPath string, err error)
+	DeleteDirectory(hostContext context.HostContext, name string) (dirPath string, err error)
 	CreateShare(hostContext context.HostContext, name string) (shareName string, err error)
 }
 

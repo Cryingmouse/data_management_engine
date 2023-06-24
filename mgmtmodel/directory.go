@@ -17,24 +17,23 @@ func (d *Directory) Create() (*Directory, error) {
 		panic(err)
 	}
 
-	hostModel := db.Host{}
-	host, err := hostModel.Get(engine, "", d.HostIp)
-	if err != nil {
+	dbHost := db.Host{Ip: d.HostIp}
+	if err = dbHost.Get(engine); err != nil {
 		panic(err)
 	}
 
 	hostContext := context.HostContext{
-		IP:       host.Ip,
-		Username: host.Username,
-		Password: host.Password,
+		IP:       dbHost.Ip,
+		Username: dbHost.Username,
+		Password: dbHost.Password,
 	}
 
-	driver := driver.GetDriver(host.StorageType)
+	driver := driver.GetDriver(dbHost.StorageType)
 	driver.CreateDirectory(hostContext, d.Name)
 
 	directoryModel := db.Directory{
 		Name:   d.Name,
-		HostIp: host.Ip,
+		HostIp: dbHost.Ip,
 	}
 
 	if err = directoryModel.Save(engine); err != nil {
@@ -42,4 +41,84 @@ func (d *Directory) Create() (*Directory, error) {
 	}
 
 	return nil, nil
+}
+
+func (d *Directory) Delete() (*Directory, error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		panic(err)
+	}
+
+	dbHost := db.Host{Ip: d.HostIp}
+	if err = dbHost.Get(engine); err != nil {
+		panic(err)
+	}
+
+	hostContext := context.HostContext{
+		IP:       dbHost.Ip,
+		Username: dbHost.Username,
+		Password: dbHost.Password,
+	}
+
+	driver := driver.GetDriver(dbHost.StorageType)
+	driver.DeleteDirectory(hostContext, d.Name)
+
+	directoryModel := db.Directory{
+		Name:   d.Name,
+		HostIp: dbHost.Ip,
+	}
+
+	if err = directoryModel.Delete(engine); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (d *Directory) Get() (*Directory, error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		panic(err)
+	}
+
+	dbDirectory := db.Directory{
+		Name:   d.Name,
+		HostIp: d.HostIp,
+	}
+	if err = dbDirectory.Get(engine); err != nil {
+		return nil, err
+	}
+
+	d.Name = dbDirectory.Name
+	d.HostIp = dbDirectory.HostIp
+
+	return d, nil
+}
+
+type DirectoryList struct {
+	Directories []Directory
+}
+
+func (dl *DirectoryList) Get(hostIp string) ([]Directory, error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		panic(err)
+	}
+
+	directoryListModel := db.DirectoryList{}
+	directories, err := directoryListModel.Get(engine, hostIp)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, _directory := range directories {
+		directory := Directory{
+			Name:   _directory.Name,
+			HostIp: _directory.HostIp,
+		}
+
+		dl.Directories = append(dl.Directories, directory)
+	}
+
+	return dl.Directories, nil
 }

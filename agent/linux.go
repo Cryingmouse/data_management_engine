@@ -21,6 +21,17 @@ func (agent *LinuxAgent) CreateDirectory(hostContext context.HostContext, name s
 	return dirPath, nil
 }
 
+func (agent *LinuxAgent) DeleteDirectory(hostContext context.HostContext, name string) (dirPath string, err error) {
+	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
+
+	err = os.Remove(dirPath)
+	if err != nil {
+		return "", err
+	}
+
+	return dirPath, nil
+}
+
 func (agent *LinuxAgent) CreateShare(hostContext context.HostContext, name string) (shareName string, err error) {
 	// TODO: Check if the root path and directory name is valid
 

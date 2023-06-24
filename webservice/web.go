@@ -34,7 +34,13 @@ func Start() {
 
 	router.POST("/api/directory/create", createDirectoryHandler)
 
+	router.POST("/api/directory/delete", deleteDirectoryHandler)
+
+	router.GET("/api/directories", getDirectoryHandler)
+
 	router.POST("/agent/directory/create", createDirectoryOnAgentHandler)
+
+	router.POST("/agent/directory/delete", deleteDirectoryOnAgentHandler)
 
 	router.Run(":8080")
 

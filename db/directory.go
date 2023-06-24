@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -12,49 +13,52 @@ type Directory struct {
 	HostIp string `gorm:"uniqueIndex:idx_name_hostip"`
 }
 
-func (model *Directory) Save(engine *DatabaseEngine) error {
-	result := engine.DB.Save(&model)
-	if result.Error != nil {
-		return result.Error
+func (d *Directory) Get(engine *DatabaseEngine) (err error) {
+	// The query information should be in the instance of Directory struct pointer 'd'
+	if err = engine.Get(d).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Directory) Save(engine *DatabaseEngine) (err error) {
+	if err = engine.DB.Save(d).Error; err != nil {
+		return err
 	}
 	return nil
 }
 
-func (model *Directory) Get(engine *DatabaseEngine, name, hostIp string) (directory *Directory, err error) {
-	directory = &Directory{}
-	query := engine.DB
-
-	query = query.Where("name = ? AND host_ip = ?", name, hostIp)
-
-	result := query.First(directory)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return directory, nil
+func (d *Directory) Delete(engine *DatabaseEngine) error {
+	return engine.DB.Unscoped().Delete(&d, d).Error
 }
 
-type DirectoryList struct{}
+type DirectoryList struct {
+	Directories []Directory
+}
 
-func (dl *DirectoryList) Get(engine *DatabaseEngine, hostIp string) ([]Directory, error) {
-	var directories []Directory
+func (dl *DirectoryList) Get(engine *DatabaseEngine, hostIp string) (directories []Directory, err error) {
+	conds := map[string]interface{}{
+		"host_ip": hostIp,
+	}
 
-	if hostIp != "" {
-		conds := map[string]interface{}{
-			"host_ip": hostIp,
-		}
-		result := engine.DB.Find(&directories, conds)
-		if result.Error != nil {
-			return nil, result.Error
-		}
-	} else {
-		result := engine.DB.Find(&directories)
-		if result.Error != nil {
-			return nil, result.Error
-		}
+	if err = engine.DB.Find(&directories, conds).Error; err != nil {
+		return nil, err
 	}
 
 	return directories, nil
+}
+
+func (dl *DirectoryList) Create(engine *DatabaseEngine) (err error) {
+	if len(dl.Directories) == 0 {
+		return errors.New("HostList is empty")
+	}
+
+	err = engine.DB.CreateInBatches(dl.Directories, len(dl.Directories)).Error
+	if err != nil {
+		return fmt.Errorf("failed to create directories in database: %w", err)
+	}
+	return nil
 }
 
 func (dl *DirectoryList) Delete(engine *DatabaseEngine, names []string, hostIp string) (err error) {

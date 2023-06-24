@@ -3,15 +3,33 @@ package db
 import (
 	"testing"
 
-	"github.com/cryingmouse/data_management_engine/context"
-	"github.com/cryingmouse/data_management_engine/utils"
+	"gorm.io/gorm"
 )
+
+func compareHosts(expected []Host, actual []Host) bool {
+	if len(expected) != len(actual) {
+		return false
+	}
+
+	for i := range expected {
+		// Compare the desired fields of each struct
+		if expected[i].Name != actual[i].Name ||
+			expected[i].Ip != actual[i].Ip ||
+			expected[i].Username != actual[i].Username ||
+			expected[i].StorageType != actual[i].StorageType {
+			return false
+		}
+		// Add more fields for comparison as needed
+	}
+
+	return true
+}
 
 func Test_Host_Save_Get_Delete(t *testing.T) {
 	engine, _ := GetDatabaseEngine()
 	host := Host{
-		Name:        "test_host_2",
-		Ip:          "127.0.0.2",
+		Name:        "test_host_1",
+		Ip:          "127.0.0.1",
 		Username:    "test_user",
 		Password:    "test_password",
 		StorageType: "local",
@@ -22,35 +40,49 @@ func Test_Host_Save_Get_Delete(t *testing.T) {
 		t.Errorf("Error saving host: %v", err)
 	}
 
-	newHost, err := host.Get(engine, host.Name, host.Ip)
+	retrievedHost := &Host{
+		Ip: "127.0.0.1",
+	}
+
+	err = retrievedHost.Get(engine)
 	if err != nil {
 		t.Errorf("Error getting host: %v", err)
 	}
 
-	if newHost.Name != host.Name {
-		t.Errorf("Expected host name to be '%s', got '%s'", host.Name, newHost.Name)
+	if retrievedHost.Name != host.Name {
+		t.Errorf("Expected host name to be '%s', got '%s'", host.Name, retrievedHost.Name)
 	}
 
-	if newHost.Ip != host.Ip {
-		t.Errorf("Expected host IP to be '%s', got '%s'", host.Ip, newHost.Ip)
+	if retrievedHost.Ip != host.Ip {
+		t.Errorf("Expected host IP to be '%s', got '%s'", host.Ip, retrievedHost.Ip)
 	}
 
-	password, err := utils.Decrypt(newHost.Password, context.SecurityKey)
+	if retrievedHost.Password != host.Password {
+		t.Errorf("Expected password to be '%s', got '%s'", host.Password, retrievedHost.Password)
+	}
+
+	deletedHost := &Host{
+		Name:        "test_host_1",
+		Ip:          "127.0.0.1",
+		Username:    "test_user",
+		StorageType: "local",
+	}
+
+	err = deletedHost.Delete(engine)
 	if err != nil {
-		t.Errorf("Error decrypting password: %v", err)
+		t.Errorf("Error deleting host: %v", err)
 	}
 
-	if password != host.Password {
-		t.Errorf("Expected password to be '%s', got '%s'", host.Password, password)
+	err = deletedHost.Get(engine)
+	if err != gorm.ErrRecordNotFound {
+		t.Errorf("Failed to delete host: %v", err)
 	}
-
-	newHost.Delete(engine)
 }
 
 func TestHostList_Create_Get(t *testing.T) {
 	engine, _ := GetDatabaseEngine()
 
-	hosts := []Host{
+	expectedHosts := []Host{
 		{
 			Name:        "test_host_1",
 			Ip:          "127.0.0.1",
@@ -74,8 +106,25 @@ func TestHostList_Create_Get(t *testing.T) {
 		},
 	}
 
+	expectedLocalHosts := []Host{
+		{
+			Name:        "test_host_1",
+			Ip:          "127.0.0.1",
+			Username:    "test_user1",
+			Password:    "test_password1",
+			StorageType: "local",
+		},
+		{
+			Name:        "test_host_2",
+			Ip:          "127.0.0.2",
+			Username:    "test_user2",
+			Password:    "test_password2",
+			StorageType: "local",
+		},
+	}
+
 	hostList := HostList{
-		Hosts: hosts,
+		Hosts: expectedHosts,
 	}
 
 	err := hostList.Create(engine)
@@ -83,12 +132,25 @@ func TestHostList_Create_Get(t *testing.T) {
 		t.Errorf("Error saving host: %v", err)
 	}
 
-	newHostList := HostList{}
-	hosts, _ = newHostList.Get(engine, "local")
+	hostList = HostList{}
+	if err = hostList.Get(engine, "local"); err != nil {
+		t.Errorf("Error get hosts: %v", err)
+	}
 
-	newHostList.Delete(engine, "local", nil, nil)
+	if !compareHosts(hostList.Hosts, expectedLocalHosts) {
+		t.Errorf("Expected hosts to be '%v', got '%v'", expectedLocalHosts, hostList.Hosts)
+	}
 
-	hosts, _ = newHostList.Get(engine, "")
+	hostList = HostList{}
+	if err = hostList.Get(engine, ""); err != nil {
+		t.Errorf("Error get hosts: %v", err)
+	}
 
-	t.Log("Test Completed.")
+	if !compareHosts(hostList.Hosts, expectedHosts) {
+		t.Errorf("Expected hosts to be '%v', got '%v'", expectedHosts, hostList.Hosts)
+	}
+
+	if err = hostList.Delete(engine, "", nil, nil); err != nil {
+		t.Errorf("Failed to delete directory: %v", err)
+	}
 }

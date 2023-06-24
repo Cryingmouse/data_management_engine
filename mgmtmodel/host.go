@@ -12,10 +12,6 @@ type Host struct {
 	StorageType string
 }
 
-type HostList struct {
-	Hosts []Host
-}
-
 func (h *Host) Register() error {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
@@ -56,19 +52,25 @@ func (h *Host) Get() (*Host, error) {
 		panic(err)
 	}
 
-	hostModel := db.Host{}
-	host, err := hostModel.Get(engine, h.Name, h.Ip)
-	if err != nil {
+	dbHost := db.Host{
+		Name: h.Name,
+		Ip:   h.Ip,
+	}
+	if err = dbHost.Get(engine); err != nil {
 		return nil, err
 	}
 
-	h.Ip = host.Ip
-	h.Name = host.Name
-	h.Username = host.Username
-	h.Password = host.Password
-	h.StorageType = host.StorageType
+	h.Ip = dbHost.Ip
+	h.Name = dbHost.Name
+	h.Username = dbHost.Username
+	h.Password = dbHost.Password
+	h.StorageType = dbHost.StorageType
 
 	return h, nil
+}
+
+type HostList struct {
+	Hosts []Host
 }
 
 func (hl *HostList) Get(storageType string) ([]Host, error) {
@@ -77,19 +79,18 @@ func (hl *HostList) Get(storageType string) ([]Host, error) {
 		panic(err)
 	}
 
-	hostListModel := db.HostList{}
-	hosts, err := hostListModel.Get(engine, storageType)
-	if err != nil {
+	dbHostList := db.HostList{}
+	if err := dbHostList.Get(engine, storageType); err != nil {
 		return nil, err
 	}
 
-	for _, host := range hosts {
+	for _, _host := range dbHostList.Hosts {
 		host := Host{
-			Ip:          host.Ip,
-			Name:        host.Name,
-			Username:    host.Username,
-			Password:    host.Password,
-			StorageType: host.StorageType,
+			Ip:          _host.Ip,
+			Name:        _host.Name,
+			Username:    _host.Username,
+			Password:    _host.Password,
+			StorageType: _host.StorageType,
 		}
 
 		hl.Hosts = append(hl.Hosts, host)
