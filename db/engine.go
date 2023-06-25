@@ -19,7 +19,7 @@ func GetDatabaseEngine() (*DatabaseEngine, error) {
 		return engine, nil
 	}
 
-	db, err := gorm.Open(sqlite.Open("./sqlite3.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("./db/sqlite3.db"), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during open sqlite database: %w", err)
 	}

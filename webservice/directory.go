@@ -63,7 +63,15 @@ func getDirectoryHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the directories.", "Error": err})
 		}
 
-		c.JSON(http.StatusOK, gin.H{"Message": "Get the directories successfully.", "Directories": directories})
+		directoryInfoList := []DirectoryInfo{}
+		for _, directory := range directories {
+			directoryInfoList = append(directoryInfoList, DirectoryInfo{
+				Name:   directory.Name,
+				HostIp: directory.HostIp,
+			})
+		}
+
+		c.JSON(http.StatusOK, gin.H{"Message": "Get the directories successfully.", "Directories": directoryInfoList})
 		return
 
 	} else {
@@ -78,7 +86,13 @@ func getDirectoryHandler(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"Message": "Get the registered host successfully.", "RegisteredHosts": directory})
+		// Convert to DirectoryInfo as REST API response.
+		directoryInfo := DirectoryInfo{
+			Name:   directory.Name,
+			HostIp: directory.HostIp,
+		}
+
+		c.JSON(http.StatusOK, gin.H{"Message": "Get the registered host successfully.", "RegisteredHosts": directoryInfo})
 
 	}
 }

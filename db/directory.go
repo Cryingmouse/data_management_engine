@@ -31,8 +31,8 @@ type DirectoryList struct {
 }
 
 func (dl *DirectoryList) Get(engine *DatabaseEngine, hostIp string) error {
-	conds := map[string]interface{}{
-		"host_ip": hostIp,
+	conds := Directory{
+		HostIp: hostIp,
 	}
 
 	return engine.DB.Find(&dl.Directories, conds).Error
