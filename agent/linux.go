@@ -32,7 +32,7 @@ func (agent *LinuxAgent) DeleteDirectory(hostContext context.HostContext, name s
 	return dirPath, nil
 }
 
-func (agent *LinuxAgent) CreateShare(hostContext context.HostContext, name string) (shareName string, err error) {
+func (agent *LinuxAgent) CreateShare(hostContext context.HostContext, name, directory_name string) (shareName string, err error) {
 	// TODO: Check if the root path and directory name is valid
 
 	// Create a new folder called `newFolderName` in the current working directory.

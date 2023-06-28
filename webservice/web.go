@@ -2,6 +2,7 @@ package webservice
 
 import (
 	"regexp"
+	"strconv"
 
 	"github.com/cryingmouse/data_management_engine/db"
 	"github.com/gin-gonic/gin"
@@ -53,4 +54,34 @@ func passwordValidator(fl validator.FieldLevel) bool {
 		return true
 	}
 	return false
+}
+
+func validatePagination(c *gin.Context) (page, limit int, err error) {
+	page, _ = strconv.Atoi(c.Query("page"))
+	limit, _ = strconv.Atoi(c.Query("limit"))
+
+	// Create a validator instance.
+	v := validator.New()
+
+	type Pagination struct {
+		Page  int `validate:"omitempty,gte=0"`
+		Limit int `validate:"omitempty,gte=0"`
+	}
+
+	// Define validation rules for page and limit.
+	pagination := Pagination{Page: page, Limit: limit}
+
+	// Custom validation function to check if both page and limit have values or both are empty.
+	v.RegisterValidation("pageLimit", func(fl validator.FieldLevel) bool {
+		if pagination.Page != 0 && pagination.Limit != 0 {
+			return true
+		}
+		if pagination.Page == 0 && pagination.Limit == 0 {
+			return true
+		}
+		return false
+	})
+
+	// Perform validation.
+	return page, limit, v.Struct(pagination)
 }

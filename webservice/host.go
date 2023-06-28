@@ -62,10 +62,10 @@ func hostRegistrationHandler(c *gin.Context) {
 			// Map SQLite ErrNo to specific error scenarios
 			switch sqliteErr.ExtendedCode {
 			case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-				c.JSON(http.StatusInternalServerError, gin.H{"Message": "The host information has already been registered.", "HostRegisterInfo": hostInfo, "Error": err})
+				c.JSON(http.StatusInternalServerError, gin.H{"Message": "The host information has already been registered.", "HostRegisterInfo": hostInfo, "Error": err.Error()})
 				return
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to register the host.", "HostRegisterInfo": hostInfo, "Error": err})
+				c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to register the host.", "HostRegisterInfo": hostInfo, "Error": err.Error()})
 			}
 		}
 
@@ -84,7 +84,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 		hostListModel := mgmtmodel.HostList{}
 		hosts, err := hostListModel.Get(storageType)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host.", "Error": err})
+			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host.", "Error": err.Error()})
 		}
 
 		var hostInfoList []HostInfoWithoutPassword
@@ -110,7 +110,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 
 		host, err := hostModel.Get()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host.", "Error": err})
+			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host.", "Error": err.Error()})
 			return
 		}
 
@@ -138,7 +138,7 @@ func hostUnregistrationHandler(c *gin.Context) {
 	}
 
 	if err := hostModel.Unregister(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to delete the registered host.", "HostUnregisterInfo": unregister_info, "Error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to delete the registered host.", "HostUnregisterInfo": unregister_info, "Error": err.Error()})
 		return
 	}
 

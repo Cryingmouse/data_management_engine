@@ -127,7 +127,7 @@ func TestHostList_Create_Get(t *testing.T) {
 		Hosts: expectedHosts,
 	}
 
-	err := hostList.Create(engine)
+	err := hostList.Save(engine)
 	if err != nil {
 		t.Errorf("Error saving host: %v", err)
 	}

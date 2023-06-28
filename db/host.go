@@ -11,7 +11,6 @@ import (
 
 type Host struct {
 	gorm.Model
-	ID          uint   `gorm:"primaryKey"`
 	Ip          string `gorm:"unique"`
 	Name        string
 	Username    string
@@ -75,7 +74,7 @@ func (hl *HostList) Get(engine *DatabaseEngine, storageType string) (err error) 
 	return nil
 }
 
-func (hl *HostList) Create(engine *DatabaseEngine) (err error) {
+func (hl *HostList) Save(engine *DatabaseEngine) (err error) {
 	if len(hl.Hosts) == 0 {
 		return errors.New("HostList is empty")
 	}

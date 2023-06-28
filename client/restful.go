@@ -29,9 +29,9 @@ func GetRestClient(hostContext context.HostContext, prefixURL string) RestfulAPI
 
 func (c *RestClient) Get(url string, contentType string) (resp *http.Response, err error) {
 	// Append the base URL to the input URL.
-	fullURL := fmt.Sprintf("http://%s/%s/%s", c.hostContext.IP, c.prefixURL, url)
+	fullURL := fmt.Sprintf("http://%s:8080/%s/%s", c.hostContext.IP, c.prefixURL, url)
 
-	req, err := http.NewRequest("POST", fullURL, nil)
+	req, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}

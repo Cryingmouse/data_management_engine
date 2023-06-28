@@ -106,8 +106,7 @@ func (dl *DirectoryList) Get(hostIp string) ([]Directory, error) {
 	}
 
 	directoryList := db.DirectoryList{}
-	err = directoryList.Get(engine, hostIp)
-	if err != nil {
+	if err = directoryList.Get(engine, hostIp, ""); err != nil {
 		return nil, err
 	}
 
@@ -121,4 +120,41 @@ func (dl *DirectoryList) Get(hostIp string) ([]Directory, error) {
 	}
 
 	return dl.Directories, nil
+}
+
+type PaginationDirectory struct {
+	Directories []Directory
+	Page        int
+	Limit       int
+	TotalCount  int64
+}
+
+func (dl *DirectoryList) GetByPagination(hostIp string, page, limit int) (*PaginationDirectory, error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return nil, err
+	}
+
+	directoryList := db.DirectoryList{}
+	paginationDirs, err := directoryList.GetByPagination(engine, []string{}, hostIp, page, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	paginationDirList := PaginationDirectory{
+		Page:       page,
+		Limit:      limit,
+		TotalCount: paginationDirs.TotalCount,
+	}
+
+	for _, _directory := range paginationDirs.Directories {
+		directory := Directory{
+			Name:   _directory.Name,
+			HostIp: _directory.HostIp,
+		}
+
+		paginationDirList.Directories = append(paginationDirList.Directories, directory)
+	}
+
+	return &paginationDirList, nil
 }

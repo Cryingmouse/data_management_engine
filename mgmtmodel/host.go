@@ -98,3 +98,11 @@ func (hl *HostList) Get(storageType string) ([]Host, error) {
 
 	return hl.Hosts, nil
 }
+
+func (hl *HostList) Register() error {
+	return nil
+}
+
+func (hl *HostList) Unregister() error {
+	return nil
+}
