@@ -20,7 +20,7 @@ func (h *Host) Register() error {
 
 	host := db.Host{
 		Name:        h.Name,
-		Ip:          h.Ip,
+		IP:          h.Ip,
 		Username:    h.Username,
 		Password:    h.Password,
 		StorageType: h.StorageType,
@@ -36,10 +36,10 @@ func (h *Host) Unregister() error {
 	}
 
 	directoryList := db.DirectoryList{}
-	directoryList.Delete(engine, nil, h.Ip)
+	directoryList.Delete(engine, nil)
 
 	host := db.Host{
-		Ip:   h.Ip,
+		IP:   h.Ip,
 		Name: h.Name,
 	}
 
@@ -54,13 +54,13 @@ func (h *Host) Get() (*Host, error) {
 
 	host := db.Host{
 		Name: h.Name,
-		Ip:   h.Ip,
+		IP:   h.Ip,
 	}
 	if err = host.Get(engine); err != nil {
 		return nil, err
 	}
 
-	h.Ip = host.Ip
+	h.Ip = host.IP
 	h.Name = host.Name
 	h.Username = host.Username
 	h.Password = host.Password
@@ -86,7 +86,7 @@ func (hl *HostList) Get(storageType string) ([]Host, error) {
 
 	for _, _host := range hostList.Hosts {
 		host := Host{
-			Ip:          _host.Ip,
+			Ip:          _host.IP,
 			Name:        _host.Name,
 			Username:    _host.Username,
 			Password:    _host.Password,

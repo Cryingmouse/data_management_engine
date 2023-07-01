@@ -11,7 +11,7 @@ import (
 
 type Host struct {
 	gorm.Model
-	Ip          string `gorm:"unique"`
+	IP          string `gorm:"unique"`
 	Name        string
 	Username    string
 	Password    string `gorm:"type:password"`
@@ -19,7 +19,7 @@ type Host struct {
 }
 
 func (h *Host) Get(engine *DatabaseEngine) (err error) {
-	if err = engine.Get(h).Error; err != nil {
+	if err = engine.DB.Where(h).First(h).Error; err != nil {
 		return err
 	}
 
@@ -30,7 +30,7 @@ func (h *Host) Get(engine *DatabaseEngine) (err error) {
 
 func (h *Host) Save(engine *DatabaseEngine) error {
 	host := Host{
-		Ip:          h.Ip,
+		IP:          h.IP,
 		Name:        h.Name,
 		Username:    h.Username,
 		StorageType: h.StorageType,

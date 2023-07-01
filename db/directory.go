@@ -3,21 +3,21 @@ package db
 import (
 	"errors"
 	"fmt"
-	"reflect"
-	"strings"
 
 	"gorm.io/gorm"
+
+	"github.com/cryingmouse/data_management_engine/context"
 )
 
 type Directory struct {
 	gorm.Model
-	Name   string `gorm:"uniqueIndex:idx_name_hostip"`
-	HostIp string `gorm:"uniqueIndex:idx_name_hostip"`
+	Name   string `gorm:"uniqueIndex:idx_name_host_ip"`
+	HostIP string `gorm:"uniqueIndex:idx_name_host_ip;column:host_ip"`
 }
 
 func (d *Directory) Get(engine *DatabaseEngine) error {
 	// The query information should be in the instance of Directory struct pointer 'd'
-	return engine.Get(d).Error
+	return engine.DB.Where(d).First(d).Error
 }
 
 func (d *Directory) Save(engine *DatabaseEngine) error {
@@ -32,19 +32,18 @@ type DirectoryList struct {
 	Directories []Directory
 }
 
-func (dl *DirectoryList) Get(engine *DatabaseEngine, hostIp string, nameKeyword string) error {
-	conds := Directory{
-		HostIp: hostIp,
+func (dl *DirectoryList) Get(engine *DatabaseEngine, filter *context.QueryFilter) (err error) {
+	model := Directory{}
+
+	if filter.Pagination != nil {
+		return fmt.Errorf("invalid filter: there is pagination in the filter")
 	}
 
-	db := engine.DB
-
-	// Add the keyword to the conditions for the fuzzy search
-	if nameKeyword != "" {
-		db = db.Where("name LIKE ?", "%"+nameKeyword+"%")
+	if _, err := Query(engine, model, filter, &dl.Directories); err != nil {
+		return fmt.Errorf("failed to query the directories by the filter %v in database: %w", filter, err)
 	}
 
-	return db.Find(&dl.Directories, conds).Error
+	return
 }
 
 type PaginationDirectory struct {
@@ -52,66 +51,46 @@ type PaginationDirectory struct {
 	TotalCount  int64
 }
 
-func (dl *DirectoryList) GetByPagination(engine *DatabaseEngine, attributes []string, hostIp string, page, pageSize int) (*PaginationDirectory, error) {
-	var directories []Directory
+func (dl *DirectoryList) Pagination(engine *DatabaseEngine, filter *context.QueryFilter) (response *PaginationDirectory, err error) {
 	var totalCount int64
+	model := Directory{}
 
-	conds := Directory{
-		HostIp: hostIp,
+	if filter.Pagination == nil {
+		return response, fmt.Errorf("invalid filter: missing pagination in the filter")
 	}
 
-	db := engine.DB
-
-	// Build the SELECT statement dynamically based on the input attributes or retrieve all attributes
-	if len(attributes) > 0 {
-		// Validate attributes exist in the Directory struct
-		var validAttributes []string
-		directory := Directory{}
-		for _, attr := range attributes {
-			if _, ok := reflect.TypeOf(directory).FieldByName(attr); ok {
-				validAttributes = append(validAttributes, attr)
-			}
-		}
-		if len(validAttributes) == 0 {
-			return nil, errors.New("no valid attributes found")
-		}
-		// Use the provided attributes
-		selectStatement := strings.Join(validAttributes, ", ")
-		db = db.Select(selectStatement)
+	totalCount, err = Query(engine, model, filter, &dl.Directories)
+	if err != nil {
+		return response, fmt.Errorf("failed to query the directories by the filter %v in database: %w", filter, err)
 	}
 
-	// Perform the query to get paginated directories and total count
-	if err := db.Model(&Directory{}).Count(&totalCount).Error; err != nil {
-		return nil, err
-	}
-
-	if err := db.Offset((page-1)*pageSize).Limit(pageSize).Find(&directories, conds).Error; err != nil {
-		return nil, err
-	}
-
-	response := &PaginationDirectory{
-		Directories: directories,
+	response = &PaginationDirectory{
+		Directories: dl.Directories,
 		TotalCount:  totalCount,
 	}
 
-	return response, nil
+	return response, err
 }
 
-func (dl *DirectoryList) Delete(engine *DatabaseEngine, names []string, hostIp string) (err error) {
+func (dl *DirectoryList) Save(engine *DatabaseEngine) (err error) {
+	if len(dl.Directories) == 0 {
+		return errors.New("directories are empty")
+	}
+
+	err = engine.DB.CreateInBatches(dl.Directories, len(dl.Directories)).Error
+	if err != nil {
+		return fmt.Errorf("failed to save the directories in database: %w", err)
+	}
+	return
+}
+
+func (dl *DirectoryList) Delete(engine *DatabaseEngine, filter *context.QueryFilter) (err error) {
 	var directories []Directory
 
-	query := engine.DB
-	if names != nil {
-		query = query.Where("name IN [?]", names)
+	err = Delete(engine, filter, directories)
+	if err != nil {
+		return fmt.Errorf("failed to delete directories by the filter %v in database: %w", filter, err)
 	}
 
-	if hostIp != "" {
-		query = query.Where("host_ip = ?", hostIp)
-	}
-
-	if err = query.Unscoped().Delete(&directories).Error; err != nil {
-		return fmt.Errorf("failed to delete hosts in database: %w", err)
-	}
-
-	return nil
+	return
 }

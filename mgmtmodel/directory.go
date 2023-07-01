@@ -8,7 +8,7 @@ import (
 
 type Directory struct {
 	Name   string
-	HostIp string
+	HostIP string
 }
 
 func (d *Directory) Create() (err error) {
@@ -17,13 +17,13 @@ func (d *Directory) Create() (err error) {
 		return err
 	}
 
-	host := db.Host{Ip: d.HostIp}
+	host := db.Host{IP: d.HostIP}
 	if err = host.Get(engine); err != nil {
 		return err
 	}
 
 	hostContext := context.HostContext{
-		IP:       host.Ip,
+		IP:       host.IP,
 		Username: host.Username,
 		Password: host.Password,
 	}
@@ -33,7 +33,7 @@ func (d *Directory) Create() (err error) {
 
 	directory := db.Directory{
 		Name:   d.Name,
-		HostIp: host.Ip,
+		HostIP: host.IP,
 	}
 
 	if err = directory.Save(engine); err != nil {
@@ -49,13 +49,13 @@ func (d *Directory) Delete() (err error) {
 		return err
 	}
 
-	host := db.Host{Ip: d.HostIp}
+	host := db.Host{IP: d.HostIP}
 	if err = host.Get(engine); err != nil {
 		return err
 	}
 
 	hostContext := context.HostContext{
-		IP:       host.Ip,
+		IP:       host.IP,
 		Username: host.Username,
 		Password: host.Password,
 	}
@@ -65,7 +65,7 @@ func (d *Directory) Delete() (err error) {
 
 	directory := db.Directory{
 		Name:   d.Name,
-		HostIp: host.Ip,
+		HostIP: host.IP,
 	}
 
 	if err = directory.Delete(engine); err != nil {
@@ -83,14 +83,14 @@ func (d *Directory) Get() (*Directory, error) {
 
 	directory := db.Directory{
 		Name:   d.Name,
-		HostIp: d.HostIp,
+		HostIP: d.HostIP,
 	}
 	if err = directory.Get(engine); err != nil {
 		return nil, err
 	}
 
 	d.Name = directory.Name
-	d.HostIp = directory.HostIp
+	d.HostIP = directory.HostIP
 
 	return d, nil
 }
@@ -99,21 +99,22 @@ type DirectoryList struct {
 	Directories []Directory
 }
 
-func (dl *DirectoryList) Get(hostIp string) ([]Directory, error) {
+func (dl *DirectoryList) Get(filter *context.QueryFilter) ([]Directory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
 	}
 
 	directoryList := db.DirectoryList{}
-	if err = directoryList.Get(engine, hostIp, ""); err != nil {
+
+	if err = directoryList.Get(engine, filter); err != nil {
 		return nil, err
 	}
 
 	for _, _directory := range directoryList.Directories {
 		directory := Directory{
 			Name:   _directory.Name,
-			HostIp: _directory.HostIp,
+			HostIP: _directory.HostIP,
 		}
 
 		dl.Directories = append(dl.Directories, directory)
@@ -129,28 +130,28 @@ type PaginationDirectory struct {
 	TotalCount  int64
 }
 
-func (dl *DirectoryList) GetByPagination(hostIp string, page, limit int) (*PaginationDirectory, error) {
+func (dl *DirectoryList) GetByPagination(filter *context.QueryFilter) (*PaginationDirectory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
 	}
 
 	directoryList := db.DirectoryList{}
-	paginationDirs, err := directoryList.GetByPagination(engine, []string{}, hostIp, page, limit)
+	paginationDirs, err := directoryList.Pagination(engine, filter)
 	if err != nil {
 		return nil, err
 	}
 
 	paginationDirList := PaginationDirectory{
-		Page:       page,
-		Limit:      limit,
+		Page:       filter.Pagination.Page,
+		Limit:      filter.Pagination.PageSize,
 		TotalCount: paginationDirs.TotalCount,
 	}
 
 	for _, _directory := range paginationDirs.Directories {
 		directory := Directory{
 			Name:   _directory.Name,
-			HostIp: _directory.HostIp,
+			HostIP: _directory.HostIP,
 		}
 
 		paginationDirList.Directories = append(paginationDirList.Directories, directory)

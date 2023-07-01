@@ -41,11 +41,11 @@ func TestHost_Unregister(t *testing.T) {
 	engine, _ := db.GetDatabaseEngine()
 	directory1 := db.Directory{
 		Name:   "Folder-1",
-		HostIp: "192.168.1.1",
+		HostIP: "192.168.1.1",
 	}
 	directory2 := db.Directory{
 		Name:   "Folder-2",
-		HostIp: "192.168.1.1",
+		HostIP: "192.168.1.1",
 	}
 	directory1.Save(engine)
 	directory2.Save(engine)
