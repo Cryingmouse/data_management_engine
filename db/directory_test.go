@@ -13,15 +13,14 @@ import (
 func setup() {
 	engine, _ := GetDatabaseEngine()
 
-	// Create an empty slice of Directory objects.
-	directories := []Directory{}
-	dl := DirectoryList{}
-
 	// Define the number of Directory objects you want to create.
 	numDirectories := 10
 
 	// Generate and append Directory objects to the slice.
 	for _, hostIP := range []string{"127.0.0.1", "127.0.0.2"} {
+		dl := DirectoryList{}
+		directories := []Directory{}
+
 		for i := 0; i < numDirectories; i++ {
 			directory := Directory{
 				Name: fmt.Sprintf("Directory %d", i),
@@ -295,7 +294,7 @@ func Test_DirectoryList_Get(t *testing.T) {
 	}
 }
 
-func Test_DirectoryList_Delete(t *testing.T) {
+func Test_DirectoryList_Delete_With_Condition(t *testing.T) {
 	engine, err := GetDatabaseEngine()
 	assert.NoError(t, err)
 
@@ -331,9 +330,9 @@ func Test_DirectoryList_Pagination_With_Fields_Keyword_Condition(t *testing.T) {
 			Page:     1,
 			PageSize: 2,
 		},
-		// Conditions: Directory{
-		// 	HostIP: "127.0.0.2",
-		// },
+		Conditions: Directory{
+			HostIP: "127.0.0.2",
+		},
 	}
 
 	dl := DirectoryList{}
