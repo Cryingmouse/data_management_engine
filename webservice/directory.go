@@ -8,6 +8,7 @@ import (
 	"github.com/cryingmouse/data_management_engine/agent"
 	"github.com/cryingmouse/data_management_engine/context"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
+	"github.com/cryingmouse/data_management_engine/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -78,7 +79,7 @@ func getDirectoryHandler(c *gin.Context) {
 	dirName := c.Query("name")
 	hostIp := c.Query("host_ip")
 	fields := c.Query("fields")
-	nameKeyword := c.Query("name_key_word")
+	nameKeyword := c.Query("q")
 
 	page, limit, err := validatePagination(c)
 	if err != nil {
@@ -91,7 +92,7 @@ func getDirectoryHandler(c *gin.Context) {
 		if page == 0 && limit == 0 {
 			// Query directories without pagination.
 			filter := context.QueryFilter{
-				Fields: strings.Split(fields, ","),
+				Fields: utils.SplitToList(fields),
 				Keyword: map[string]string{
 					"name": nameKeyword,
 				},
@@ -138,7 +139,7 @@ func getDirectoryHandler(c *gin.Context) {
 					HostIP: hostIp,
 				},
 			}
-			paginationDirs, err := directoryListModel.GetByPagination(&filter)
+			paginationDirs, err := directoryListModel.Pagination(&filter)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"Message": fmt.Sprintf("Failed to get the directories with the parameters: host_ip=%s,page=%d,limit=%d", hostIp, page, limit),
@@ -162,7 +163,7 @@ func getDirectoryHandler(c *gin.Context) {
 				paginationDirList.Directories = append(paginationDirList.Directories, directory)
 			}
 
-			c.JSON(http.StatusOK, gin.H{"Message": "Get the directories successfully.", "PaginationDirectories": paginationDirList})
+			c.JSON(http.StatusOK, gin.H{"Message": "Get the directories successfully.", "Pagination": paginationDirList})
 			return
 		}
 	} else {
@@ -186,89 +187,8 @@ func getDirectoryHandler(c *gin.Context) {
 			HostIP: directory.HostIP,
 		}
 
-		c.JSON(http.StatusOK, gin.H{"Message": "Get the registered host successfully.", "RegisteredHosts": directoryInfo})
+		c.JSON(http.StatusOK, gin.H{"Message": "Get the directory successfully.", "Directory": directoryInfo})
 	}
-}
-
-func searchDirectoryHandler(c *gin.Context) {
-	nameKeyword := c.Query("name")
-	fields := c.Query("fields")
-
-	page, limit, err := validatePagination(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"Message": "Invalid request.", "Error": err.Error()})
-		return
-	}
-
-	directoryListModel := mgmtmodel.DirectoryList{}
-	if page == 0 && limit == 0 {
-		// Query directories without pagination.
-		filter := context.QueryFilter{
-			Fields: strings.Split(fields, ","),
-			Keyword: map[string]string{
-				"name": nameKeyword,
-			},
-		}
-		directories, err := directoryListModel.Get(&filter)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"Message": fmt.Sprintf("Failed to search the directories with the keyword: name=%s", nameKeyword),
-				"Error":   err.Error(),
-			})
-			return
-		}
-
-		directoryInfoList := []DirectoryInfo{}
-		for _, directory := range directories {
-			directoryInfoList = append(directoryInfoList, DirectoryInfo{
-				Name:   directory.Name,
-				HostIP: directory.HostIP,
-			})
-		}
-
-		c.JSON(http.StatusOK, gin.H{"Message": "Get the directories successfully.", "Directories": directoryInfoList})
-		return
-
-	} else {
-		// Query directories with pagination.
-		filter := context.QueryFilter{
-			Fields: strings.Split(fields, ","),
-			Keyword: map[string]string{
-				"name": nameKeyword,
-			},
-			Pagination: &context.Pagination{
-				Page:     page,
-				PageSize: limit,
-			},
-		}
-		paginationDirs, err := directoryListModel.GetByPagination(&filter)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"Message": fmt.Sprintf("Failed to search the directories with the parameters: page=%d,limit=%d", page, limit),
-				"Error":   err.Error(),
-			})
-			return
-		}
-
-		paginationDirList := PaginationDirectoryInfo{
-			Page:       page,
-			Limit:      limit,
-			TotalCount: paginationDirs.TotalCount,
-		}
-
-		for _, _directory := range paginationDirs.Directories {
-			directory := DirectoryInfo{
-				Name:   _directory.Name,
-				HostIP: _directory.HostIP,
-			}
-
-			paginationDirList.Directories = append(paginationDirList.Directories, directory)
-		}
-
-		c.JSON(http.StatusOK, gin.H{"Message": "Get the directories successfully.", "PaginationDirectories": paginationDirList})
-		return
-	}
-
 }
 
 type AgentDirectoryInfo struct {

@@ -5,11 +5,10 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
-	"reflect"
 	"sort"
+	"strings"
 )
 
 func In(target string, str_array []string) bool {
@@ -90,54 +89,10 @@ func Decrypt(encrypted_text, key string) (string, error) {
 	return string(plaintext), nil
 }
 
-func CopyStruct(src, dest interface{}) error {
-	srcVal := reflect.ValueOf(src)
-	destVal := reflect.ValueOf(dest)
-
-	// 如果 src 或 dest 是指针，则获取其指向的值
-	if srcVal.Kind() == reflect.Ptr {
-		srcVal = srcVal.Elem()
+func SplitToList(fields string) []string {
+	if fields == "" {
+		return []string{} // 返回空切片
 	}
 
-	if destVal.Kind() == reflect.Ptr {
-		destVal = reflect.New(destVal.Type().Elem()).Elem()
-	} else {
-		destVal = reflect.New(destVal.Type()).Elem()
-	}
-
-	// 检查 src 和 dest 是否为结构体
-	if srcVal.Kind() != reflect.Struct || destVal.Kind() != reflect.Struct {
-		return errors.New("src and dest must be struct instances")
-	}
-
-	srcType := srcVal.Type()
-
-	for i := 0; i < srcType.NumField(); i++ {
-		srcField := srcVal.Field(i)
-		srcFieldType := srcType.Field(i)
-
-		// 如果 dest 没有该字段，跳过
-		destField := destVal.FieldByName(srcFieldType.Name)
-		if !destField.IsValid() || !destField.CanSet() {
-			continue
-		}
-
-		// 如果 srcField 和 destField 的类型不同，跳过
-		if srcField.Type() != destField.Type() {
-			continue
-		}
-
-		// 处理嵌套结构体字段
-		if srcFieldType.Type.Kind() == reflect.Struct {
-			err := CopyStruct(srcField.Interface(), destField.Addr().Interface())
-			if err != nil {
-				return err
-			}
-		} else {
-			destField.Set(srcField)
-		}
-	}
-
-	reflect.ValueOf(dest).Elem().Set(destVal)
-	return nil
+	return strings.Split(fields, ",")
 }

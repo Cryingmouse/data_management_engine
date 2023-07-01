@@ -11,11 +11,11 @@ import (
 
 type Host struct {
 	gorm.Model
-	IP          string `gorm:"unique"`
-	Name        string
-	Username    string
-	Password    string `gorm:"type:password"`
-	StorageType string
+	IP          string `gorm:"unique;column:ip"`
+	Name        string `gorm:"column:name"`
+	Username    string `gorm:"column:username"`
+	Password    string `gorm:"type:password;column:password"`
+	StorageType string `gorm:"column:storage_type"`
 }
 
 func (h *Host) Get(engine *DatabaseEngine) (err error) {

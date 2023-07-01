@@ -1,0 +1,105 @@
+openapi: 3.0.0
+info:
+  title: Data Management Engine API
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1/api
+paths:
+  /directories:
+    get:
+      summary: Retrieve directories
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Name of the directory, return `Get directory example`
+          example: Folder-1
+        - in: query
+          name: host_ip
+          schema:
+            type: string
+          description: IP address of the host
+          example: 127.0.0.1
+        - in: query
+          name: fields
+          schema:
+            type: string
+          description: The fields of the directory returned in response, separated by comma
+          example: name,host_ip
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: 模糊查询的directory名字
+          example: Folder-
+        - in: query
+          name: page
+          schema:
+            type: int
+          description: The page of pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: int
+          description: The page size of pagination
+          example: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/DirectoryResponse"
+                  - $ref: "#/components/schemas/DirectoriesResponse"
+              examples:
+                example1:
+                  summary: Get directory example
+                  value:
+                    Message: Get the directory successfully.
+                    Directory:
+                      name: Directory 1
+                      host_ip: 127.0.0.1
+                example2:
+                  summary: Get directories example
+                  value:
+                    Message: Get the directories successfully.
+                    Directories:
+                      - name: Directory 1
+                        host_ip: 127.0.0.1
+components:
+  schemas:
+    DirectoryResponse:
+      type: object
+      properties:
+        Message:
+          type: string
+          description: Success message
+        Directory:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Name of the directory
+            host_ip:
+              type: string
+              description: IP address of the host
+    DirectoriesResponse:
+      type: object
+      properties:
+        Message:
+          type: string
+          description: Success message
+        Directories:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Name of the directory
+              host_ip:
+                type: string
+                description: IP address of the host

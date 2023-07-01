@@ -130,7 +130,7 @@ type PaginationDirectory struct {
 	TotalCount  int64
 }
 
-func (dl *DirectoryList) GetByPagination(filter *context.QueryFilter) (*PaginationDirectory, error) {
+func (dl *DirectoryList) Pagination(filter *context.QueryFilter) (*PaginationDirectory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -158,4 +158,35 @@ func (dl *DirectoryList) GetByPagination(filter *context.QueryFilter) (*Paginati
 	}
 
 	return &paginationDirList, nil
+}
+
+func (dl *DirectoryList) Save() (err error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return err
+	}
+
+	directoryList := db.DirectoryList{}
+
+	for _, _directory := range dl.Directories {
+		directory := db.Directory{
+			Name:   _directory.Name,
+			HostIP: _directory.HostIP,
+		}
+
+		directoryList.Directories = append(directoryList.Directories, directory)
+	}
+
+	return directoryList.Save(engine)
+}
+
+func (dl *DirectoryList) Delete(filter *context.QueryFilter) (err error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return err
+	}
+
+	directoryList := db.DirectoryList{}
+
+	return directoryList.Delete(engine, filter)
 }

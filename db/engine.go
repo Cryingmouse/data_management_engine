@@ -2,6 +2,8 @@ package db
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -19,7 +21,19 @@ func GetDatabaseEngine() (*DatabaseEngine, error) {
 		return engine, nil
 	}
 
-	db, err := gorm.Open(sqlite.Open("./sqlite3.db"), &gorm.Config{})
+	// 获取当前工作目录
+	dir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	// 构建项目路径
+	projectPath := filepath.Join(dir, "./") // 假设项目的根目录在当前目录的上一级目录
+
+	// 构建SQLite数据库文件路径
+	dbPath := filepath.Join(projectPath, "db/sqlite3.db")
+
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during open sqlite database: %w", err)
 	}

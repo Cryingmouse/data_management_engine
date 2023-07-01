@@ -3,6 +3,8 @@ package db
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/cryingmouse/data_management_engine/context"
@@ -46,6 +48,17 @@ func cleanup() {
 }
 
 func TestMain(m *testing.M) {
+	// 获取当前文件所在的目录
+	_, filename, _, _ := runtime.Caller(0)
+	dir := filepath.Dir(filename)
+
+	// 切换到项目的根目录
+	projectPath := filepath.Join(dir, "../") // 假设项目的根目录在当前目录的上一级目录
+	err := os.Chdir(projectPath)
+	if err != nil {
+		panic(err)
+	}
+
 	setup()
 	// 在所有测试运行之后执行清理操作
 	defer cleanup()

@@ -11,7 +11,7 @@ import (
 
 type Directory struct {
 	gorm.Model
-	Name   string `gorm:"uniqueIndex:idx_name_host_ip"`
+	Name   string `gorm:"uniqueIndex:idx_name_host_ip;column:name"`
 	HostIP string `gorm:"uniqueIndex:idx_name_host_ip;column:host_ip"`
 }
 

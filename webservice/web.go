@@ -48,8 +48,6 @@ func Start() {
 
 	router.GET("/api/directories", getDirectoryHandler)
 
-	router.GET("/api/directories/search", searchDirectoryHandler)
-
 	router.POST("/agent/directory/create", createDirectoryOnAgentHandler)
 
 	router.POST("/agent/directory/delete", deleteDirectoryOnAgentHandler)

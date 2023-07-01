@@ -9,6 +9,42 @@ import (
 	"github.com/cryingmouse/data_management_engine/context"
 )
 
+func parseGormTag(tag string) string {
+	if tag == "" {
+		return ""
+	}
+
+	tags := strings.Split(tag, ";")
+	for _, t := range tags {
+		if strings.HasPrefix(t, "column:") {
+			column := strings.TrimPrefix(t, "column:")
+			return column
+		}
+	}
+
+	return ""
+}
+
+func getTagToFieldMap(model interface{}) map[string]string {
+	tagToFieldMap := make(map[string]string)
+
+	modelType := reflect.TypeOf(model)
+	for i := 0; i < modelType.NumField(); i++ {
+		field := modelType.Field(i)
+		gormTag := field.Tag.Get("gorm")
+
+		// 解析 GORM 标签
+		columnName := parseGormTag(gormTag)
+
+		// 将 GORM 标签和属性名映射到 map
+		if columnName != "" {
+			tagToFieldMap[columnName] = field.Name
+		}
+	}
+
+	return tagToFieldMap
+}
+
 func Query(engine *DatabaseEngine, model interface{}, filter *context.QueryFilter, items interface{}) (totalCount int64, err error) {
 	db := engine.DB.Debug()
 
@@ -23,15 +59,12 @@ func Query(engine *DatabaseEngine, model interface{}, filter *context.QueryFilte
 	if len(filter.Fields) > 0 {
 		// Validate attributes exist in the Directory struct
 		var validAttributes []string
+		tagToFieldMap := getTagToFieldMap(model)
 		for _, attr := range filter.Fields {
-			field, ok := reflect.TypeOf(model).FieldByName(attr)
-			if ok {
-				gormTag := field.Tag.Get("gorm")
-				if strings.Contains(gormTag, "column:") {
-					attr = strings.Split(gormTag, "column:")[1]
-				}
-
+			if _, ok := tagToFieldMap[attr]; ok {
 				validAttributes = append(validAttributes, attr)
+			} else {
+				return totalCount, fmt.Errorf("invalid attribute:%v found", attr)
 			}
 		}
 		if len(validAttributes) == 0 {
@@ -50,7 +83,9 @@ func Query(engine *DatabaseEngine, model interface{}, filter *context.QueryFilte
 		page := filter.Pagination.Page
 		pageSize := filter.Pagination.PageSize
 
-		err = db.Model(&model).Offset((page-1)*pageSize).Limit(pageSize).Find(items, filter.Conditions).Count(&totalCount).Error
+		err = db.Model(&model).Find(items, filter.Conditions).Count(&totalCount).Error
+
+		err = db.Model(&model).Offset((page-1)*pageSize).Limit(pageSize).Find(items, filter.Conditions).Error
 	} else {
 		err = db.Model(&model).Find(items, filter.Conditions).Error
 	}
