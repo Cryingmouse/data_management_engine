@@ -89,10 +89,3 @@ func Test_DirectoryList_Get_With_Fields_Keyword_Condition(t *testing.T) {
 		assert.NotEmpty(t, directory.HostIP)
 	}
 }
-
-// func Test_DirectoryList_Delete(t *testing.T) {
-// 	filter := context.QueryFilter{}
-
-// 	dl := DirectoryList{}
-// 	dl.Delete(&filter)
-// }

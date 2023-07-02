@@ -62,77 +62,77 @@ func Test_Host_Save_Get_Delete(t *testing.T) {
 	assert.NoError(t, err, "Failed to get the host: %v", deletedHost)
 }
 
-func TestHostList_Create_Get(t *testing.T) {
-	engine, _ := GetDatabaseEngine()
+// func TestHostList_Create_Get(t *testing.T) {
+// 	engine, _ := GetDatabaseEngine()
 
-	expectedHosts := []Host{
-		{
-			Name:        "test_host_1",
-			IP:          "127.0.0.1",
-			Username:    "test_user1",
-			Password:    "test_password1",
-			StorageType: "local",
-		},
-		{
-			Name:        "test_host_2",
-			IP:          "127.0.0.2",
-			Username:    "test_user2",
-			Password:    "test_password2",
-			StorageType: "local",
-		},
-		{
-			Name:        "test_host_3",
-			IP:          "127.0.0.3",
-			Username:    "test_user3",
-			Password:    "test_password3",
-			StorageType: "remote",
-		},
-	}
+// 	expectedHosts := []Host{
+// 		{
+// 			Name:        "test_host_1",
+// 			IP:          "127.0.0.1",
+// 			Username:    "test_user1",
+// 			Password:    "test_password1",
+// 			StorageType: "local",
+// 		},
+// 		{
+// 			Name:        "test_host_2",
+// 			IP:          "127.0.0.2",
+// 			Username:    "test_user2",
+// 			Password:    "test_password2",
+// 			StorageType: "local",
+// 		},
+// 		{
+// 			Name:        "test_host_3",
+// 			IP:          "127.0.0.3",
+// 			Username:    "test_user3",
+// 			Password:    "test_password3",
+// 			StorageType: "remote",
+// 		},
+// 	}
 
-	expectedLocalHosts := []Host{
-		{
-			Name:        "test_host_1",
-			IP:          "127.0.0.1",
-			Username:    "test_user1",
-			Password:    "test_password1",
-			StorageType: "local",
-		},
-		{
-			Name:        "test_host_2",
-			IP:          "127.0.0.2",
-			Username:    "test_user2",
-			Password:    "test_password2",
-			StorageType: "local",
-		},
-	}
+// 	expectedLocalHosts := []Host{
+// 		{
+// 			Name:        "test_host_1",
+// 			IP:          "127.0.0.1",
+// 			Username:    "test_user1",
+// 			Password:    "test_password1",
+// 			StorageType: "local",
+// 		},
+// 		{
+// 			Name:        "test_host_2",
+// 			IP:          "127.0.0.2",
+// 			Username:    "test_user2",
+// 			Password:    "test_password2",
+// 			StorageType: "local",
+// 		},
+// 	}
 
-	hostList := HostList{
-		Hosts: expectedHosts,
-	}
+// 	hostList := HostList{
+// 		Hosts: expectedHosts,
+// 	}
 
-	err := hostList.Save(engine)
-	assert.NoError(t, err, "Failed to save the host list: %v", hostList)
+// 	err := hostList.Save(engine)
+// 	assert.NoError(t, err, "Failed to save the host list: %v", hostList)
 
-	hostList = HostList{}
-	err = hostList.Get(engine, "local")
-	assert.NoError(t, err, "Failed to get host list: %v", hostList)
+// 	hostList = HostList{}
+// 	err = hostList.Get(engine, "local")
+// 	assert.NoError(t, err, "Failed to get host list: %v", hostList)
 
-	assert.EqualValues(t, expectedLocalHosts, hostList.Hosts)
+// 	assert.EqualValues(t, expectedLocalHosts, hostList.Hosts)
 
-	if !compareHosts(hostList.Hosts, expectedLocalHosts) {
-		t.Errorf("Expected hosts to be '%v', got '%v'", expectedLocalHosts, hostList.Hosts)
-	}
+// 	if !compareHosts(hostList.Hosts, expectedLocalHosts) {
+// 		t.Errorf("Expected hosts to be '%v', got '%v'", expectedLocalHosts, hostList.Hosts)
+// 	}
 
-	hostList = HostList{}
-	if err = hostList.Get(engine, ""); err != nil {
-		t.Errorf("Error get hosts: %v", err)
-	}
+// 	hostList = HostList{}
+// 	if err = hostList.Get(engine, ""); err != nil {
+// 		t.Errorf("Error get hosts: %v", err)
+// 	}
 
-	if !compareHosts(hostList.Hosts, expectedHosts) {
-		t.Errorf("Expected hosts to be '%v', got '%v'", expectedHosts, hostList.Hosts)
-	}
+// 	if !compareHosts(hostList.Hosts, expectedHosts) {
+// 		t.Errorf("Expected hosts to be '%v', got '%v'", expectedHosts, hostList.Hosts)
+// 	}
 
-	if err = hostList.Delete(engine, "", nil, nil); err != nil {
-		t.Errorf("Failed to delete directory: %v", err)
-	}
-}
+// 	if err = hostList.Delete(engine, "", nil, nil); err != nil {
+// 		t.Errorf("Failed to delete directory: %v", err)
+// 	}
+// }

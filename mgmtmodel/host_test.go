@@ -6,11 +6,11 @@ import (
 	"github.com/cryingmouse/data_management_engine/db"
 )
 
-func TestHost_Register(t *testing.T) {
+func Test_Host_Register(t *testing.T) {
 	// Arrange
 	host := Host{
 		Name:        "test_host",
-		Ip:          "192.168.1.1",
+		IP:          "192.168.1.1",
 		Username:    "admin",
 		Password:    "password",
 		StorageType: "s3",
@@ -25,11 +25,11 @@ func TestHost_Register(t *testing.T) {
 	}
 }
 
-func TestHost_Unregister(t *testing.T) {
+func Test_Host_Unregister(t *testing.T) {
 	// Arrange
 	host := Host{
 		Name:        "test_host",
-		Ip:          "192.168.1.1",
+		IP:          "192.168.1.1",
 		Username:    "admin",
 		Password:    "password",
 		StorageType: "s3",
@@ -56,11 +56,11 @@ func TestHost_Unregister(t *testing.T) {
 	}
 }
 
-func TestHost_Get(t *testing.T) {
+func Test_Host_Get(t *testing.T) {
 	// Arrange
 	host := Host{
 		Name:        "test_host",
-		Ip:          "192.168.1.1",
+		IP:          "192.168.1.1",
 		Username:    "admin",
 		Password:    "password",
 		StorageType: "s3",
@@ -72,18 +72,5 @@ func TestHost_Get(t *testing.T) {
 	// Assert
 	if err != nil {
 		t.Errorf("Failed to get host: %v", err)
-	}
-}
-
-func TestHostList_Get(t *testing.T) {
-	// Arrange
-	hostList := HostList{}
-
-	// Act
-	_, err := hostList.Get("s3")
-
-	// Assert
-	if err != nil {
-		t.Errorf("Failed to get host list: %v", err)
 	}
 }

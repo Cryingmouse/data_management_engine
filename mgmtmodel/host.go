@@ -1,12 +1,13 @@
 package mgmtmodel
 
 import (
+	"github.com/cryingmouse/data_management_engine/context"
 	"github.com/cryingmouse/data_management_engine/db"
 )
 
 type Host struct {
 	Name        string
-	Ip          string
+	IP          string
 	Username    string
 	Password    string
 	StorageType string
@@ -20,7 +21,7 @@ func (h *Host) Register() error {
 
 	host := db.Host{
 		Name:        h.Name,
-		IP:          h.Ip,
+		IP:          h.IP,
 		Username:    h.Username,
 		Password:    h.Password,
 		StorageType: h.StorageType,
@@ -39,7 +40,7 @@ func (h *Host) Unregister() error {
 	directoryList.Delete(engine, nil)
 
 	host := db.Host{
-		IP:   h.Ip,
+		IP:   h.IP,
 		Name: h.Name,
 	}
 
@@ -54,13 +55,13 @@ func (h *Host) Get() (*Host, error) {
 
 	host := db.Host{
 		Name: h.Name,
-		IP:   h.Ip,
+		IP:   h.IP,
 	}
 	if err = host.Get(engine); err != nil {
 		return nil, err
 	}
 
-	h.Ip = host.IP
+	h.IP = host.IP
 	h.Name = host.Name
 	h.Username = host.Username
 	h.Password = host.Password
@@ -73,20 +74,20 @@ type HostList struct {
 	Hosts []Host
 }
 
-func (hl *HostList) Get(storageType string) ([]Host, error) {
+func (hl *HostList) Get(filter *context.QueryFilter) ([]Host, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		panic(err)
 	}
 
 	hostList := db.HostList{}
-	if err := hostList.Get(engine, storageType); err != nil {
+	if err := hostList.Get(engine, filter); err != nil {
 		return nil, err
 	}
 
 	for _, _host := range hostList.Hosts {
 		host := Host{
-			Ip:          _host.IP,
+			IP:          _host.IP,
 			Name:        _host.Name,
 			Username:    _host.Username,
 			Password:    _host.Password,
@@ -97,6 +98,46 @@ func (hl *HostList) Get(storageType string) ([]Host, error) {
 	}
 
 	return hl.Hosts, nil
+}
+
+type PaginationHost struct {
+	Hosts      []Host
+	Page       int
+	Limit      int
+	TotalCount int64
+}
+
+func (hl *HostList) Pagination(filter *context.QueryFilter) (*PaginationHost, error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return nil, err
+	}
+
+	hostList := db.HostList{}
+	paginationHosts, err := hostList.Pagination(engine, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	paginationHostList := PaginationHost{
+		Page:       filter.Pagination.Page,
+		Limit:      filter.Pagination.PageSize,
+		TotalCount: paginationHosts.TotalCount,
+	}
+
+	for _, _host := range paginationHosts.Hosts {
+		host := Host{
+			Name:        _host.Name,
+			IP:          _host.IP,
+			Username:    _host.Username,
+			Password:    _host.Password,
+			StorageType: _host.StorageType,
+		}
+
+		paginationHostList.Hosts = append(paginationHostList.Hosts, host)
+	}
+
+	return &paginationHostList, nil
 }
 
 func (hl *HostList) Register() error {

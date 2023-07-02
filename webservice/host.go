@@ -1,8 +1,10 @@
 package webservice
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/cryingmouse/data_management_engine/context"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
 	"github.com/cryingmouse/data_management_engine/utils"
 	"github.com/gin-gonic/gin"
@@ -13,9 +15,16 @@ import (
 
 type HostInfoWithoutPassword struct {
 	Name        string `json:"name" binding:"required"`
-	Ip          string `json:"ip" binding:"required"`
+	IP          string `json:"ip" binding:"required"`
 	Username    string `json:"user_name" binding:"required"`
-	StorageType string `json:"storage_type" binding:"required,validateStorageType"`
+	StorageType string `json:"storage_type" binding:"required"`
+}
+
+type PaginationHostInfo struct {
+	Hosts      []HostInfoWithoutPassword `json:"hosts"`
+	Page       int                       `json:"page"`
+	Limit      int                       `json:"limit"`
+	TotalCount int64                     `json:"total_count"`
 }
 
 type HostRegisterInfo struct {
@@ -38,20 +47,20 @@ func hostRegistrationHandler(c *gin.Context) {
 
 	var registerInfo HostRegisterInfo
 	if err := c.ShouldBindJSON(&registerInfo); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"Message": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
 		return
 	}
 
 	hostInfo := HostInfoWithoutPassword{
 		Name:        registerInfo.Name,
-		Ip:          registerInfo.Ip,
+		IP:          registerInfo.Ip,
 		Username:    registerInfo.Username,
 		StorageType: registerInfo.StorageType,
 	}
 
 	hostModel := mgmtmodel.Host{
 		Name:        registerInfo.Name,
-		Ip:          registerInfo.Ip,
+		IP:          registerInfo.Ip,
 		Username:    registerInfo.Username,
 		Password:    registerInfo.Password,
 		StorageType: registerInfo.StorageType,
@@ -62,66 +71,137 @@ func hostRegistrationHandler(c *gin.Context) {
 			// Map SQLite ErrNo to specific error scenarios
 			switch sqliteErr.ExtendedCode {
 			case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-				c.JSON(http.StatusInternalServerError, gin.H{"Message": "The host information has already been registered.", "HostRegisterInfo": hostInfo, "Error": err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "The host information has already been registered.", "HostRegisterInfo": hostInfo, "error": err.Error()})
 				return
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to register the host.", "HostRegisterInfo": hostInfo, "Error": err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the host.", "HostRegisterInfo": hostInfo, "error": err.Error()})
 			}
 		}
-
 	}
 
-	c.JSON(http.StatusOK, gin.H{"Message": "Register the host information successfully.", "HostRegisterInfo": hostInfo})
+	c.JSON(http.StatusOK, gin.H{"message": "Register the host information successfully.", "host": hostInfo})
 }
 
 func getRegisteredHostsHandler(c *gin.Context) {
 	hostName := c.Query("name")
 	hostIp := c.Query("ip")
 	storageType := c.Query("storage_type")
+	fields := c.Query("fields")
+	hostNameKeyword := c.Query("q")
+
+	page, limit, err := validatePagination(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request.", "error": err.Error()})
+		return
+	}
 
 	if hostName == "" && hostIp == "" {
 		// Using mgmtmodel.HostList, to get the list of the host.
 		hostListModel := mgmtmodel.HostList{}
-		hosts, err := hostListModel.Get(storageType)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host.", "Error": err.Error()})
-		}
-
-		var hostInfoList []HostInfoWithoutPassword
-		for _, host := range hosts {
-			host := HostInfoWithoutPassword{
-				Ip:          host.Ip,
-				Name:        host.Name,
-				Username:    host.Username,
-				StorageType: host.StorageType,
+		if page == 0 && limit == 0 {
+			// Query hosts without pagination.
+			filter := context.QueryFilter{
+				Fields: utils.SplitToList(fields),
+				Keyword: map[string]string{
+					"name": hostNameKeyword,
+				},
+				Conditions: struct {
+					StorageType string
+				}{
+					StorageType: storageType,
+				},
+			}
+			hosts, err := hostListModel.Get(&filter)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": fmt.Sprintf("Failed to get the hosts with the parameters: storage_type=%s", storageType),
+					"error":   err.Error(),
+				})
+				return
 			}
 
-			hostInfoList = append(hostInfoList, host)
-		}
+			var hostInfoList []HostInfoWithoutPassword
+			for _, host := range hosts {
+				host := HostInfoWithoutPassword{
+					IP:          host.IP,
+					Name:        host.Name,
+					Username:    host.Username,
+					StorageType: host.StorageType,
+				}
 
-		c.JSON(http.StatusOK, gin.H{"Message": "Get the registered hosts successfully.", "RegisteredHosts": hostInfoList})
-		return
+				hostInfoList = append(hostInfoList, host)
+			}
+
+			c.JSON(http.StatusOK, gin.H{"message": "Get the registered hosts successfully.", "hosts": hostInfoList})
+			return
+		} else {
+			// Query hosts with pagination.
+			filter := context.QueryFilter{
+				Fields: utils.SplitToList(fields),
+				Keyword: map[string]string{
+					"name": hostNameKeyword,
+				},
+				Pagination: &context.Pagination{
+					Page:     page,
+					PageSize: limit,
+				},
+				Conditions: struct {
+					StorageType string
+				}{
+					StorageType: storageType,
+				},
+			}
+			paginationHosts, err := hostListModel.Pagination(&filter)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": fmt.Sprintf("Failed to get the host with the parameters: storage_type=%s,page=%d,limit=%d", storageType, page, limit),
+					"error":   err.Error(),
+				})
+				return
+			}
+
+			paginationHostList := PaginationHostInfo{
+				Page:       page,
+				Limit:      limit,
+				TotalCount: paginationHosts.TotalCount,
+			}
+
+			for _, _host := range paginationHosts.Hosts {
+				host := HostInfoWithoutPassword{
+					IP:          _host.IP,
+					Name:        _host.Name,
+					Username:    _host.Username,
+					StorageType: _host.StorageType,
+				}
+
+				paginationHostList.Hosts = append(paginationHostList.Hosts, host)
+			}
+
+			c.JSON(http.StatusOK, gin.H{"message": "Get the hosts successfully.", "pagination": paginationHostList})
+			return
+
+		}
 	} else {
 		// Using mgmtmodel.Host, to get the host.
 		hostModel := mgmtmodel.Host{
-			Ip:   hostIp,
+			IP:   hostIp,
 			Name: hostName,
 		}
 
 		host, err := hostModel.Get()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to get the registered host.", "Error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to get the registered host.", "error": err.Error()})
 			return
 		}
 
 		hostInfo := HostInfoWithoutPassword{
-			Ip:          host.Ip,
+			IP:          host.IP,
 			Name:        host.Name,
 			Username:    host.Username,
 			StorageType: host.StorageType,
 		}
 
-		c.JSON(http.StatusOK, gin.H{"Message": "Get the registered host successfully.", "RegisteredHosts": hostInfo})
+		c.JSON(http.StatusOK, gin.H{"message": "Get the registered host successfully.", "host": hostInfo})
 	}
 }
 
@@ -133,16 +213,16 @@ func hostUnregistrationHandler(c *gin.Context) {
 	}
 
 	hostModel := mgmtmodel.Host{
-		Ip:   unregister_info.Ip,
+		IP:   unregister_info.Ip,
 		Name: unregister_info.Name,
 	}
 
 	if err := hostModel.Unregister(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to delete the registered host.", "HostUnregisterInfo": unregister_info, "Error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to delete the registered host.", "HostUnregisterInfo": unregister_info, "error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"Message": "Unregister the host successfully.", "HostUnregisterInfo": unregister_info})
+	c.JSON(http.StatusOK, gin.H{"message": "Unregister the host successfully.", "host": unregister_info})
 }
 
 func storageTypeValidator(fl validator.FieldLevel) bool {

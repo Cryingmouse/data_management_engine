@@ -53,25 +53,52 @@ type HostList struct {
 	Hosts []Host
 }
 
-func (hl *HostList) Get(engine *DatabaseEngine, storageType string) (err error) {
-	conds := Host{
-		StorageType: storageType,
+func (hl *HostList) Get(engine *DatabaseEngine, filter *context.QueryFilter) (err error) {
+	model := Host{}
+
+	if filter.Pagination != nil {
+		return fmt.Errorf("invalid filter: there is pagination in the filter")
 	}
 
-	if err = engine.DB.Find(&hl.Hosts, conds).Error; err != nil {
-		return err
+	if _, err := Query(engine, model, filter, &hl.Hosts); err != nil {
+		return fmt.Errorf("failed to query the hosts by the filter %v in database: %w", filter, err)
 	}
 
-	for i := range hl.Hosts {
-		decryptedPassword, err := utils.Decrypt(hl.Hosts[i].Password, context.SecurityKey)
-		if err != nil {
-			return err
-		}
-
-		hl.Hosts[i].Password = decryptedPassword
+	for _, host := range hl.Hosts {
+		host.Password, err = utils.Decrypt(host.Password, context.SecurityKey)
 	}
 
-	return nil
+	return
+}
+
+type PaginationHost struct {
+	Hosts      []Host
+	TotalCount int64
+}
+
+func (hl *HostList) Pagination(engine *DatabaseEngine, filter *context.QueryFilter) (response *PaginationHost, err error) {
+	var totalCount int64
+	model := Host{}
+
+	if filter.Pagination == nil {
+		return response, fmt.Errorf("invalid filter: missing pagination in the filter")
+	}
+
+	totalCount, err = Query(engine, model, filter, &hl.Hosts)
+	if err != nil {
+		return response, fmt.Errorf("failed to query the hosts by the filter %v in database: %w", filter, err)
+	}
+
+	for _, host := range hl.Hosts {
+		host.Password, err = utils.Decrypt(host.Password, context.SecurityKey)
+	}
+
+	response = &PaginationHost{
+		Hosts:      hl.Hosts,
+		TotalCount: totalCount,
+	}
+
+	return response, err
 }
 
 func (hl *HostList) Save(engine *DatabaseEngine) (err error) {
