@@ -5,27 +5,17 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/cryingmouse/data_management_engine/db"
 	"github.com/cryingmouse/data_management_engine/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 )
 
-type apiInfo struct{}
-
 func Start() {
 	config, err := utils.GetConfig()
 	if err != nil {
 		panic(err)
 	}
-
-	engine, err := db.GetDatabaseEngine()
-	if err != nil {
-		panic(err)
-	}
-
-	engine.Migrate()
 
 	router := gin.Default()
 

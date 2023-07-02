@@ -69,12 +69,12 @@ func deleteDirectoryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Delete the directory '%s' on host '%s' successfully.", directoryInfo.Name, directoryInfo.HostIP)})
 }
 
-// GetUsers returns a list of users
-// swagger:route GET /users users listUsers
-// Returns a list of users
+// getDirectoryHandler returns a list of directory
+// swagger:route GET /api/directories directory listDirectory
+// Returns a list of directory
 // responses:
 //
-//	200: []userResponse
+//	200:
 func getDirectoryHandler(c *gin.Context) {
 	dirName := c.Query("name")
 	hostIp := c.Query("host_ip")
