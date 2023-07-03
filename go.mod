@@ -2,7 +2,10 @@ module github.com/cryingmouse/data_management_engine
 
 go 1.20
 
-require gorm.io/driver/sqlite v1.5.2
+require (
+	github.com/gin-contrib/cors v1.4.0
+	gorm.io/driver/sqlite v1.5.2
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -17,7 +20,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
