@@ -12,6 +12,8 @@ type Driver interface {
 	DeleteDirectory(hostContext context.HostContext, name string) (resp *http.Response, err error)
 	CreateShare(hostContext context.HostContext, name string) (resp *http.Response, err error)
 	DeleteShare(hostContext context.HostContext, name string) (resp *http.Response, err error)
+	CreateUser(hostContext context.HostContext, name, password string) (resp *http.Response, err error)
+	DeleteUser(hostContext context.HostContext, name string) (resp *http.Response, err error)
 }
 
 func GetDriver(storageType string) Driver {

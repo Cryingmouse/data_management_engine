@@ -28,21 +28,26 @@ func Start() {
 	// 登录路由，验证用户凭证并生成JWT令牌
 	// router.POST("/login", getTokenHandler)
 
+	// API about hosts
 	router.POST("/api/host/register", hostRegistrationHandler)
-
 	router.GET("/api/hosts", getRegisteredHostsHandler)
-
 	router.POST("/api/host/unregister", hostUnregistrationHandler)
 
+	// API about directory
 	router.POST("/api/directory/create", createDirectoryHandler)
-
 	router.POST("/api/directory/delete", deleteDirectoryHandler)
-
 	router.GET("/api/directories", getDirectoryHandler)
 
 	router.POST("/agent/directory/create", createDirectoryOnAgentHandler)
-
 	router.POST("/agent/directory/delete", deleteDirectoryOnAgentHandler)
+
+	// API about user
+	router.POST("/api/user/create", createUserHandler)
+	router.POST("/api/user/delete", deleteUserHandler)
+	router.GET("/api/users", getUserHandler)
+
+	router.POST("/agent/user/create", createUserOnAgentHandler)
+	router.POST("/agent/user/delete", deleteUserOnAgentHandler)
 
 	router.Group("/api/docs").Use(
 		cors.New(cors.Config{
@@ -60,7 +65,7 @@ func Start() {
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Length, Content-Type")
 	})
 
-	router.Static("/api/docs", "./webservice/swagger-ui/dist")
+	router.Static("/api/docs", "./docs/swagger-ui/dist")
 
 	addr := fmt.Sprintf(":%s", config.Webservice.Port)
 	router.Run(addr)

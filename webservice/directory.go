@@ -220,7 +220,7 @@ func deleteDirectoryOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	dirPath, _ := agent.DeleteDirectory(hostContext, directoryInfo.Name)
+	agent.DeleteDirectory(hostContext, directoryInfo.Name)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Delete directory on agent successfully.", "directory": dirPath})
+	c.JSON(http.StatusOK, gin.H{"message": "Delete directory on agent successfully.", "directory": directoryInfo.Name})
 }

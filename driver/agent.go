@@ -51,3 +51,27 @@ func (d *AgentDriver) DeleteShare(hostContext context.HostContext, name string) 
 
 	return nil, nil
 }
+
+func (d *AgentDriver) CreateUser(hostContext context.HostContext, name, password string) (resp *http.Response, err error) {
+	restClient := client.GetRestClient(hostContext, "agent")
+
+	// Create the request body as a string
+	body := fmt.Sprintf(`{"name": "%s", "password": "%s"}`, name, password)
+
+	// Convert the string to an io.Reader
+	reader := strings.NewReader(body)
+
+	return restClient.Post("user/create", "application/json", reader)
+}
+
+func (d *AgentDriver) DeleteUser(hostContext context.HostContext, name string) (resp *http.Response, err error) {
+	restClient := client.GetRestClient(hostContext, "agent")
+
+	// Create the request body as a string
+	body := fmt.Sprintf(`{"name": "%s"}`, name)
+
+	// Convert the string to an io.Reader
+	reader := strings.NewReader(body)
+
+	return restClient.Post("user/delete", "application/json", reader)
+}

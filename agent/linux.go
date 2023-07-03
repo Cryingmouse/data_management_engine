@@ -21,21 +21,24 @@ func (agent *LinuxAgent) CreateDirectory(hostContext context.HostContext, name s
 	return dirPath, nil
 }
 
-func (agent *LinuxAgent) DeleteDirectory(hostContext context.HostContext, name string) (dirPath string, err error) {
-	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
+func (agent *LinuxAgent) DeleteDirectory(hostContext context.HostContext, name string) (err error) {
+	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
 
-	err = os.Remove(dirPath)
-	if err != nil {
-		return "", err
-	}
-
-	return dirPath, nil
+	return os.Remove(dirPath)
 }
 
-func (agent *LinuxAgent) CreateShare(hostContext context.HostContext, name, directory_name string) (shareName string, err error) {
-	// TODO: Check if the root path and directory name is valid
+func (agent *LinuxAgent) CreateShare(hostContext context.HostContext, name, directory_name string) (err error) {
+	return err
+}
 
-	// Create a new folder called `newFolderName` in the current working directory.
+func (agent *LinuxAgent) CreateLocalUser(hostContext context.HostContext, username, password string) (err error) {
+	return err
+}
 
-	return "", nil
+func (agent *LinuxAgent) DeleteLocalUser(hostContext context.HostContext, username string) (err error) {
+	return err
+}
+
+func (agent *LinuxAgent) GetLocalUsers(hostContext context.HostContext) (users []User, err error) {
+	return nil, nil
 }
