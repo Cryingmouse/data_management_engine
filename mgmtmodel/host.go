@@ -63,7 +63,6 @@ func (h *Host) Unregister() error {
 
 	directoryList := db.DirectoryList{}
 
-	// Todo: Need to implement filter.
 	filter := context.QueryFilter{
 		Conditions: struct {
 			HostIP string

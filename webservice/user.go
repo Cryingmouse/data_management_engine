@@ -12,61 +12,69 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserInfo struct {
+type UserResponse struct {
 	Name     string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-type PaginationUserInfo struct {
-	Users      []UserInfo `json:"users"`
-	Page       int        `json:"page"`
-	Limit      int        `json:"limit"`
-	TotalCount int64      `json:"total_count"`
+type PaginationUserResponse struct {
+	Users      []UserResponse `json:"users"`
+	Page       int            `json:"page"`
+	Limit      int            `json:"limit"`
+	TotalCount int64          `json:"total_count"`
 }
 
 func createUserHandler(c *gin.Context) {
-	var userInfo UserInfo
-	if err := c.ShouldBindJSON(&userInfo); err != nil {
+	type Request struct {
+		Name     string `json:"name" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+	var request Request
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	userModel := mgmtmodel.User{
-		Name:     userInfo.Name,
-		Password: userInfo.Password,
+		Name:     request.Name,
+		Password: request.Password,
 	}
 
 	if err := userModel.Create(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Failed to create the user with the parameters: host_ip=%s,name=%s", userInfo.Password, userInfo.Name),
+			"message": fmt.Sprintf("Failed to create the user with the parameters: host_ip=%s,name=%s", request.Password, request.Name),
 			"error":   err.Error(),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Create the user '%s' on host '%s' successfully.", userInfo.Name, userInfo.Password)})
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Create the user '%s' on host '%s' successfully.", request.Name, request.Password)})
 }
 
 func deleteUserHandler(c *gin.Context) {
-	var userInfo UserInfo
-	if err := c.ShouldBindJSON(&userInfo); err != nil {
+	type Request struct {
+		Name     string `json:"name" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+	var request Request
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	userModel := mgmtmodel.User{
-		Name:     userInfo.Name,
-		Password: userInfo.Password,
+		Name:     request.Name,
+		Password: request.Password,
 	}
 
 	if err := userModel.Delete(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Failed to delete the user '%s' on host '%s'.", userInfo.Name, userInfo.Password),
+			"message": fmt.Sprintf("Failed to delete the user '%s' on host '%s'.", request.Name, request.Password),
 			"error":   err.Error(),
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Delete the user '%s' on host '%s' successfully.", userInfo.Name, userInfo.Password)})
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Delete the user '%s' on host '%s' successfully.", request.Name, request.Password)})
 }
 
 func getUserHandler(c *gin.Context) {
@@ -105,9 +113,9 @@ func getUserHandler(c *gin.Context) {
 				return
 			}
 
-			userInfoList := []UserInfo{}
+			userInfoList := []UserResponse{}
 			for _, user := range users {
-				userInfoList = append(userInfoList, UserInfo{
+				userInfoList = append(userInfoList, UserResponse{
 					Name:     user.Name,
 					Password: user.Password,
 				})
@@ -115,7 +123,6 @@ func getUserHandler(c *gin.Context) {
 
 			c.JSON(http.StatusOK, gin.H{"message": "Get the users successfully.", "users": userInfoList})
 			return
-
 		} else {
 			// Query users with pagination.
 			filter := context.QueryFilter{
@@ -142,14 +149,14 @@ func getUserHandler(c *gin.Context) {
 				return
 			}
 
-			paginationDirList := PaginationUserInfo{
+			paginationDirList := PaginationUserResponse{
 				Page:       page,
 				Limit:      limit,
 				TotalCount: paginationDirs.TotalCount,
 			}
 
 			for _, _user := range paginationDirs.Users {
-				user := UserInfo{
+				user := UserResponse{
 					Name:     _user.Name,
 					Password: _user.Password,
 				}
@@ -176,7 +183,7 @@ func getUserHandler(c *gin.Context) {
 		}
 
 		// Convert to UserInfo as REST API response.
-		userInfo := UserInfo{
+		userInfo := UserResponse{
 			Name:     user.Name,
 			Password: user.Password,
 		}
@@ -186,13 +193,13 @@ func getUserHandler(c *gin.Context) {
 }
 
 func createUserOnAgentHandler(c *gin.Context) {
-	type AgentUserInfo struct {
+	type Request struct {
 		Name     string `json:"name"`
 		Password string `json:"password"`
 	}
 
-	var userInfo AgentUserInfo
-	if err := c.ShouldBindJSON(&userInfo); err != nil {
+	var request Request
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
@@ -203,18 +210,18 @@ func createUserOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	agent.CreateLocalUser(hostContext, userInfo.Name, userInfo.Password)
+	agent.CreateLocalUser(hostContext, request.Name, request.Password)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Create user on agent successfully."})
 }
 
 func deleteUserOnAgentHandler(c *gin.Context) {
-	type AgentUserInfo struct {
+	type Request struct {
 		Name string `json:"name"`
 	}
 
-	var userInfo AgentUserInfo
-	if err := c.ShouldBindJSON(&userInfo); err != nil {
+	var request Request
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
@@ -225,9 +232,9 @@ func deleteUserOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	agent.DeleteLocalUser(hostContext, userInfo.Name)
+	agent.DeleteLocalUser(hostContext, request.Name)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Delete user on agent successfully.", "user": userInfo.Name})
+	c.JSON(http.StatusOK, gin.H{"message": "Delete user on agent successfully.", "user": request.Name})
 }
 
 func getUserOnAgentHandler(c *gin.Context) {

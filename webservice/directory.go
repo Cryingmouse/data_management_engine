@@ -12,61 +12,69 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DirectoryInfo struct {
+type DirectoryResponse struct {
 	Name   string `json:"name" binding:"required"`
 	HostIP string `json:"host_ip" binding:"required"`
 }
 
-type PaginationDirectoryInfo struct {
-	Directories []DirectoryInfo `json:"directories"`
-	Page        int             `json:"page"`
-	Limit       int             `json:"limit"`
-	TotalCount  int64           `json:"total_count"`
+type PaginationDirectoryResponse struct {
+	Directories []DirectoryResponse `json:"directories"`
+	Page        int                 `json:"page"`
+	Limit       int                 `json:"limit"`
+	TotalCount  int64               `json:"total_count"`
 }
 
 func createDirectoryHandler(c *gin.Context) {
-	var directoryInfo DirectoryInfo
-	if err := c.ShouldBindJSON(&directoryInfo); err != nil {
+	type Request struct {
+		Name   string `json:"name" binding:"required"`
+		HostIP string `json:"host_ip" binding:"required"`
+	}
+	var request Request
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	directoryModel := mgmtmodel.Directory{
-		Name:   directoryInfo.Name,
-		HostIP: directoryInfo.HostIP,
+		Name:   request.Name,
+		HostIP: request.HostIP,
 	}
 
 	if err := directoryModel.Create(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Failed to create the directory with the parameters: host_ip=%s,name=%s", directoryInfo.HostIP, directoryInfo.Name),
+			"message": fmt.Sprintf("Failed to create the directory with the parameters: host_ip=%s,name=%s", request.HostIP, request.Name),
 			"error":   err.Error(),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Create the directory '%s' on host '%s' successfully.", directoryInfo.Name, directoryInfo.HostIP)})
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Create the directory '%s' on host '%s' successfully.", request.Name, request.HostIP)})
 }
 
 func deleteDirectoryHandler(c *gin.Context) {
-	var directoryInfo DirectoryInfo
-	if err := c.ShouldBindJSON(&directoryInfo); err != nil {
+	type Request struct {
+		Name   string `json:"name" binding:"required"`
+		HostIP string `json:"host_ip" binding:"required"`
+	}
+	var request Request
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	directoryModel := mgmtmodel.Directory{
-		Name:   directoryInfo.Name,
-		HostIP: directoryInfo.HostIP,
+		Name:   request.Name,
+		HostIP: request.HostIP,
 	}
 
 	if err := directoryModel.Delete(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Failed to delete the directory '%s' on host '%s'.", directoryInfo.Name, directoryInfo.HostIP),
+			"message": fmt.Sprintf("Failed to delete the directory '%s' on host '%s'.", request.Name, request.HostIP),
 			"error":   err.Error(),
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Delete the directory '%s' on host '%s' successfully.", directoryInfo.Name, directoryInfo.HostIP)})
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Delete the directory '%s' on host '%s' successfully.", request.Name, request.HostIP)})
 }
 
 func getDirectoryHandler(c *gin.Context) {
@@ -105,15 +113,15 @@ func getDirectoryHandler(c *gin.Context) {
 				return
 			}
 
-			directoryInfoList := []DirectoryInfo{}
+			directoryList := []DirectoryResponse{}
 			for _, directory := range directories {
-				directoryInfoList = append(directoryInfoList, DirectoryInfo{
+				directoryList = append(directoryList, DirectoryResponse{
 					Name:   directory.Name,
 					HostIP: directory.HostIP,
 				})
 			}
 
-			c.JSON(http.StatusOK, gin.H{"message": "Get the directories successfully.", "directories": directoryInfoList})
+			c.JSON(http.StatusOK, gin.H{"message": "Get the directories successfully.", "directories": directoryList})
 			return
 
 		} else {
@@ -142,14 +150,14 @@ func getDirectoryHandler(c *gin.Context) {
 				return
 			}
 
-			paginationDirList := PaginationDirectoryInfo{
+			paginationDirList := PaginationDirectoryResponse{
 				Page:       page,
 				Limit:      limit,
 				TotalCount: paginationDirs.TotalCount,
 			}
 
 			for _, _directory := range paginationDirs.Directories {
-				directory := DirectoryInfo{
+				directory := DirectoryResponse{
 					Name:   _directory.Name,
 					HostIP: _directory.HostIP,
 				}
@@ -175,8 +183,8 @@ func getDirectoryHandler(c *gin.Context) {
 			return
 		}
 
-		// Convert to DirectoryInfo as REST API response.
-		directoryInfo := DirectoryInfo{
+		// Convert to DirectoryResponse as REST API response.
+		directoryInfo := DirectoryResponse{
 			Name:   directory.Name,
 			HostIP: directory.HostIP,
 		}
@@ -185,13 +193,12 @@ func getDirectoryHandler(c *gin.Context) {
 	}
 }
 
-type AgentDirectoryInfo struct {
-	Name string `json:"name"`
-}
-
 func createDirectoryOnAgentHandler(c *gin.Context) {
-	var directoryInfo AgentDirectoryInfo
-	if err := c.ShouldBindJSON(&directoryInfo); err != nil {
+	type Request struct {
+		Name string `json:"name"`
+	}
+	var request Request
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
@@ -202,14 +209,17 @@ func createDirectoryOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	dirPath, _ := agent.CreateDirectory(hostContext, directoryInfo.Name)
+	dirPath, _ := agent.CreateDirectory(hostContext, request.Name)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Create directory on agent successfully.", "directory": dirPath})
 }
 
 func deleteDirectoryOnAgentHandler(c *gin.Context) {
-	var directoryInfo AgentDirectoryInfo
-	if err := c.ShouldBindJSON(&directoryInfo); err != nil {
+	type Request struct {
+		Name string `json:"name"`
+	}
+	var request Request
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
@@ -220,7 +230,7 @@ func deleteDirectoryOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	agent.DeleteDirectory(hostContext, directoryInfo.Name)
+	agent.DeleteDirectory(hostContext, request.Name)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Delete directory on agent successfully.", "directory": directoryInfo.Name})
+	c.JSON(http.StatusOK, gin.H{"message": "Delete directory on agent successfully.", "directory": request.Name})
 }
