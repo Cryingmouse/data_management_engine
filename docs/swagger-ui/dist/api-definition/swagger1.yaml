@@ -1,0 +1,346 @@
+openapi: 3.0.0
+info:
+  title: Data Management Engine API
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:8080
+paths:
+  /api/host/register:
+    post:
+      summary: Register a host
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostRegisterInfo"
+            example:
+              ip: 127.0.0.1
+              user_name: admin
+              password: P@ssw0rd123
+              storage_type: agent
+      responses:
+        "200":
+          description: Successful registration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostRegisterResponseBody"
+              example:
+                ip: 192.168.0.1
+                name: MyComputer
+                user_name: admin
+                password: P@ssw0rd123
+                storage_type: SSD
+                os_caption: Windows 10
+                os_arch: x64
+                os_version: 10.0.19043
+                build_number: 19043.123
+        "400":
+          description: Invalid request
+
+  /api/host/unregister:
+    post:
+      summary: Unregister Host
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostUnregisterInfo"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnregisterResponse"
+
+  /api/directories:
+    get:
+      summary: Retrieve directories
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Name of the directory, return `Get directory example`
+          example: Folder-1
+        - in: query
+          name: host_ip
+          schema:
+            type: string
+          description: IP address of the host
+          example: 127.0.0.1
+        - in: query
+          name: fields
+          schema:
+            type: string
+          description: The fields of the directory returned in response, separated by comma
+          example: name,host_ip
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: 模糊查询的directory名字
+          example: Folder-
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: The page of pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: The page size of pagination
+          example: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/DirectoryResponse"
+                  - $ref: "#/components/schemas/DirectoriesResponse"
+              examples:
+                example1:
+                  summary: Get directory example
+                  value:
+                    Message: Get the directory successfully.
+                    Directory:
+                      name: Directory 1
+                      host_ip: 127.0.0.1
+                example2:
+                  summary: Get directories example
+                  value:
+                    Message: Get the directories successfully.
+                    Directories:
+                      - name: Directory 1
+                        host_ip: 127.0.0.1
+
+  /agent/system-info:
+    get:
+      summary: Get system information
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/System"
+              example:
+                host_name: localhost
+                os_type: Example system
+                os_arch: x64
+                version: 10.0.19043
+                build_number: 19043.123
+        "400":
+          description: Invalid request
+        "500":
+          description: Failed to get system info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Failed to get system info on agent.
+                error: "Internal Server Error"
+
+  /agent/users:
+    get:
+      summary: Get user details by name
+      parameters:
+        - name: name
+          in: query
+          description: User name
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/UserResponse"
+                  - $ref: "#/components/schemas/UserArrayResponse"
+              examples:
+                singleUser:
+                  value:
+                    name: John
+                    id: 123456789
+                    fullname: John Doe
+                    description: Example user
+                    status: Active
+                    is_password_expired: false
+                    is_password_changeable: true
+                    is_password_required: true
+                    is_lockout: false
+                    host_name: localhost
+                multipleUsers:
+                  value:
+                    - name: John
+                      id: 123456789
+                      fullname: John Doe
+                      description: Example user
+                      status: Active
+                      is_password_expired: false
+                      is_password_changeable: true
+                      is_password_required: true
+                      is_lockout: false
+                      host_name: localhost
+                    - name: Jane
+                      id: 987654321
+                      fullname: Jane Smith
+                      description: Another user
+                      status: Inactive
+                      is_password_expired: true
+                      is_password_changeable: false
+                      is_password_required: true
+                      is_lockout: false
+                      host_name: localhost
+        "400":
+          description: Invalid request
+        "404":
+          description: User not found
+
+components:
+  schemas:
+    HostRegisterInfo:
+      type: object
+      properties:
+        ip:
+          type: string
+        user_name:
+          type: string
+        password:
+          type: string
+        storage_type:
+          type: string
+    HostRegisterResponseBody:
+      type: object
+      properties:
+        ip:
+          type: string
+        name:
+          type: string
+        user_name:
+          type: string
+        password:
+          type: string
+        storage_type:
+          type: string
+        os_caption:
+          type: string
+        os_arch:
+          type: string
+        os_version:
+          type: string
+        build_number:
+          type: string
+
+    HostUnregisterInfo:
+      type: object
+      properties:
+        ip:
+          type: string
+      example:
+        ip: 127.0.0.1
+    UnregisterResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        host:
+          type: string
+      example:
+        message: Unregister the host successfully.
+        host: 127.0.0.1
+
+    System:
+      type: object
+      properties:
+        host_name:
+          type: string
+        os_type:
+          type: string
+        os_arch:
+          type: string
+        version:
+          type: string
+        build_number:
+          type: string
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        error:
+          type: string
+
+    UserResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+        fullname:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        is_password_expired:
+          type: boolean
+        is_password_changeable:
+          type: boolean
+        is_password_required:
+          type: boolean
+        is_lockout:
+          type: boolean
+        host_name:
+          type: string
+
+    UserArrayResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/UserResponse"
+
+    DirectoryResponse:
+      type: object
+      properties:
+        Message:
+          type: string
+          description: Success message
+        Directory:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Name of the directory
+            host_ip:
+              type: string
+              description: IP address of the host
+
+    DirectoriesResponse:
+      type: object
+      properties:
+        Message:
+          type: string
+          description: Success message
+        Directories:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Name of the directory
+              host_ip:
+                type: string
+                description: IP address of the host

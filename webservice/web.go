@@ -32,6 +32,7 @@ func Start() {
 	router.POST("/api/host/register", hostRegistrationHandler)
 	router.GET("/api/hosts", getRegisteredHostsHandler)
 	router.POST("/api/host/unregister", hostUnregistrationHandler)
+	router.GET("/agent/system-info", getSystemInfoOnAgentHandler)
 
 	// API about directory
 	router.POST("/api/directory/create", createDirectoryHandler)
@@ -48,6 +49,7 @@ func Start() {
 
 	router.POST("/agent/user/create", createUserOnAgentHandler)
 	router.POST("/agent/user/delete", deleteUserOnAgentHandler)
+	router.GET("/agent/users", getUserOnAgentHandler)
 
 	router.Static("/api/docs", "./docs/swagger-ui/dist")
 

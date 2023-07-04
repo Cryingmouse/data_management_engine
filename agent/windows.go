@@ -8,6 +8,8 @@ import (
 	"os/exec"
 
 	"github.com/cryingmouse/data_management_engine/context"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 type WindowsAgent struct {
@@ -54,7 +56,16 @@ func (agent *WindowsAgent) CreateShare(hostContext context.HostContext, name, di
 }
 
 type User struct {
-	Name string
+	Name                 string `json:"name"`
+	ID                   string `json:"id"`
+	Fullname             string `json:"fullname"`
+	Description          string `json:"description"`
+	Status               string `json:"status"`
+	IsPasswordExpired    bool   `json:"is_password_expired"`
+	IsPasswordChangeable bool   `json:"is_password_changeable"`
+	IsPasswordRequired   bool   `json:"is_password_required"`
+	IsLockout            bool   `json:"is_lockout"`
+	ComputerName         string `json:"host_name"`
 }
 
 func (agent *WindowsAgent) CreateLocalUser(hostContext context.HostContext, username, password string) (err error) {
@@ -82,16 +93,94 @@ func (agent *WindowsAgent) GetLocalUsers(hostContext context.HostContext) (users
 	// 设置要执行的脚本和参数
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
-
-	var result map[string]interface{}
-	err = json.Unmarshal(output, &result)
 	if err != nil {
+		return nil, err
 	}
 
-	// 使用解析后的map进行操作
-	fmt.Println("解析后的map:", result)
+	var result map[string]map[string]interface{}
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, value := range result {
+
+		// Print the key and value of the current map entry
+		user := User{
+			Name:                 fmt.Sprintf("%v", value["Name"]),
+			Fullname:             fmt.Sprintf("%v", value["FullName"]),
+			Description:          fmt.Sprintf("%v", value["Description"]),
+			Status:               fmt.Sprintf("%v", value["Status"]),
+			IsPasswordExpired:    value["PasswordExpires"].(bool),
+			IsPasswordChangeable: value["PasswordChangeable"].(bool),
+			IsPasswordRequired:   value["PasswordRequired"].(bool),
+			IsLockout:            value["Lockout"].(bool),
+			ComputerName:         fmt.Sprintf("%v", value["PSComputerName"]),
+			ID:                   fmt.Sprintf("%v", value["SID"]),
+		}
+		users = append(users, user)
+	}
 
 	return users, nil
+}
+
+func (agent *WindowsAgent) GetLocalUser(hostContext context.HostContext, username string) (user User, err error) {
+	// 设置要执行的脚本和参数
+	script := "./agent/windows/Get-LocalUserDetails.ps1"
+	output, err := execPowerShellCmdlet(script, "-UserName", username)
+	if err != nil {
+		return user, err
+	}
+
+	var result map[string]map[string]interface{}
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return user, err
+	}
+
+	for _, value := range result {
+		user = User{
+			Name:                 fmt.Sprintf("%v", value["Name"]),
+			Fullname:             fmt.Sprintf("%v", value["FullName"]),
+			Description:          fmt.Sprintf("%v", value["Description"]),
+			Status:               fmt.Sprintf("%v", value["Status"]),
+			IsPasswordExpired:    value["PasswordExpires"].(bool),
+			IsPasswordChangeable: value["PasswordChangeable"].(bool),
+			IsPasswordRequired:   value["PasswordRequired"].(bool),
+			IsLockout:            value["Lockout"].(bool),
+			ComputerName:         fmt.Sprintf("%v", value["PSComputerName"]),
+			ID:                   fmt.Sprintf("%v", value["SID"]),
+		}
+
+		return user, nil
+	}
+
+	return user, fmt.Errorf("unable to get the user %s", username)
+}
+
+func (agent *WindowsAgent) GetSystemInfo(hostContext context.HostContext) (systemInfo context.SystemInfo, err error) {
+	// 设置要执行的脚本和参数
+	script := "./agent/windows/Get-SystemDetails.ps1"
+	output, err := execPowerShellCmdlet(script)
+	if err != nil {
+		return systemInfo, err
+	}
+
+	result := make(map[string]string)
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return systemInfo, err
+	}
+
+	systemInfo = context.SystemInfo{
+		ComputerName:   result["ComputerName"],
+		Caption:        result["Caption"],
+		OSArchitecture: result["OSArchitecture"],
+		Version:        result["Version"],
+		BuildNumber:    result["BuildNumber"],
+	}
+
+	return systemInfo, nil
 }
 
 func execPowerShellCmdlet(script string, args ...string) (output []byte, err error) {
@@ -114,13 +203,21 @@ func execPowerShellCmdlet(script string, args ...string) (output []byte, err err
 	cmd.Stderr = &stderr
 
 	// 执行命令
-	err = cmd.Run()
-	if err != nil {
+	if err = cmd.Run(); err != nil {
+		return nil, err
 	}
 
-	// 检查错误输出
 	if stderr.Len() > 0 {
+		return nil, fmt.Errorf(stderr.String())
 	}
 
-	return stdout.Bytes(), err
+	// 将输出按照UTF-8编码转换为字符串
+	outputBytes := stdout.Bytes()
+	decoder := simplifiedchinese.GB18030.NewDecoder()
+	outputStr, _, err := transform.String(decoder, string(outputBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(outputStr), nil
 }

@@ -14,6 +14,8 @@ type Agent interface {
 	CreateLocalUser(hostContext context.HostContext, username, password string) (err error)
 	DeleteLocalUser(hostContext context.HostContext, username string) (err error)
 	GetLocalUsers(hostContext context.HostContext) (users []User, err error)
+	GetLocalUser(hostContext context.HostContext, username string) (user User, err error)
+	GetSystemInfo(hostContext context.HostContext) (system context.SystemInfo, err error)
 }
 
 func GetAgent() Agent {

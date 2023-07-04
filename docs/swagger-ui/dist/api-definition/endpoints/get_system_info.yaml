@@ -1,0 +1,26 @@
+getSystemInfo:
+  summary: Get system information
+  responses:
+    "200":
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas.yaml#/components/schemas/System"
+          example:
+            host_name: localhost
+            os_type: Example system
+            os_arch: x64
+            version: 10.0.19043
+            build_number: 19043.123
+    "400":
+      description: Invalid request
+    "500":
+      description: Failed to get system info
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas.yaml#/components/schemas/Error"
+          example:
+            message: Failed to get system info on agent.
+            error: Internal Server Error

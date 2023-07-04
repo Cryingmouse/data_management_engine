@@ -13,54 +13,44 @@ import (
 	"github.com/mattn/go-sqlite3"
 )
 
-type HostInfoWithoutPassword struct {
-	Name        string `json:"name" binding:"required"`
-	IP          string `json:"ip" binding:"required"`
-	Username    string `json:"user_name" binding:"required"`
-	StorageType string `json:"storage_type" binding:"required"`
+type HostRegisterResponse struct {
+	IP             string `json:"ip"`
+	ComputerName   string `json:"name"`
+	Username       string `json:"username"`
+	StorageType    string `json:"storage_type"`
+	Caption        string `json:"os_type"`
+	OSArchitecture string `json:"os_arch"`
+	Version        string `json:"os_version"`
+	BuildNumber    string `json:"build_number"`
 }
 
 type PaginationHostInfo struct {
-	Hosts      []HostInfoWithoutPassword `json:"hosts"`
-	Page       int                       `json:"page"`
-	Limit      int                       `json:"limit"`
-	TotalCount int64                     `json:"total_count"`
-}
-
-type HostRegisterInfo struct {
-	Name        string `json:"name" binding:"required"`
-	Ip          string `json:"ip" binding:"required"`
-	Username    string `json:"user_name" binding:"required"`
-	Password    string `json:"password" binding:"required,validatePassword"`
-	StorageType string `json:"storage_type" binding:"required,validateStorageType"`
-}
-
-type HostUnregisterInfo struct {
-	Ip   string `json:"ip" binding:"required"`
-	Name string `json:"name"`
+	Hosts      []HostRegisterResponse `json:"hosts"`
+	Page       int                    `json:"page"`
+	Limit      int                    `json:"limit"`
+	TotalCount int64                  `json:"total_count"`
 }
 
 func hostRegistrationHandler(c *gin.Context) {
+	type HostRegisterRequest struct {
+		IP          string `json:"ip" binding:"required"`
+		Username    string `json:"user_name" binding:"required"`
+		Password    string `json:"password" binding:"required,validatePassword"`
+		StorageType string `json:"storage_type" binding:"required,validateStorageType"`
+	}
+
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("validateStorageType", storageTypeValidator)
 	}
 
-	var registerInfo HostRegisterInfo
+	var registerInfo HostRegisterRequest
 	if err := c.ShouldBindJSON(&registerInfo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
 		return
 	}
 
-	hostInfo := HostInfoWithoutPassword{
-		Name:        registerInfo.Name,
-		IP:          registerInfo.Ip,
-		Username:    registerInfo.Username,
-		StorageType: registerInfo.StorageType,
-	}
-
 	hostModel := mgmtmodel.Host{
-		Name:        registerInfo.Name,
-		IP:          registerInfo.Ip,
+		IP:          registerInfo.IP,
 		Username:    registerInfo.Username,
 		Password:    registerInfo.Password,
 		StorageType: registerInfo.StorageType,
@@ -71,15 +61,26 @@ func hostRegistrationHandler(c *gin.Context) {
 			// Map SQLite ErrNo to specific error scenarios
 			switch sqliteErr.ExtendedCode {
 			case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-				c.JSON(http.StatusInternalServerError, gin.H{"message": "The host information has already been registered.", "HostRegisterInfo": hostInfo, "error": err.Error()})
+				c.JSON(http.StatusBadRequest, gin.H{"message": "The host information has already been registered.", "error": err.Error()})
 				return
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the host.", "HostRegisterInfo": hostInfo, "error": err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the host.", "error": err.Error()})
 			}
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Register the host information successfully.", "host": hostInfo})
+	host := HostRegisterResponse{
+		IP:             hostModel.IP,
+		ComputerName:   hostModel.Name,
+		Username:       hostModel.Username,
+		StorageType:    hostModel.StorageType,
+		Caption:        hostModel.Caption,
+		OSArchitecture: hostModel.OSArchitecture,
+		Version:        hostModel.Version,
+		BuildNumber:    hostModel.BuildNumber,
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Register the host information successfully.", "host": host})
 }
 
 func getRegisteredHostsHandler(c *gin.Context) {
@@ -120,13 +121,17 @@ func getRegisteredHostsHandler(c *gin.Context) {
 				return
 			}
 
-			var hostInfoList []HostInfoWithoutPassword
+			var hostInfoList []HostRegisterResponse
 			for _, host := range hosts {
-				host := HostInfoWithoutPassword{
-					IP:          host.IP,
-					Name:        host.Name,
-					Username:    host.Username,
-					StorageType: host.StorageType,
+				host := HostRegisterResponse{
+					IP:             host.IP,
+					ComputerName:   host.Name,
+					Username:       host.Username,
+					StorageType:    host.StorageType,
+					Caption:        host.Caption,
+					OSArchitecture: host.OSArchitecture,
+					Version:        host.Version,
+					BuildNumber:    host.BuildNumber,
 				}
 
 				hostInfoList = append(hostInfoList, host)
@@ -167,11 +172,15 @@ func getRegisteredHostsHandler(c *gin.Context) {
 			}
 
 			for _, _host := range paginationHosts.Hosts {
-				host := HostInfoWithoutPassword{
-					IP:          _host.IP,
-					Name:        _host.Name,
-					Username:    _host.Username,
-					StorageType: _host.StorageType,
+				host := HostRegisterResponse{
+					IP:             _host.IP,
+					ComputerName:   _host.Name,
+					Username:       _host.Username,
+					StorageType:    _host.StorageType,
+					Caption:        _host.Caption,
+					OSArchitecture: _host.OSArchitecture,
+					Version:        _host.Version,
+					BuildNumber:    _host.BuildNumber,
 				}
 
 				paginationHostList.Hosts = append(paginationHostList.Hosts, host)
@@ -194,11 +203,15 @@ func getRegisteredHostsHandler(c *gin.Context) {
 			return
 		}
 
-		hostInfo := HostInfoWithoutPassword{
-			IP:          host.IP,
-			Name:        host.Name,
-			Username:    host.Username,
-			StorageType: host.StorageType,
+		hostInfo := HostRegisterResponse{
+			IP:             host.IP,
+			ComputerName:   host.Name,
+			Username:       host.Username,
+			StorageType:    host.StorageType,
+			Caption:        host.Caption,
+			OSArchitecture: host.OSArchitecture,
+			Version:        host.Version,
+			BuildNumber:    host.BuildNumber,
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "Get the registered host successfully.", "host": hostInfo})
@@ -206,6 +219,10 @@ func getRegisteredHostsHandler(c *gin.Context) {
 }
 
 func hostUnregistrationHandler(c *gin.Context) {
+	type HostUnregisterInfo struct {
+		IP string `json:"ip" binding:"required"`
+	}
+
 	var unregister_info HostUnregisterInfo
 	if err := c.ShouldBindJSON(&unregister_info); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
@@ -213,16 +230,15 @@ func hostUnregistrationHandler(c *gin.Context) {
 	}
 
 	hostModel := mgmtmodel.Host{
-		IP:   unregister_info.Ip,
-		Name: unregister_info.Name,
+		IP: unregister_info.IP,
 	}
 
 	if err := hostModel.Unregister(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to delete the registered host.", "HostUnregisterInfo": unregister_info, "error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to unregister the host.", "error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Unregister the host successfully.", "host": unregister_info})
+	c.JSON(http.StatusOK, gin.H{"message": "Unregister the host successfully.", "host": unregister_info.IP})
 }
 
 func storageTypeValidator(fl validator.FieldLevel) bool {

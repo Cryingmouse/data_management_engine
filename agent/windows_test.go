@@ -59,7 +59,23 @@ func Test_Windows_GetLocalUsers(t *testing.T) {
 
 	users, err := agent.GetLocalUsers(hostContext)
 	if err != nil {
-		t.Errorf("Failed to get local users: %s. Error: %v", users, err)
+		t.Errorf("Failed to get local users: %v. Error: %v", users, err)
+	}
+}
+
+func Test_Windows_GetSystemInfo(t *testing.T) {
+
+	agent := GetAgent()
+
+	hostContext := context.HostContext{
+		IP:       "127.09.0.1",
+		Username: "admin",
+		Password: "password",
+	}
+
+	systemInfo, err := agent.GetSystemInfo(hostContext)
+	if err != nil {
+		t.Errorf("Failed to get system info: %v. Error: %v", systemInfo, err)
 	}
 }
 

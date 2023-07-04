@@ -11,11 +11,15 @@ import (
 
 type Host struct {
 	gorm.Model
-	IP          string `gorm:"unique;column:ip"`
-	Name        string `gorm:"column:name"`
-	Username    string `gorm:"column:username"`
-	Password    string `gorm:"type:password;column:password"`
-	StorageType string `gorm:"column:storage_type"`
+	IP             string `gorm:"unique;column:ip"`
+	Name           string `gorm:"column:name"`
+	Username       string `gorm:"column:username"`
+	Password       string `gorm:"type:password;column:password"`
+	StorageType    string `gorm:"column:storage_type"`
+	Caption        string `gorm:"column:os_type"`
+	OSArchitecture string `gorm:"column:os_arch"`
+	Version        string `gorm:"column:version"`
+	BuildNumber    string `gorm:"column:build_number"`
 }
 
 func (h *Host) Get(engine *DatabaseEngine) (err error) {
@@ -30,10 +34,14 @@ func (h *Host) Get(engine *DatabaseEngine) (err error) {
 
 func (h *Host) Save(engine *DatabaseEngine) error {
 	host := Host{
-		IP:          h.IP,
-		Name:        h.Name,
-		Username:    h.Username,
-		StorageType: h.StorageType,
+		IP:             h.IP,
+		Name:           h.Name,
+		Username:       h.Username,
+		StorageType:    h.StorageType,
+		Caption:        h.Caption,
+		OSArchitecture: h.OSArchitecture,
+		Version:        h.Version,
+		BuildNumber:    h.BuildNumber,
 	}
 
 	encrypted_password, err := utils.Encrypt(h.Password, context.SecurityKey)

@@ -185,12 +185,12 @@ func getUserHandler(c *gin.Context) {
 	}
 }
 
-type AgentUserInfo struct {
-	Name     string `json:"name"`
-	Password string `json:"password"`
-}
-
 func createUserOnAgentHandler(c *gin.Context) {
+	type AgentUserInfo struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+	}
+
 	var userInfo AgentUserInfo
 	if err := c.ShouldBindJSON(&userInfo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
@@ -209,6 +209,10 @@ func createUserOnAgentHandler(c *gin.Context) {
 }
 
 func deleteUserOnAgentHandler(c *gin.Context) {
+	type AgentUserInfo struct {
+		Name string `json:"name"`
+	}
+
 	var userInfo AgentUserInfo
 	if err := c.ShouldBindJSON(&userInfo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
@@ -224,4 +228,24 @@ func deleteUserOnAgentHandler(c *gin.Context) {
 	agent.DeleteLocalUser(hostContext, userInfo.Name)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Delete user on agent successfully.", "user": userInfo.Name})
+}
+
+func getUserOnAgentHandler(c *gin.Context) {
+	username := c.Query("name")
+
+	hostContext := context.HostContext{
+		Username: c.Request.Header.Get("X-agent-username"),
+		Password: c.Request.Header.Get("X-agent-password"),
+	}
+
+	agent := agent.GetAgent()
+
+	if username != "" {
+		user, _ := agent.GetLocalUser(hostContext, username)
+		c.JSON(http.StatusOK, gin.H{"message": "Get the user on agent successfully.", "user": user})
+
+	} else {
+		users, _ := agent.GetLocalUsers(hostContext)
+		c.JSON(http.StatusOK, gin.H{"message": "Get the users on agent successfully.", "users": users})
+	}
 }

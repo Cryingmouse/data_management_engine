@@ -75,3 +75,9 @@ func (d *AgentDriver) DeleteUser(hostContext context.HostContext, name string) (
 
 	return restClient.Post("user/delete", "application/json", reader)
 }
+
+func (d *AgentDriver) GetSystemInfo(hostContext context.HostContext) (resp *http.Response, err error) {
+	restClient := client.GetRestClient(hostContext, "agent")
+
+	return restClient.Get("system-info", "application/json")
+}

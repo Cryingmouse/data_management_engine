@@ -83,7 +83,9 @@ func Query(engine *DatabaseEngine, model interface{}, filter *context.QueryFilte
 		page := filter.Pagination.Page
 		pageSize := filter.Pagination.PageSize
 
-		err = db.Model(&model).Find(items, filter.Conditions).Count(&totalCount).Error
+		if err = db.Model(&model).Find(items, filter.Conditions).Count(&totalCount).Error; err != nil {
+			return totalCount, err
+		}
 
 		err = db.Model(&model).Offset((page-1)*pageSize).Limit(pageSize).Find(items, filter.Conditions).Error
 	} else {

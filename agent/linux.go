@@ -42,3 +42,11 @@ func (agent *LinuxAgent) DeleteLocalUser(hostContext context.HostContext, userna
 func (agent *LinuxAgent) GetLocalUsers(hostContext context.HostContext) (users []User, err error) {
 	return nil, nil
 }
+
+func (agent *LinuxAgent) GetLocalUser(hostContext context.HostContext, username string) (user User, err error) {
+	return user, nil
+}
+
+func (agent *LinuxAgent) GetSystemInfo(hostContext context.HostContext) (system context.SystemInfo, err error) {
+	return system, nil
+}
