@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"time"
 
 	"github.com/cryingmouse/data_management_engine/utils"
 	"github.com/gin-contrib/cors"
@@ -20,6 +19,7 @@ func Start() {
 	}
 
 	router := gin.Default()
+	router.Use(cors.Default())
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("validatePassword", passwordValidator)
@@ -48,22 +48,6 @@ func Start() {
 
 	router.POST("/agent/user/create", createUserOnAgentHandler)
 	router.POST("/agent/user/delete", deleteUserOnAgentHandler)
-
-	router.Group("/api/docs").Use(
-		cors.New(cors.Config{
-			AllowOrigins:     []string{"*"},
-			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
-			AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type"},
-			ExposeHeaders:    []string{"Content-Length"},
-			AllowCredentials: false,
-			MaxAge:           12 * time.Hour,
-		}))
-
-	router.OPTIONS("/api/docs/swagger-ui.js", func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Length, Content-Type")
-	})
 
 	router.Static("/api/docs", "./docs/swagger-ui/dist")
 
