@@ -1,10 +1,11 @@
 package agent
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/cryingmouse/data_management_engine/context"
 )
@@ -78,33 +79,48 @@ func (agent *WindowsAgent) DeleteLocalUser(hostContext context.HostContext, user
 }
 
 func (agent *WindowsAgent) GetLocalUsers(hostContext context.HostContext) (users []User, err error) {
-	// Execute the PowerShell command
-	cmd := exec.Command("powershell", "Get-LocalUser | Select-Object -Property Name")
-	output, err := cmd.CombinedOutput()
+	// 设置要执行的脚本和参数
+	script := "./agent/windows/Get-LocalUserDetails.ps1"
+	output, err := execPowerShellCmdlet(script)
+
+	var result map[string]interface{}
+	err = json.Unmarshal(output, &result)
 	if err != nil {
-		fmt.Println("Error executing PowerShell command:", err.Error())
-		return nil, err
 	}
 
-	local_users := parseLocalUserOutput(string(output))
-	for _, user := range local_users {
-		users = append(users, User{Name: user})
-	}
+	// 使用解析后的map进行操作
+	fmt.Println("解析后的map:", result)
 
 	return users, nil
 }
 
-func parseLocalUserOutput(output string) []string {
-	lines := strings.Split(output, "\r\n")
-	users := make([]string, 0)
+func execPowerShellCmdlet(script string, args ...string) (output []byte, err error) {
+	// 创建一个执行命令的Cmd对象
+	cmd := exec.Command("powershell", "-ExecutionPolicy", "Bypass", "-File", script)
+	cmd.Args = append(cmd.Args, args...)
 
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "Name") || strings.HasPrefix(line, "----") {
-			continue
-		}
-		users = append(users, line)
+	// 设置命令的工作目录
+	cmd.Dir, err = os.Getwd()
+	if err != nil {
+		return nil, err
 	}
 
-	return users
+	// 创建一个缓冲区来收集输出
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	// 将缓冲区分配给命令对象
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// 执行命令
+	err = cmd.Run()
+	if err != nil {
+	}
+
+	// 检查错误输出
+	if stderr.Len() > 0 {
+	}
+
+	return stdout.Bytes(), err
 }
