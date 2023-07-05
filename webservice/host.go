@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/cryingmouse/data_management_engine/agent"
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
-	"github.com/cryingmouse/data_management_engine/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -33,55 +33,53 @@ type PaginationHostResponse struct {
 }
 
 func hostRegistrationHandler(c *gin.Context) {
-	type Request struct {
+	request := []struct {
 		IP          string `json:"ip" binding:"required"`
-		Username    string `json:"user_name" binding:"required"`
+		Username    string `json:"username" binding:"required"`
 		Password    string `json:"password" binding:"required,validatePassword"`
 		StorageType string `json:"storage_type" binding:"required,validateStorageType"`
-	}
+	}{}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("validateStorageType", storageTypeValidator)
 	}
 
-	var request Request
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
 		return
 	}
 
-	hostModel := mgmtmodel.Host{
-		IP:          request.IP,
-		Username:    request.Username,
-		Password:    request.Password,
-		StorageType: request.StorageType,
-	}
+	var hostList mgmtmodel.HostList
+	common.CopyStructList(request, &hostList.Hosts)
 
-	if err := hostModel.Register(); err != nil {
+	if err := hostList.Register(); err != nil {
 		if sqliteErr, ok := err.(sqlite3.Error); ok {
 			// Map SQLite ErrNo to specific error scenarios
 			switch sqliteErr.ExtendedCode {
 			case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-				c.JSON(http.StatusBadRequest, gin.H{"message": "The host information has already been registered.", "error": err.Error()})
+				c.JSON(http.StatusBadRequest, gin.H{"message": "The hosts have already been registered.", "error": err.Error()})
 				return
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the host.", "error": err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
 			}
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
 		}
+
+		return
 	}
 
-	host := HostResponse{
-		IP:             hostModel.IP,
-		ComputerName:   hostModel.Name,
-		Username:       hostModel.Username,
-		StorageType:    hostModel.StorageType,
-		Caption:        hostModel.Caption,
-		OSArchitecture: hostModel.OSArchitecture,
-		Version:        hostModel.Version,
-		BuildNumber:    hostModel.BuildNumber,
-	}
+	if len(hostList.Hosts) == 1 {
+		var host HostResponse
+		common.CopyStructList(hostList.Hosts[0], &host)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Register the host information successfully.", "host": host})
+		c.JSON(http.StatusOK, gin.H{"message": "Register the host information successfully.", "host": host})
+	} else {
+		var response []HostResponse
+		common.CopyStructList(hostList.Hosts, &response)
+
+		c.JSON(http.StatusOK, gin.H{"message": "Register the host information successfully.", "hosts": response})
+	}
 }
 
 func getRegisteredHostsHandler(c *gin.Context) {
@@ -102,8 +100,8 @@ func getRegisteredHostsHandler(c *gin.Context) {
 		hostListModel := mgmtmodel.HostList{}
 		if page == 0 && limit == 0 {
 			// Query hosts without pagination.
-			filter := context.QueryFilter{
-				Fields: utils.SplitToList(fields),
+			filter := common.QueryFilter{
+				Fields: common.SplitToList(fields),
 				Keyword: map[string]string{
 					"name": hostNameKeyword,
 				},
@@ -142,12 +140,12 @@ func getRegisteredHostsHandler(c *gin.Context) {
 			return
 		} else {
 			// Query hosts with pagination.
-			filter := context.QueryFilter{
-				Fields: utils.SplitToList(fields),
+			filter := common.QueryFilter{
+				Fields: common.SplitToList(fields),
 				Keyword: map[string]string{
 					"name": hostNameKeyword,
 				},
-				Pagination: &context.Pagination{
+				Pagination: &common.Pagination{
 					Page:     page,
 					PageSize: limit,
 				},
@@ -243,7 +241,7 @@ func hostUnregistrationHandler(c *gin.Context) {
 }
 
 func getSystemInfoOnAgentHandler(c *gin.Context) {
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		Username: c.Request.Header.Get("X-agent-username"),
 		Password: c.Request.Header.Get("X-agent-password"),
 	}
@@ -264,5 +262,5 @@ func storageTypeValidator(fl validator.FieldLevel) bool {
 
 	storageTypeList := []string{"agent", "ontap", "magnascale"}
 
-	return utils.In(storageType, storageTypeList)
+	return common.In(storageType, storageTypeList)
 }

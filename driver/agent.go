@@ -6,13 +6,13 @@ import (
 	"strings"
 
 	"github.com/cryingmouse/data_management_engine/client"
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 )
 
 type AgentDriver struct {
 }
 
-func (d *AgentDriver) CreateDirectory(hostContext context.HostContext, name string) (resp *http.Response, err error) {
+func (d *AgentDriver) CreateDirectory(hostContext common.HostContext, name string) (resp *http.Response, err error) {
 	restClient := client.GetRestClient(hostContext, "agent")
 
 	// Create the request body as a string
@@ -24,7 +24,7 @@ func (d *AgentDriver) CreateDirectory(hostContext context.HostContext, name stri
 	return restClient.Post("directory/create", "application/json", reader)
 }
 
-func (d *AgentDriver) DeleteDirectory(hostContext context.HostContext, name string) (resp *http.Response, err error) {
+func (d *AgentDriver) DeleteDirectory(hostContext common.HostContext, name string) (resp *http.Response, err error) {
 	restClient := client.GetRestClient(hostContext, "agent")
 
 	// Create the request body as a string
@@ -36,7 +36,7 @@ func (d *AgentDriver) DeleteDirectory(hostContext context.HostContext, name stri
 	return restClient.Post("directory/delete", "application/json", reader)
 }
 
-func (d *AgentDriver) CreateShare(hostContext context.HostContext, name string) (resp *http.Response, err error) {
+func (d *AgentDriver) CreateShare(hostContext common.HostContext, name string) (resp *http.Response, err error) {
 	// TODO: Check if the root path and directory name is valid
 
 	// Create a new folder called `newFolderName` in the current working directory.
@@ -44,7 +44,7 @@ func (d *AgentDriver) CreateShare(hostContext context.HostContext, name string) 
 	return nil, nil
 }
 
-func (d *AgentDriver) DeleteShare(hostContext context.HostContext, name string) (resp *http.Response, err error) {
+func (d *AgentDriver) DeleteShare(hostContext common.HostContext, name string) (resp *http.Response, err error) {
 	// TODO: Check if the root path and directory name is valid
 
 	// Delete a new folder called `newFolderName` in the current working directory.
@@ -52,7 +52,7 @@ func (d *AgentDriver) DeleteShare(hostContext context.HostContext, name string) 
 	return nil, nil
 }
 
-func (d *AgentDriver) CreateUser(hostContext context.HostContext, name, password string) (resp *http.Response, err error) {
+func (d *AgentDriver) CreateUser(hostContext common.HostContext, name, password string) (resp *http.Response, err error) {
 	restClient := client.GetRestClient(hostContext, "agent")
 
 	// Create the request body as a string
@@ -64,7 +64,7 @@ func (d *AgentDriver) CreateUser(hostContext context.HostContext, name, password
 	return restClient.Post("user/create", "application/json", reader)
 }
 
-func (d *AgentDriver) DeleteUser(hostContext context.HostContext, name string) (resp *http.Response, err error) {
+func (d *AgentDriver) DeleteUser(hostContext common.HostContext, name string) (resp *http.Response, err error) {
 	restClient := client.GetRestClient(hostContext, "agent")
 
 	// Create the request body as a string
@@ -76,8 +76,9 @@ func (d *AgentDriver) DeleteUser(hostContext context.HostContext, name string) (
 	return restClient.Post("user/delete", "application/json", reader)
 }
 
-func (d *AgentDriver) GetSystemInfo(hostContext context.HostContext) (resp *http.Response, err error) {
+func (d *AgentDriver) GetSystemInfo(hostContext common.HostContext) (resp *http.Response, err error) {
 	restClient := client.GetRestClient(hostContext, "agent")
 
-	return restClient.Get("system-info", "application/json")
+	resp, err = restClient.Get("system-info", "application/json")
+	return resp, err
 }

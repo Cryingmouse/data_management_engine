@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
@@ -41,7 +41,7 @@ func cleanup() {
 	engine, _ := GetDatabaseEngine()
 
 	// Create an empty slice of Directory objects.
-	filter := context.QueryFilter{}
+	filter := common.QueryFilter{}
 
 	dl := DirectoryList{}
 	dl.Delete(engine, &filter)
@@ -112,7 +112,7 @@ func Test_DirectoryList_Get_With_Fields_Keyword_Condition(t *testing.T) {
 	// Create a new Directory object.
 	dl := DirectoryList{}
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Fields: []string{"Name"},
 		Keyword: map[string]string{
 			"name": "Directory 1",
@@ -141,7 +141,7 @@ func Test_DirectoryList_Get_With_Fields_Condition(t *testing.T) {
 	// Create a new Directory object.
 	dl := DirectoryList{}
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Fields: []string{"Name"},
 		Conditions: Directory{
 			HostIP: "127.0.0.1",
@@ -167,7 +167,7 @@ func Test_DirectoryList_Get_With_Fields_Keyword(t *testing.T) {
 	// Create a new Directory object.
 	dl := DirectoryList{}
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Fields: []string{"Name"},
 		Keyword: map[string]string{
 			"name": "Directory 1",
@@ -193,7 +193,7 @@ func Test_DirectoryList_Get_With_Keyword_Condition(t *testing.T) {
 	// Create a new Directory object.
 	dl := DirectoryList{}
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Keyword: map[string]string{
 			"name": "Directory 1",
 		},
@@ -221,7 +221,7 @@ func Test_DirectoryList_Get_With_Condition(t *testing.T) {
 	// Create a new Directory object.
 	dl := DirectoryList{}
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Conditions: Directory{
 			HostIP: "127.0.0.1",
 		},
@@ -246,7 +246,7 @@ func Test_DirectoryList_Get_With_Fields(t *testing.T) {
 	// Create a new Directory object.
 	dl := DirectoryList{}
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Fields: []string{"Name"},
 	}
 
@@ -269,7 +269,7 @@ func Test_DirectoryList_Get_With_Keyword(t *testing.T) {
 	// Create a new Directory object.
 	dl := DirectoryList{}
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Keyword: map[string]string{
 			"name": "Directory 1",
 		},
@@ -294,7 +294,7 @@ func Test_DirectoryList_Get(t *testing.T) {
 	// Create a new Directory object.
 	dl := DirectoryList{}
 
-	filter := context.QueryFilter{}
+	filter := common.QueryFilter{}
 
 	// Get the Directory object from the database.
 	err = dl.Get(engine, &filter)
@@ -312,7 +312,7 @@ func Test_DirectoryList_Delete_With_Condition(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Create an empty slice of Directory objects.
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Conditions: Directory{
 			HostIP: "127.0.0.1",
 		},
@@ -321,7 +321,7 @@ func Test_DirectoryList_Delete_With_Condition(t *testing.T) {
 	dl := DirectoryList{}
 	dl.Delete(engine, &filter)
 
-	filter = context.QueryFilter{
+	filter = common.QueryFilter{
 		Fields: []string{"HostIP", "Name"},
 	}
 
@@ -334,12 +334,12 @@ func Test_DirectoryList_Pagination_With_Fields_Keyword_Condition(t *testing.T) {
 	engine, err := GetDatabaseEngine()
 	assert.NoError(t, err)
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Fields: []string{"HostIP", "Name"},
 		Keyword: map[string]string{
 			"name": "Directory 1",
 		},
-		Pagination: &context.Pagination{
+		Pagination: &common.Pagination{
 			Page:     1,
 			PageSize: 2,
 		},

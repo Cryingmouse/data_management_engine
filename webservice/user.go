@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/cryingmouse/data_management_engine/agent"
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
-	"github.com/cryingmouse/data_management_engine/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -93,8 +93,8 @@ func getUserHandler(c *gin.Context) {
 		userListModel := mgmtmodel.UserList{}
 		if page == 0 && limit == 0 {
 			// Query users without pagination.
-			filter := context.QueryFilter{
-				Fields: utils.SplitToList(fields),
+			filter := common.QueryFilter{
+				Fields: common.SplitToList(fields),
 				Keyword: map[string]string{
 					"name": nameKeyword,
 				},
@@ -125,12 +125,12 @@ func getUserHandler(c *gin.Context) {
 			return
 		} else {
 			// Query users with pagination.
-			filter := context.QueryFilter{
+			filter := common.QueryFilter{
 				Fields: strings.Split(fields, ","),
 				Keyword: map[string]string{
 					"name": nameKeyword,
 				},
-				Pagination: &context.Pagination{
+				Pagination: &common.Pagination{
 					Page:     page,
 					PageSize: limit,
 				},
@@ -204,7 +204,7 @@ func createUserOnAgentHandler(c *gin.Context) {
 		return
 	}
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		Username: c.Request.Header.Get("X-agent-username"),
 		Password: c.Request.Header.Get("X-agent-password"),
 	}
@@ -226,7 +226,7 @@ func deleteUserOnAgentHandler(c *gin.Context) {
 		return
 	}
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		Username: c.Request.Header.Get("X-agent-username"),
 		Password: c.Request.Header.Get("X-agent-password"),
 	}
@@ -240,7 +240,7 @@ func deleteUserOnAgentHandler(c *gin.Context) {
 func getUserOnAgentHandler(c *gin.Context) {
 	username := c.Query("name")
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		Username: c.Request.Header.Get("X-agent-username"),
 		Password: c.Request.Header.Get("X-agent-password"),
 	}

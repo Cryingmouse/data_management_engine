@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 )
 
 type RestfulAPI interface {
@@ -15,11 +15,11 @@ type RestfulAPI interface {
 
 type RestClient struct {
 	client      *http.Client
-	hostContext context.HostContext
+	hostContext common.HostContext
 	prefixURL   string
 }
 
-func GetRestClient(hostContext context.HostContext, prefixURL string) RestfulAPI {
+func GetRestClient(hostContext common.HostContext, prefixURL string) RestfulAPI {
 	return &RestClient{
 		client:      &http.Client{},
 		hostContext: hostContext,
@@ -27,7 +27,7 @@ func GetRestClient(hostContext context.HostContext, prefixURL string) RestfulAPI
 	}
 }
 
-func (c *RestClient) Get(url string, contentType string) (resp *http.Response, err error) {
+func (c *RestClient) Get(url string, contentType string) (*http.Response, error) {
 	// Append the base URL to the input URL.
 	fullURL := fmt.Sprintf("http://%s:8080/%s/%s", c.hostContext.IP, c.prefixURL, url)
 
@@ -57,5 +57,4 @@ func (c *RestClient) Post(url, contentType string, body io.Reader) (resp *http.R
 
 	req.Header.Set("Content-Type", contentType)
 	return c.client.Do(req)
-
 }

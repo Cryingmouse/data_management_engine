@@ -10,11 +10,11 @@ paths:
     get:
       $ref: "./endpoints/get_hosts.yaml#/getHosts"
 
-  /api/host/register:
+  /api/hosts/register:
     post:
       $ref: "./endpoints/register_host.yaml#/registerHost"
 
-  /api/host/unregister:
+  /api/hosts/unregister:
     post:
       $ref: "./endpoints/unregister_host.yaml#/unregisterHost"
 

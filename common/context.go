@@ -1,4 +1,4 @@
-package context
+package common
 
 type HostContext struct {
 	IP       string

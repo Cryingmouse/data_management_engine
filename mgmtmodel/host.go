@@ -1,14 +1,17 @@
 package mgmtmodel
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/db"
 	"github.com/cryingmouse/data_management_engine/driver"
+	"golang.org/x/sync/errgroup"
 )
 
 type Host struct {
@@ -63,7 +66,7 @@ func (h *Host) Unregister() error {
 
 	directoryList := db.DirectoryList{}
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Conditions: struct {
 			HostIP string
 		}{
@@ -106,7 +109,7 @@ type HostList struct {
 	Hosts []Host
 }
 
-func (hl *HostList) Get(filter *context.QueryFilter) ([]Host, error) {
+func (hl *HostList) Get(filter *common.QueryFilter) ([]Host, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		panic(err)
@@ -139,7 +142,7 @@ type PaginationHost struct {
 	TotalCount int64
 }
 
-func (hl *HostList) Pagination(filter *context.QueryFilter) (*PaginationHost, error) {
+func (hl *HostList) Pagination(filter *common.QueryFilter) (*PaginationHost, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -173,15 +176,57 @@ func (hl *HostList) Pagination(filter *context.QueryFilter) (*PaginationHost, er
 }
 
 func (hl *HostList) Register() error {
-	return nil
+	g, _ := errgroup.WithContext(context.Background())
+
+	results := make([]*common.SystemInfo, len(hl.Hosts))
+	var resultErr error
+
+	for i, h := range hl.Hosts {
+		index := i // 避免闭包问题
+		host := h  // 避免闭包问题
+		g.Go(func() error {
+			systemInfo, err := host.getSystemInfo()
+			if err != nil {
+				resultErr = errors.Join(resultErr, err)
+				return err
+			}
+			results[index] = systemInfo // 保存协程的返回值
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		if resultErr != nil {
+			return resultErr
+		}
+		return err
+	}
+
+	if err := common.CopyStructList(results, &hl.Hosts); err != nil {
+		return err
+	}
+
+	dbHostList := db.HostList{}
+
+	if err := common.CopyStructList(hl.Hosts, &dbHostList.Hosts); err != nil {
+		return err
+	}
+
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return err
+	}
+
+	return dbHostList.Save(engine)
 }
 
 func (hl *HostList) Unregister() error {
 	return nil
 }
 
-func (h *Host) getSystemInfo() (*context.SystemInfo, error) {
-	hostContext := context.HostContext{
+func (h *Host) getSystemInfo() (*common.SystemInfo, error) {
+	hostContext := common.HostContext{
 		IP:       h.IP,
 		Username: h.Username,
 		Password: h.Password,
@@ -209,8 +254,8 @@ func (h *Host) getSystemInfo() (*context.SystemInfo, error) {
 	}
 
 	var result struct {
-		Message    string             `json:"message"`
-		SystemInfo context.SystemInfo `json:"system-info"`
+		Message    string            `json:"message"`
+		SystemInfo common.SystemInfo `json:"system-info"`
 	}
 
 	err = json.Unmarshal([]byte(body), &result)

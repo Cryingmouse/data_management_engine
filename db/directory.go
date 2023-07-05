@@ -6,7 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 )
 
 type Directory struct {
@@ -32,7 +32,7 @@ type DirectoryList struct {
 	Directories []Directory
 }
 
-func (dl *DirectoryList) Get(engine *DatabaseEngine, filter *context.QueryFilter) (err error) {
+func (dl *DirectoryList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
 	model := Directory{}
 
 	if filter.Pagination != nil {
@@ -51,7 +51,7 @@ type PaginationDirectory struct {
 	TotalCount  int64
 }
 
-func (dl *DirectoryList) Pagination(engine *DatabaseEngine, filter *context.QueryFilter) (response *PaginationDirectory, err error) {
+func (dl *DirectoryList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (response *PaginationDirectory, err error) {
 	var totalCount int64
 	model := Directory{}
 
@@ -84,7 +84,7 @@ func (dl *DirectoryList) Save(engine *DatabaseEngine) (err error) {
 	return
 }
 
-func (dl *DirectoryList) Delete(engine *DatabaseEngine, filter *context.QueryFilter) (err error) {
+func (dl *DirectoryList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
 	var directories []Directory
 
 	err = Delete(engine, filter, directories)

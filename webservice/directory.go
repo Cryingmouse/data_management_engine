@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/cryingmouse/data_management_engine/agent"
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
-	"github.com/cryingmouse/data_management_engine/utils"
+	
 	"github.com/gin-gonic/gin"
 )
 
@@ -93,8 +93,8 @@ func getDirectoryHandler(c *gin.Context) {
 		directoryListModel := mgmtmodel.DirectoryList{}
 		if page == 0 && limit == 0 {
 			// Query directories without pagination.
-			filter := context.QueryFilter{
-				Fields: utils.SplitToList(fields),
+			filter := common.QueryFilter{
+				Fields: common.SplitToList(fields),
 				Keyword: map[string]string{
 					"name": nameKeyword,
 				},
@@ -126,12 +126,12 @@ func getDirectoryHandler(c *gin.Context) {
 
 		} else {
 			// Query directories with pagination.
-			filter := context.QueryFilter{
+			filter := common.QueryFilter{
 				Fields: strings.Split(fields, ","),
 				Keyword: map[string]string{
 					"name": nameKeyword,
 				},
-				Pagination: &context.Pagination{
+				Pagination: &common.Pagination{
 					Page:     page,
 					PageSize: limit,
 				},
@@ -203,7 +203,7 @@ func createDirectoryOnAgentHandler(c *gin.Context) {
 		return
 	}
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		Username: c.Request.Header.Get("X-agent-username"),
 		Password: c.Request.Header.Get("X-agent-password"),
 	}
@@ -224,7 +224,7 @@ func deleteDirectoryOnAgentHandler(c *gin.Context) {
 		return
 	}
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		Username: c.Request.Header.Get("X-agent-username"),
 		Password: c.Request.Header.Get("X-agent-password"),
 	}

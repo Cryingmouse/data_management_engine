@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +36,7 @@ func setup() {
 
 func cleanup() {
 	// Create an empty slice of Directory objects.
-	filter := context.QueryFilter{}
+	filter := common.QueryFilter{}
 
 	dl := DirectoryList{}
 	dl.Delete(&filter)
@@ -69,7 +69,7 @@ func Test_DirectoryList_Get_With_Fields_Keyword_Condition(t *testing.T) {
 	// Create a new Directory object.
 	dl := DirectoryList{}
 
-	filter := context.QueryFilter{
+	filter := common.QueryFilter{
 		Fields: []string{"Name", "HostIP"},
 		Keyword: map[string]string{
 			"name": "Directory 1",

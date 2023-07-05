@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/cryingmouse/data_management_engine/utils"
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -13,7 +13,7 @@ import (
 )
 
 func Start() {
-	config, err := utils.GetConfig()
+	config, err := common.GetConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -29,9 +29,9 @@ func Start() {
 	// router.POST("/login", getTokenHandler)
 
 	// API about hosts
-	router.POST("/api/host/register", hostRegistrationHandler)
+	router.POST("/api/hosts/register", hostRegistrationHandler)
 	router.GET("/api/hosts", getRegisteredHostsHandler)
-	router.POST("/api/host/unregister", hostUnregistrationHandler)
+	router.POST("/api/hosts/unregister", hostUnregistrationHandler)
 	router.GET("/agent/system-info", getSystemInfoOnAgentHandler)
 
 	// API about directory

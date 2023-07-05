@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cryingmouse/data_management_engine/context"
-	"github.com/cryingmouse/data_management_engine/utils"
+	"github.com/cryingmouse/data_management_engine/common"
+
 	"gorm.io/gorm"
 )
 
@@ -20,7 +20,7 @@ func (u *User) Get(engine *DatabaseEngine) (err error) {
 		return err
 	}
 
-	u.Password, err = utils.Decrypt(u.Password, context.SecurityKey)
+	u.Password, err = common.Decrypt(u.Password, common.SecurityKey)
 
 	return err
 }
@@ -30,7 +30,7 @@ func (u *User) Save(engine *DatabaseEngine) error {
 		Name: u.Name,
 	}
 
-	encrypted_password, err := utils.Encrypt(u.Password, context.SecurityKey)
+	encrypted_password, err := common.Encrypt(u.Password, common.SecurityKey)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ type UserList struct {
 	Users []User
 }
 
-func (ul *UserList) Get(engine *DatabaseEngine, filter *context.QueryFilter) (err error) {
+func (ul *UserList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
 	model := User{}
 
 	if filter.Pagination != nil {
@@ -59,7 +59,7 @@ func (ul *UserList) Get(engine *DatabaseEngine, filter *context.QueryFilter) (er
 	}
 
 	for _, user := range ul.Users {
-		user.Password, err = utils.Decrypt(user.Password, context.SecurityKey)
+		user.Password, err = common.Decrypt(user.Password, common.SecurityKey)
 	}
 
 	return
@@ -70,7 +70,7 @@ type PaginationUser struct {
 	TotalCount int64
 }
 
-func (ul *UserList) Pagination(engine *DatabaseEngine, filter *context.QueryFilter) (response *PaginationUser, err error) {
+func (ul *UserList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (response *PaginationUser, err error) {
 	var totalCount int64
 	model := User{}
 
@@ -84,7 +84,7 @@ func (ul *UserList) Pagination(engine *DatabaseEngine, filter *context.QueryFilt
 	}
 
 	for _, user := range ul.Users {
-		user.Password, err = utils.Decrypt(user.Password, context.SecurityKey)
+		user.Password, err = common.Decrypt(user.Password, common.SecurityKey)
 	}
 
 	response = &PaginationUser{
@@ -102,7 +102,7 @@ func (ul *UserList) Save(engine *DatabaseEngine) (err error) {
 
 	for i, user := range ul.Users {
 		// Encrypt the password
-		ul.Users[i].Password, err = utils.Encrypt(user.Password, context.SecurityKey)
+		ul.Users[i].Password, err = common.Encrypt(user.Password, common.SecurityKey)
 		if err != nil {
 			return fmt.Errorf("failed to encrypt password for user %v: %w", user.Name, err)
 		}
@@ -115,7 +115,7 @@ func (ul *UserList) Save(engine *DatabaseEngine) (err error) {
 	return nil
 }
 
-func (ul *UserList) Delete(engine *DatabaseEngine, filter *context.QueryFilter) (err error) {
+func (ul *UserList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
 	var users []User
 
 	err = Delete(engine, filter, users)

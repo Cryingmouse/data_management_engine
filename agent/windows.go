@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 )
@@ -15,7 +15,7 @@ import (
 type WindowsAgent struct {
 }
 
-func (agent *WindowsAgent) CreateDirectory(hostContext context.HostContext, name string) (dirPath string, err error) {
+func (agent *WindowsAgent) CreateDirectory(hostContext common.HostContext, name string) (dirPath string, err error) {
 	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
 
 	err = os.Mkdir(dirPath, os.ModePerm)
@@ -26,13 +26,13 @@ func (agent *WindowsAgent) CreateDirectory(hostContext context.HostContext, name
 	return dirPath, nil
 }
 
-func (agent *WindowsAgent) DeleteDirectory(hostContext context.HostContext, name string) (err error) {
+func (agent *WindowsAgent) DeleteDirectory(hostContext common.HostContext, name string) (err error) {
 	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
 
 	return os.Remove(dirPath)
 }
 
-func (agent *WindowsAgent) CreateShare(hostContext context.HostContext, name, directory_name string) (err error) {
+func (agent *WindowsAgent) CreateShare(hostContext common.HostContext, name, directory_name string) (err error) {
 	cmdlet := "New-SmbShare"
 
 	// Define the arguments
@@ -68,7 +68,7 @@ type User struct {
 	ComputerName         string `json:"host_name"`
 }
 
-func (agent *WindowsAgent) CreateLocalUser(hostContext context.HostContext, username, password string) (err error) {
+func (agent *WindowsAgent) CreateLocalUser(hostContext common.HostContext, username, password string) (err error) {
 	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("New-LocalUser -Name '%s' -Password (ConvertTo-SecureString -String '%s' -AsPlainText -Force)", username, password))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
@@ -78,7 +78,7 @@ func (agent *WindowsAgent) CreateLocalUser(hostContext context.HostContext, user
 	return err
 }
 
-func (agent *WindowsAgent) DeleteLocalUser(hostContext context.HostContext, username string) (err error) {
+func (agent *WindowsAgent) DeleteLocalUser(hostContext common.HostContext, username string) (err error) {
 	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("Remove-LocalUser -Name '%s'", username))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
@@ -89,7 +89,7 @@ func (agent *WindowsAgent) DeleteLocalUser(hostContext context.HostContext, user
 	return err
 }
 
-func (agent *WindowsAgent) GetLocalUsers(hostContext context.HostContext) (users []User, err error) {
+func (agent *WindowsAgent) GetLocalUsers(hostContext common.HostContext) (users []User, err error) {
 	// 设置要执行的脚本和参数
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
@@ -124,7 +124,7 @@ func (agent *WindowsAgent) GetLocalUsers(hostContext context.HostContext) (users
 	return users, nil
 }
 
-func (agent *WindowsAgent) GetLocalUser(hostContext context.HostContext, username string) (user User, err error) {
+func (agent *WindowsAgent) GetLocalUser(hostContext common.HostContext, username string) (user User, err error) {
 	// 设置要执行的脚本和参数
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script, "-UserName", username)
@@ -158,7 +158,7 @@ func (agent *WindowsAgent) GetLocalUser(hostContext context.HostContext, usernam
 	return user, fmt.Errorf("unable to get the user %s", username)
 }
 
-func (agent *WindowsAgent) GetSystemInfo(hostContext context.HostContext) (systemInfo context.SystemInfo, err error) {
+func (agent *WindowsAgent) GetSystemInfo(hostContext common.HostContext) (systemInfo common.SystemInfo, err error) {
 	// 设置要执行的脚本和参数
 	script := "./agent/windows/Get-SystemDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
@@ -172,7 +172,7 @@ func (agent *WindowsAgent) GetSystemInfo(hostContext context.HostContext) (syste
 		return systemInfo, err
 	}
 
-	systemInfo = context.SystemInfo{
+	systemInfo = common.SystemInfo{
 		ComputerName:   result["ComputerName"],
 		Caption:        result["Caption"],
 		OSArchitecture: result["OSArchitecture"],

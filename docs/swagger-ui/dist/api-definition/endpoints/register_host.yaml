@@ -1,5 +1,5 @@
 registerHost:
-  summary: Register a host
+  summary: Register hosts
   requestBody:
     required: true
     content:
@@ -7,26 +7,47 @@ registerHost:
         schema:
           $ref: "../schemas.yaml#/components/schemas/HostRegisterInfo"
         example:
-          ip: 127.0.0.1
-          user_name: admin
-          password: P@ssw0rd123
-          storage_type: agent
+          - ip: 127.0.0.1
+            user_name: admin
+            password: P@ssw0rd123
+            storage_type: agent
   responses:
     "200":
       description: Successful registration
       content:
         application/json:
           schema:
-            $ref: "../schemas.yaml#/components/schemas/HostRegisterResponseBody"
-          example:
-            ip: 192.168.0.1
-            name: MyComputer
-            user_name: admin
-            password: P@ssw0rd123
-            storage_type: SSD
-            os_caption: Windows 10
-            os_arch: x64
-            os_version: 10.0.19043
-            build_number: 19043.123
+            anyOf:
+              - $ref: "../schemas.yaml#/components/schemas/HostRegisterResponseBody"
+              - $ref: "../schemas.yaml#/components/schemas/HostsRegisterResponseBody"
+          examples:
+            example1:
+              summary: Get Registered Host
+              value:
+                Message: Get the registered host successfully.
+                Host:
+                  ip: 192.168.0.1
+                  name: MyComputer
+                  user_name: admin
+                  password: P@ssw0rd123
+                  storage_type: SSD
+                  os_caption: Windows 10
+                  os_arch: x64
+                  os_version: 10.0.19043
+                  build_number: 19043.123
+            example2:
+              summary: Get Register Hosts
+              value:
+                Message: Get the registered hosts successfully.
+                Hosts:
+                  - ip: 192.168.0.1
+                    name: MyComputer
+                    user_name: admin
+                    password: P@ssw0rd123
+                    storage_type: SSD
+                    os_caption: Windows 10
+                    os_arch: x64
+                    os_version: 10.0.19043
+                    build_number: 19043.123
     "400":
       description: Invalid request

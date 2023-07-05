@@ -3,18 +3,18 @@ package driver
 import (
 	"net/http"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 )
 
 type Driver interface {
 	// The area method returns the area of the shape.
-	CreateDirectory(hostContext context.HostContext, name string) (resp *http.Response, err error)
-	DeleteDirectory(hostContext context.HostContext, name string) (resp *http.Response, err error)
-	CreateShare(hostContext context.HostContext, name string) (resp *http.Response, err error)
-	DeleteShare(hostContext context.HostContext, name string) (resp *http.Response, err error)
-	CreateUser(hostContext context.HostContext, name, password string) (resp *http.Response, err error)
-	DeleteUser(hostContext context.HostContext, name string) (resp *http.Response, err error)
-	GetSystemInfo(hostContext context.HostContext) (resp *http.Response, err error)
+	CreateDirectory(hostContext common.HostContext, name string) (resp *http.Response, err error)
+	DeleteDirectory(hostContext common.HostContext, name string) (resp *http.Response, err error)
+	CreateShare(hostContext common.HostContext, name string) (resp *http.Response, err error)
+	DeleteShare(hostContext common.HostContext, name string) (resp *http.Response, err error)
+	CreateUser(hostContext common.HostContext, name, password string) (resp *http.Response, err error)
+	DeleteUser(hostContext common.HostContext, name string) (resp *http.Response, err error)
+	GetSystemInfo(hostContext common.HostContext) (resp *http.Response, err error)
 }
 
 func GetDriver(storageType string) Driver {

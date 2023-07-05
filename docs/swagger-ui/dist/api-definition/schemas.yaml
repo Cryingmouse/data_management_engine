@@ -1,21 +1,23 @@
 components:
   schemas:
     HostRegisterInfo:
-      type: object
-      properties:
-        ip:
-          type: string
-        user_name:
-          type: string
-        password:
-          type: string
-        storage_type:
-          type: string
-      required:
-        - ip
-        - user_name
-        - password
-        - storage_type
+      type: array
+      items:
+        type: object
+        properties:
+          ip:
+            type: string
+          user_name:
+            type: string
+          password:
+            type: string
+          storage_type:
+            type: string
+        required:
+          - ip
+          - user_name
+          - password
+          - storage_type
 
     HostRegisterResponseBody:
       type: object
@@ -48,6 +50,40 @@ components:
         - os_arch
         - os_version
         - build_number
+
+    HostsRegisterResponseBody:
+      type: array
+      items:
+        type: object
+        properties:
+          ip:
+            type: string
+          name:
+            type: string
+          user_name:
+            type: string
+          password:
+            type: string
+          storage_type:
+            type: string
+          os_caption:
+            type: string
+          os_arch:
+            type: string
+          os_version:
+            type: string
+          build_number:
+            type: string
+        required:
+          - ip
+          - name
+          - user_name
+          - password
+          - storage_type
+          - os_caption
+          - os_arch
+          - os_version
+          - build_number
 
     HostUnregisterInfo:
       type: object

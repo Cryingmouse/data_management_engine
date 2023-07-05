@@ -1,7 +1,7 @@
 package mgmtmodel
 
 import (
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/db"
 	"github.com/cryingmouse/data_management_engine/driver"
 )
@@ -22,7 +22,7 @@ func (u *User) Create() (err error) {
 		return err
 	}
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		IP:       host.IP,
 		Username: host.Username,
 		Password: host.Password,
@@ -54,7 +54,7 @@ func (u *User) Delete() (err error) {
 		return err
 	}
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		IP:       host.IP,
 		Username: host.Username,
 		Password: host.Password,
@@ -99,7 +99,7 @@ type UserList struct {
 	Users []User
 }
 
-func (dl *UserList) Get(filter *context.QueryFilter) ([]User, error) {
+func (dl *UserList) Get(filter *common.QueryFilter) ([]User, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ type PaginationUser struct {
 	TotalCount int64
 }
 
-func (dl *UserList) Pagination(filter *context.QueryFilter) (*PaginationUser, error) {
+func (dl *UserList) Pagination(filter *common.QueryFilter) (*PaginationUser, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func (dl *UserList) Save() (err error) {
 	return userList.Save(engine)
 }
 
-func (dl *UserList) Delete(filter *context.QueryFilter) (err error) {
+func (dl *UserList) Delete(filter *common.QueryFilter) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err

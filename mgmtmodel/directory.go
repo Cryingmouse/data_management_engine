@@ -1,7 +1,7 @@
 package mgmtmodel
 
 import (
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/db"
 	"github.com/cryingmouse/data_management_engine/driver"
 )
@@ -22,7 +22,7 @@ func (d *Directory) Create() (err error) {
 		return err
 	}
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		IP:       host.IP,
 		Username: host.Username,
 		Password: host.Password,
@@ -54,7 +54,7 @@ func (d *Directory) Delete() (err error) {
 		return err
 	}
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		IP:       host.IP,
 		Username: host.Username,
 		Password: host.Password,
@@ -99,7 +99,7 @@ type DirectoryList struct {
 	Directories []Directory
 }
 
-func (dl *DirectoryList) Get(filter *context.QueryFilter) ([]Directory, error) {
+func (dl *DirectoryList) Get(filter *common.QueryFilter) ([]Directory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ type PaginationDirectory struct {
 	TotalCount  int64
 }
 
-func (dl *DirectoryList) Pagination(filter *context.QueryFilter) (*PaginationDirectory, error) {
+func (dl *DirectoryList) Pagination(filter *common.QueryFilter) (*PaginationDirectory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func (dl *DirectoryList) Save() (err error) {
 	return directoryList.Save(engine)
 }
 
-func (dl *DirectoryList) Delete(filter *context.QueryFilter) (err error) {
+func (dl *DirectoryList) Delete(filter *common.QueryFilter) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err

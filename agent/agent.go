@@ -3,19 +3,19 @@ package agent
 import (
 	"runtime"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 )
 
 type Agent interface {
 	// The area method returns the area of the shape.
-	CreateDirectory(hostContext context.HostContext, name string) (dirPath string, err error)
-	DeleteDirectory(hostContext context.HostContext, name string) (err error)
-	CreateShare(hostContext context.HostContext, name, directory_name string) (err error)
-	CreateLocalUser(hostContext context.HostContext, username, password string) (err error)
-	DeleteLocalUser(hostContext context.HostContext, username string) (err error)
-	GetLocalUsers(hostContext context.HostContext) (users []User, err error)
-	GetLocalUser(hostContext context.HostContext, username string) (user User, err error)
-	GetSystemInfo(hostContext context.HostContext) (system context.SystemInfo, err error)
+	CreateDirectory(hostContext common.HostContext, name string) (dirPath string, err error)
+	DeleteDirectory(hostContext common.HostContext, name string) (err error)
+	CreateShare(hostContext common.HostContext, name, directory_name string) (err error)
+	CreateLocalUser(hostContext common.HostContext, username, password string) (err error)
+	DeleteLocalUser(hostContext common.HostContext, username string) (err error)
+	GetLocalUsers(hostContext common.HostContext) (users []User, err error)
+	GetLocalUser(hostContext common.HostContext, username string) (user User, err error)
+	GetSystemInfo(hostContext common.HostContext) (system common.SystemInfo, err error)
 }
 
 func GetAgent() Agent {

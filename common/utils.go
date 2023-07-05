@@ -1,12 +1,14 @@
-package utils
+package common
 
 import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"sort"
 	"strings"
 )
@@ -95,4 +97,83 @@ func SplitToList(fields string) []string {
 	}
 
 	return strings.Split(fields, ",")
+}
+
+func CopyStructList(src, dest interface{}) error {
+	srcVal := reflect.ValueOf(src)
+	destVal := reflect.ValueOf(dest)
+
+	// 如果 src 或 dest 是指针，则获取其指向的值
+	if srcVal.Kind() == reflect.Ptr {
+		srcVal = srcVal.Elem()
+	}
+
+	if destVal.Kind() == reflect.Ptr {
+		destVal = destVal.Elem()
+	}
+
+	// 检查 src 和 dest 是否为结构体列表或结构体
+	if srcVal.Kind() == reflect.Slice && destVal.Kind() == reflect.Slice {
+		// src 和 dest 是结构体列表
+		srcLen := srcVal.Len()
+
+		// 扩展 dest 的长度
+		destType := destVal.Type()
+		destSlice := reflect.MakeSlice(destType, srcLen, srcLen)
+		reflect.Copy(destSlice, destVal)
+
+		// 复制结构体列表
+		for i := 0; i < srcLen; i++ {
+			srcStruct := srcVal.Index(i)
+			destStruct := destSlice.Index(i)
+
+			// 检查 srcStruct 和 destStruct 是否为结构体
+			if srcStruct.Kind() == reflect.Ptr {
+				srcStruct = srcStruct.Elem()
+			}
+
+			if destStruct.Kind() == reflect.Ptr {
+				destStruct = destStruct.Elem()
+			}
+
+			if srcStruct.Kind() != reflect.Struct || destStruct.Kind() != reflect.Struct {
+				return errors.New("src and dest must contain struct instances")
+			}
+
+			// 复制结构体字段
+			err := copyStructFields(srcStruct, destStruct)
+			if err != nil {
+				return err
+			}
+		}
+
+		// 将扩展后的 dest 赋值回原始 dest 变量
+		reflect.ValueOf(dest).Elem().Set(destSlice)
+	} else if srcVal.Kind() == reflect.Struct && destVal.Kind() == reflect.Struct {
+		// src 和 dest 是单个结构体
+		return copyStructFields(srcVal, destVal)
+	} else {
+		return errors.New("src and dest must be either slice of structs or structs")
+	}
+
+	return nil
+}
+
+func copyStructFields(src, dest reflect.Value) error {
+	destType := dest.Type()
+
+	for i := 0; i < destType.NumField(); i++ {
+		field := destType.Field(i)
+		destField := dest.FieldByName(field.Name)
+
+		if destField.IsValid() && destField.CanSet() {
+			srcField := src.FieldByName(field.Name)
+
+			if srcField.IsValid() && srcField.Type() == destField.Type() {
+				destField.Set(srcField)
+			}
+		}
+	}
+
+	return nil
 }

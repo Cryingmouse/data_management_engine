@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 )
 
 func parseGormTag(tag string) string {
@@ -45,7 +45,7 @@ func getTagToFieldMap(model interface{}) map[string]string {
 	return tagToFieldMap
 }
 
-func Query(engine *DatabaseEngine, model interface{}, filter *context.QueryFilter, items interface{}) (totalCount int64, err error) {
+func Query(engine *DatabaseEngine, model interface{}, filter *common.QueryFilter, items interface{}) (totalCount int64, err error) {
 	db := engine.DB.Debug()
 
 	// Add the keyword to the conditions for the fuzzy search
@@ -94,7 +94,7 @@ func Query(engine *DatabaseEngine, model interface{}, filter *context.QueryFilte
 	return totalCount, err
 }
 
-func Delete(engine *DatabaseEngine, filter *context.QueryFilter, items interface{}) (err error) {
+func Delete(engine *DatabaseEngine, filter *common.QueryFilter, items interface{}) (err error) {
 	db := engine.DB.Debug().Where("1 = 1")
 
 	for key, value := range filter.Keyword {

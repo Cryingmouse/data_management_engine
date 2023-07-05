@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cryingmouse/data_management_engine/context"
-	"github.com/cryingmouse/data_management_engine/utils"
+	"github.com/cryingmouse/data_management_engine/common"
+
 	"gorm.io/gorm"
 )
 
@@ -27,7 +27,7 @@ func (h *Host) Get(engine *DatabaseEngine) (err error) {
 		return err
 	}
 
-	h.Password, err = utils.Decrypt(h.Password, context.SecurityKey)
+	h.Password, err = common.Decrypt(h.Password, common.SecurityKey)
 
 	return err
 }
@@ -44,7 +44,7 @@ func (h *Host) Save(engine *DatabaseEngine) error {
 		BuildNumber:    h.BuildNumber,
 	}
 
-	encrypted_password, err := utils.Encrypt(h.Password, context.SecurityKey)
+	encrypted_password, err := common.Encrypt(h.Password, common.SecurityKey)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ type HostList struct {
 	Hosts []Host
 }
 
-func (hl *HostList) Get(engine *DatabaseEngine, filter *context.QueryFilter) (err error) {
+func (hl *HostList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
 	model := Host{}
 
 	if filter.Pagination != nil {
@@ -73,7 +73,7 @@ func (hl *HostList) Get(engine *DatabaseEngine, filter *context.QueryFilter) (er
 	}
 
 	for _, host := range hl.Hosts {
-		host.Password, err = utils.Decrypt(host.Password, context.SecurityKey)
+		host.Password, err = common.Decrypt(host.Password, common.SecurityKey)
 	}
 
 	return
@@ -84,7 +84,7 @@ type PaginationHost struct {
 	TotalCount int64
 }
 
-func (hl *HostList) Pagination(engine *DatabaseEngine, filter *context.QueryFilter) (response *PaginationHost, err error) {
+func (hl *HostList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (response *PaginationHost, err error) {
 	var totalCount int64
 	model := Host{}
 
@@ -98,7 +98,7 @@ func (hl *HostList) Pagination(engine *DatabaseEngine, filter *context.QueryFilt
 	}
 
 	for _, host := range hl.Hosts {
-		host.Password, err = utils.Decrypt(host.Password, context.SecurityKey)
+		host.Password, err = common.Decrypt(host.Password, common.SecurityKey)
 	}
 
 	response = &PaginationHost{
@@ -116,7 +116,7 @@ func (hl *HostList) Save(engine *DatabaseEngine) (err error) {
 
 	for i, host := range hl.Hosts {
 		// Encrypt the password
-		hl.Hosts[i].Password, err = utils.Encrypt(host.Password, context.SecurityKey)
+		hl.Hosts[i].Password, err = common.Encrypt(host.Password, common.SecurityKey)
 		if err != nil {
 			return fmt.Errorf("failed to encrypt password for host %v: %w", host.Name, err)
 		}

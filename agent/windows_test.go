@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/cryingmouse/data_management_engine/context"
+	"github.com/cryingmouse/data_management_engine/common"
 )
 
 func TestMain(m *testing.M) {
@@ -32,7 +32,7 @@ func Test_Windows_CreateShare(t *testing.T) {
 
 	agent := GetAgent()
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		IP:       "127.09.0.1",
 		Username: "admin",
 		Password: "password",
@@ -51,7 +51,7 @@ func Test_Windows_GetLocalUsers(t *testing.T) {
 
 	agent := GetAgent()
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		IP:       "127.09.0.1",
 		Username: "admin",
 		Password: "password",
@@ -67,7 +67,7 @@ func Test_Windows_GetSystemInfo(t *testing.T) {
 
 	agent := GetAgent()
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		IP:       "127.09.0.1",
 		Username: "admin",
 		Password: "password",
@@ -83,7 +83,7 @@ func Test_Windows_CreateLocalUsers(t *testing.T) {
 
 	agent := GetAgent()
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		IP:       "127.09.0.1",
 		Username: "admin",
 		Password: "password",
@@ -102,7 +102,7 @@ func Test_Windows_DeleteLocalUsers(t *testing.T) {
 
 	agent := GetAgent()
 
-	hostContext := context.HostContext{
+	hostContext := common.HostContext{
 		IP:       "127.09.0.1",
 		Username: "admin",
 		Password: "password",
