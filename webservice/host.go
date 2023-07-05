@@ -186,26 +186,28 @@ func getRegisteredHostsHandler(c *gin.Context) {
 }
 
 func hostUnregistrationHandler(c *gin.Context) {
-	type Request struct {
-		IP string `json:"ip" binding:"required"`
+	request := []struct {
+		IP string `json:"ip" binding:"required,validateIP"`
+	}{}
+
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("validateIP", common.IPValidator)
 	}
 
-	var request Request
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
 		return
 	}
 
-	hostModel := mgmtmodel.Host{
-		IP: request.IP,
-	}
+	var hostList mgmtmodel.HostList
+	common.CopyStructList(request, &hostList.Hosts)
 
-	if err := hostModel.Unregister(); err != nil {
+	if err := hostList.Unregister(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to unregister the host.", "error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Unregister the host successfully.", "host": request.IP})
+	c.JSON(http.StatusOK, gin.H{"message": "Unregister the host successfully.", "hosts": request})
 }
 
 func getSystemInfoOnAgentHandler(c *gin.Context) {

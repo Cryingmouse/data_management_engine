@@ -7,11 +7,11 @@ unregisterHost:
         schema:
           $ref: "../schemas.yaml#/components/schemas/HostUnregisterInfo"
         example:
-          ip: 127.0.0.1
+          - ip: 127.0.0.1
   responses:
     "200":
       description: Successful operation
       content:
         application/json:
           schema:
-            $ref: "../schemas.yaml#/components/schemas/UnregisterResponse"
+            $ref: "../schemas.yaml#/components/schemas/UnregisterHostResponse"

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cryingmouse/data_management_engine/common"
+	"github.com/thoas/go-funk"
 
 	"gorm.io/gorm"
 )
@@ -129,19 +130,16 @@ func (hl *HostList) Save(engine *DatabaseEngine) (err error) {
 	return nil
 }
 
-func (hl *HostList) Delete(engine *DatabaseEngine, storageType string, names, ips []string) error {
+func (hl *HostList) Delete(engine *DatabaseEngine) error {
 	var host Host
 
 	query := engine.DB.Where("1 = 1")
-	if storageType != "" {
-		query = engine.DB.Where("storage_type = ?", storageType)
-	}
-	if names != nil {
-		query.Where("name IN [?]", names)
-	}
 
+	ips := funk.Map(hl.Hosts, func(host Host) string {
+		return host.IP
+	}).([]string)
 	if ips != nil {
-		query.Where("ip IN [?]", ips)
+		query.Where("ip IN (?)", ips)
 	}
 
 	return query.Unscoped().Delete(&host).Error

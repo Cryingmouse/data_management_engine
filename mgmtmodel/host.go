@@ -198,7 +198,16 @@ func (hl *HostList) Register() error {
 }
 
 func (hl *HostList) Unregister() error {
-	return nil
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return err
+	}
+
+	hostList := db.HostList{}
+
+	common.CopyStructList(hl.Hosts, &hostList.Hosts)
+
+	return hostList.Delete(engine)
 }
 
 func (h *Host) getSystemInfo() (*common.SystemInfo, error) {

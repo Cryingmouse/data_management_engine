@@ -86,18 +86,22 @@ components:
           - build_number
 
     HostUnregisterInfo:
-      type: object
-      properties:
-        ip:
-          type: string
-      required:
-        - ip
+      type: array
+      items:
+        type: object
+        properties:
+          ip:
+            type: string
+        required:
+          - ip
 
-    UnregisterResponse:
-      type: object
-      properties:
-        message:
-          type: string
+    UnregisterHostResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          message:
+            type: string
 
     DirectoryResponse:
       type: object
