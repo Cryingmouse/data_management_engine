@@ -13,7 +13,7 @@ func compareHosts(expected []Host, actual []Host) bool {
 
 	for i := range expected {
 		// Compare the desired fields of each struct
-		if expected[i].Name != actual[i].Name ||
+		if expected[i].ComputerName != actual[i].ComputerName ||
 			expected[i].IP != actual[i].IP ||
 			expected[i].Username != actual[i].Username ||
 			expected[i].StorageType != actual[i].StorageType {
@@ -28,11 +28,11 @@ func compareHosts(expected []Host, actual []Host) bool {
 func Test_Host_Save_Get_Delete(t *testing.T) {
 	engine, _ := GetDatabaseEngine()
 	host := Host{
-		Name:        "test_host_1",
-		IP:          "127.0.0.1",
-		Username:    "test_user",
-		Password:    "test_password",
-		StorageType: "local",
+		ComputerName: "test_host_1",
+		IP:           "127.0.0.1",
+		Username:     "test_user",
+		Password:     "test_password",
+		StorageType:  "local",
 	}
 
 	err := host.Save(engine)
@@ -44,15 +44,15 @@ func Test_Host_Save_Get_Delete(t *testing.T) {
 
 	err = retrievedHost.Get(engine)
 	assert.NoError(t, err, "Failed to get host: %v", retrievedHost)
-	assert.Equal(t, host.Name, retrievedHost.Name)
+	assert.Equal(t, host.ComputerName, retrievedHost.ComputerName)
 	assert.Equal(t, host.IP, retrievedHost.IP)
 	assert.Equal(t, host.Password, retrievedHost.Password)
 
 	deletedHost := &Host{
-		Name:        "test_host_1",
-		IP:          "127.0.0.1",
-		Username:    "test_user",
-		StorageType: "local",
+		ComputerName: "test_host_1",
+		IP:           "127.0.0.1",
+		Username:     "test_user",
+		StorageType:  "local",
 	}
 
 	err = deletedHost.Delete(engine)

@@ -9,11 +9,11 @@ import (
 func Test_Host_Register(t *testing.T) {
 	// Arrange
 	host := Host{
-		Name:        "test_host",
-		IP:          "192.168.1.1",
-		Username:    "admin",
-		Password:    "password",
-		StorageType: "s3",
+		ComputerName: "test_host",
+		IP:           "192.168.1.1",
+		Username:     "admin",
+		Password:     "password",
+		StorageType:  "s3",
 	}
 
 	// Act
@@ -28,11 +28,11 @@ func Test_Host_Register(t *testing.T) {
 func Test_Host_Unregister(t *testing.T) {
 	// Arrange
 	host := Host{
-		Name:        "test_host",
-		IP:          "192.168.1.1",
-		Username:    "admin",
-		Password:    "password",
-		StorageType: "s3",
+		ComputerName: "test_host",
+		IP:           "192.168.1.1",
+		Username:     "admin",
+		Password:     "password",
+		StorageType:  "s3",
 	}
 	if err := host.Register(); err != nil {
 		t.Errorf("Failed to register host: %v", err)
@@ -59,11 +59,11 @@ func Test_Host_Unregister(t *testing.T) {
 func Test_Host_Get(t *testing.T) {
 	// Arrange
 	host := Host{
-		Name:        "test_host",
-		IP:          "192.168.1.1",
-		Username:    "admin",
-		Password:    "password",
-		StorageType: "s3",
+		ComputerName: "test_host",
+		IP:           "192.168.1.1",
+		Username:     "admin",
+		Password:     "password",
+		StorageType:  "s3",
 	}
 
 	// Act

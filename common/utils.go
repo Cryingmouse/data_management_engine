@@ -8,9 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"reflect"
 	"sort"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func In(target string, str_array []string) bool {
@@ -176,4 +179,13 @@ func copyStructFields(src, dest reflect.Value) error {
 	}
 
 	return nil
+}
+
+func IPValidator(fl validator.FieldLevel) bool {
+	IP := fl.Field().String()
+	ip := net.ParseIP(IP)
+	if ip != nil && ip.IsGlobalUnicast() {
+		return true
+	}
+	return false
 }

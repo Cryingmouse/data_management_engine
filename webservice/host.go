@@ -34,7 +34,7 @@ type PaginationHostResponse struct {
 
 func hostRegistrationHandler(c *gin.Context) {
 	request := []struct {
-		IP          string `json:"ip" binding:"required"`
+		IP          string `json:"ip" binding:"required,validateIP"`
 		Username    string `json:"username" binding:"required"`
 		Password    string `json:"password" binding:"required,validatePassword"`
 		StorageType string `json:"storage_type" binding:"required,validateStorageType"`
@@ -42,10 +42,11 @@ func hostRegistrationHandler(c *gin.Context) {
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("validateStorageType", storageTypeValidator)
+		v.RegisterValidation("validateIP", common.IPValidator)
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
 		return
 	}
 
@@ -121,20 +122,8 @@ func getRegisteredHostsHandler(c *gin.Context) {
 			}
 
 			var hostInfoList []HostResponse
-			for _, host := range hosts {
-				host := HostResponse{
-					IP:             host.IP,
-					ComputerName:   host.Name,
-					Username:       host.Username,
-					StorageType:    host.StorageType,
-					Caption:        host.Caption,
-					OSArchitecture: host.OSArchitecture,
-					Version:        host.Version,
-					BuildNumber:    host.BuildNumber,
-				}
 
-				hostInfoList = append(hostInfoList, host)
-			}
+			common.CopyStructList(hosts, &hostInfoList)
 
 			c.JSON(http.StatusOK, gin.H{"message": "Get the registered hosts successfully.", "hosts": hostInfoList})
 			return
@@ -170,20 +159,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 				TotalCount: paginationHosts.TotalCount,
 			}
 
-			for _, _host := range paginationHosts.Hosts {
-				host := HostResponse{
-					IP:             _host.IP,
-					ComputerName:   _host.Name,
-					Username:       _host.Username,
-					StorageType:    _host.StorageType,
-					Caption:        _host.Caption,
-					OSArchitecture: _host.OSArchitecture,
-					Version:        _host.Version,
-					BuildNumber:    _host.BuildNumber,
-				}
-
-				paginationHostList.Hosts = append(paginationHostList.Hosts, host)
-			}
+			common.CopyStructList(paginationHosts.Hosts, &paginationHostList.Hosts)
 
 			c.JSON(http.StatusOK, gin.H{"message": "Get the hosts successfully.", "pagination": paginationHostList})
 			return
@@ -192,8 +168,8 @@ func getRegisteredHostsHandler(c *gin.Context) {
 	} else {
 		// Using mgmtmodel.Host, to get the host.
 		hostModel := mgmtmodel.Host{
-			IP:   hostIp,
-			Name: hostName,
+			IP:           hostIp,
+			ComputerName: hostName,
 		}
 
 		host, err := hostModel.Get()
@@ -202,16 +178,8 @@ func getRegisteredHostsHandler(c *gin.Context) {
 			return
 		}
 
-		hostInfo := HostResponse{
-			IP:             host.IP,
-			ComputerName:   host.Name,
-			Username:       host.Username,
-			StorageType:    host.StorageType,
-			Caption:        host.Caption,
-			OSArchitecture: host.OSArchitecture,
-			Version:        host.Version,
-			BuildNumber:    host.BuildNumber,
-		}
+		var hostInfo HostResponse
+		common.CopyStructList(host, &hostInfo)
 
 		c.JSON(http.StatusOK, gin.H{"message": "Get the registered host successfully.", "host": hostInfo})
 	}

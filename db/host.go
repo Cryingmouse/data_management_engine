@@ -12,7 +12,7 @@ import (
 type Host struct {
 	gorm.Model
 	IP             string `gorm:"unique;column:ip"`
-	Name           string `gorm:"column:name"`
+	ComputerName   string `gorm:"column:name"`
 	Username       string `gorm:"column:username"`
 	Password       string `gorm:"type:password;column:password"`
 	StorageType    string `gorm:"column:storage_type"`
@@ -35,7 +35,7 @@ func (h *Host) Get(engine *DatabaseEngine) (err error) {
 func (h *Host) Save(engine *DatabaseEngine) error {
 	host := Host{
 		IP:             h.IP,
-		Name:           h.Name,
+		ComputerName:   h.ComputerName,
 		Username:       h.Username,
 		StorageType:    h.StorageType,
 		Caption:        h.Caption,
@@ -118,7 +118,7 @@ func (hl *HostList) Save(engine *DatabaseEngine) (err error) {
 		// Encrypt the password
 		hl.Hosts[i].Password, err = common.Encrypt(host.Password, common.SecurityKey)
 		if err != nil {
-			return fmt.Errorf("failed to encrypt password for host %v: %w", host.Name, err)
+			return fmt.Errorf("failed to encrypt password for host %v: %w", host.ComputerName, err)
 		}
 	}
 

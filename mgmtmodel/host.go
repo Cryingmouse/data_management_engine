@@ -15,7 +15,7 @@ import (
 )
 
 type Host struct {
-	Name           string
+	ComputerName   string
 	IP             string
 	Username       string
 	Password       string
@@ -42,14 +42,14 @@ func (h *Host) Register() error {
 		Username:       h.Username,
 		Password:       h.Password,
 		StorageType:    h.StorageType,
-		Name:           systemInfo.ComputerName,
+		ComputerName:   systemInfo.ComputerName,
 		Caption:        systemInfo.Caption,
 		OSArchitecture: systemInfo.OSArchitecture,
 		Version:        systemInfo.Version,
 		BuildNumber:    systemInfo.BuildNumber,
 	}
 
-	h.Name = host.Name
+	h.ComputerName = host.ComputerName
 	h.Caption = host.Caption
 	h.OSArchitecture = host.OSArchitecture
 	h.Version = host.Version
@@ -89,18 +89,14 @@ func (h *Host) Get() (*Host, error) {
 	}
 
 	host := db.Host{
-		Name: h.Name,
-		IP:   h.IP,
+		ComputerName: h.ComputerName,
+		IP:           h.IP,
 	}
 	if err = host.Get(engine); err != nil {
 		return nil, err
 	}
 
-	h.IP = host.IP
-	h.Name = host.Name
-	h.Username = host.Username
-	h.Password = host.Password
-	h.StorageType = host.StorageType
+	common.CopyStructList(host, h)
 
 	return h, nil
 }
@@ -120,17 +116,7 @@ func (hl *HostList) Get(filter *common.QueryFilter) ([]Host, error) {
 		return nil, err
 	}
 
-	for _, _host := range hostList.Hosts {
-		host := Host{
-			IP:          _host.IP,
-			Name:        _host.Name,
-			Username:    _host.Username,
-			Password:    _host.Password,
-			StorageType: _host.StorageType,
-		}
-
-		hl.Hosts = append(hl.Hosts, host)
-	}
+	common.CopyStructList(hostList.Hosts, &hl.Hosts)
 
 	return hl.Hosts, nil
 }
@@ -160,17 +146,7 @@ func (hl *HostList) Pagination(filter *common.QueryFilter) (*PaginationHost, err
 		TotalCount: paginationHosts.TotalCount,
 	}
 
-	for _, _host := range paginationHosts.Hosts {
-		host := Host{
-			Name:        _host.Name,
-			IP:          _host.IP,
-			Username:    _host.Username,
-			Password:    _host.Password,
-			StorageType: _host.StorageType,
-		}
-
-		paginationHostList.Hosts = append(paginationHostList.Hosts, host)
-	}
+	common.CopyStructList(paginationHosts.Hosts, &paginationHostList.Hosts)
 
 	return &paginationHostList, nil
 }

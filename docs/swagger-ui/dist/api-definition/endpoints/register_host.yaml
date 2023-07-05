@@ -7,8 +7,8 @@ registerHost:
         schema:
           $ref: "../schemas.yaml#/components/schemas/HostRegisterInfo"
         example:
-          - ip: 127.0.0.1
-            user_name: admin
+          - ip: 192.168.0.166
+            username: admin
             password: P@ssw0rd123
             storage_type: agent
   responses:
@@ -28,7 +28,7 @@ registerHost:
                 Host:
                   ip: 192.168.0.1
                   name: MyComputer
-                  user_name: admin
+                  username: admin
                   password: P@ssw0rd123
                   storage_type: SSD
                   os_caption: Windows 10
@@ -42,7 +42,7 @@ registerHost:
                 Hosts:
                   - ip: 192.168.0.1
                     name: MyComputer
-                    user_name: admin
+                    username: admin
                     password: P@ssw0rd123
                     storage_type: SSD
                     os_caption: Windows 10

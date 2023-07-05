@@ -3,6 +3,9 @@ package common
 import (
 	"reflect"
 	"testing"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/stretchr/testify/assert"
 )
 
 type Person struct {
@@ -10,7 +13,7 @@ type Person struct {
 	Age  int
 }
 
-func Test_Copy_StructList(t *testing.T) {
+func TestCopyStructList(t *testing.T) {
 	// Test struct list copying
 	srcList := []Person{
 		{Name: "Alice", Age: 25},
@@ -38,4 +41,28 @@ func Test_Copy_StructList(t *testing.T) {
 	if !reflect.DeepEqual(srcStruct, destStruct) {
 		t.Errorf("Copied individual struct is not equal to the source")
 	}
+}
+
+func TestIPValidator(t *testing.T) {
+	type IPAddress struct {
+		IP string `validate:"required,ipvalidator"`
+	}
+
+	validate := validator.New()
+	validate.RegisterValidation("ipvalidator", IPValidator)
+
+	// Valid IP address
+	validIP := IPAddress{IP: "192.168.0.1"}
+	err := validate.Struct(validIP)
+	assert.NoError(t, err, "Expected no validation error for valid IP address")
+
+	// Loopback IP address
+	loopbackIP := IPAddress{IP: "127.0.0.1"}
+	err = validate.Struct(loopbackIP)
+	assert.Error(t, err, "Expected validation error for loopback IP address")
+
+	// Invalid IP address
+	invalidIP := IPAddress{IP: "invalid-ip"}
+	err = validate.Struct(invalidIP)
+	assert.Error(t, err, "Expected validation error for invalid IP address")
 }
