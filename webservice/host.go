@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"errors"
+
 	"github.com/cryingmouse/data_management_engine/agent"
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
-
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -15,14 +16,13 @@ import (
 )
 
 type HostResponse struct {
-	IP             string `json:"ip"`
-	ComputerName   string `json:"name"`
-	Username       string `json:"username"`
-	StorageType    string `json:"storage_type"`
-	Caption        string `json:"os_type"`
-	OSArchitecture string `json:"os_arch"`
-	Version        string `json:"os_version"`
-	BuildNumber    string `json:"build_number"`
+	IP             string `json:"ip,omitempty"`
+	ComputerName   string `json:"name,omitempty"`
+	StorageType    string `json:"storage_type,omitempty"`
+	Caption        string `json:"os_type,omitempty"`
+	OSArchitecture string `json:"os_arch,omitempty"`
+	Version        string `json:"os_version,omitempty"`
+	BuildNumber    string `json:"build_number,omitempty"`
 }
 
 type PaginationHostResponse struct {
@@ -50,36 +50,36 @@ func hostRegistrationHandler(c *gin.Context) {
 		return
 	}
 
-	var hostList mgmtmodel.HostList
-	common.CopyStructList(request, &hostList.Hosts)
+	var hostListModel mgmtmodel.HostList
+	common.CopyStructList(request, &hostListModel.Hosts)
 
-	if err := hostList.Register(); err != nil {
-		if sqliteErr, ok := err.(sqlite3.Error); ok {
-			// Map SQLite ErrNo to specific error scenarios
-			switch sqliteErr.ExtendedCode {
-			case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-				c.JSON(http.StatusBadRequest, gin.H{"message": "The hosts have already been registered.", "error": err.Error()})
-				return
-			default:
+	if err := hostListModel.Register(); err != nil {
+		for err != nil {
+			err = errors.Unwrap(err)
+			if sqliteErr, ok := err.(sqlite3.Error); ok {
+				switch sqliteErr.ExtendedCode {
+				// Map SQLite ErrNo to specific error scenarios
+				case sqlite3.ErrConstraintUnique: // SQLite constraint violation
+					c.JSON(http.StatusBadRequest, gin.H{"message": "The hosts have already been registered.", "error": err.Error()})
+					return
+				}
+			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
+				return
 			}
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
 		}
-
-		return
 	}
 
-	if len(hostList.Hosts) == 1 {
+	if len(hostListModel.Hosts) == 1 {
 		var host HostResponse
-		common.CopyStructList(hostList.Hosts[0], &host)
+		common.CopyStructList(hostListModel.Hosts[0], &host)
 
-		c.JSON(http.StatusOK, gin.H{"message": "Register the host information successfully.", "host": host})
+		c.JSON(http.StatusOK, host)
 	} else {
 		var response []HostResponse
-		common.CopyStructList(hostList.Hosts, &response)
+		common.CopyStructList(hostListModel.Hosts, &response)
 
-		c.JSON(http.StatusOK, gin.H{"message": "Register the host information successfully.", "hosts": response})
+		c.JSON(http.StatusOK, response)
 	}
 }
 
@@ -125,7 +125,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 
 			common.CopyStructList(hosts, &hostInfoList)
 
-			c.JSON(http.StatusOK, gin.H{"message": "Get the registered hosts successfully.", "hosts": hostInfoList})
+			c.JSON(http.StatusOK, gin.H{"hosts": hostInfoList})
 			return
 		} else {
 			// Query hosts with pagination.
@@ -161,7 +161,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 
 			common.CopyStructList(paginationHosts.Hosts, &paginationHostList.Hosts)
 
-			c.JSON(http.StatusOK, gin.H{"message": "Get the hosts successfully.", "pagination": paginationHostList})
+			c.JSON(http.StatusOK, paginationHostList)
 			return
 
 		}
@@ -181,7 +181,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 		var hostInfo HostResponse
 		common.CopyStructList(host, &hostInfo)
 
-		c.JSON(http.StatusOK, gin.H{"message": "Get the registered host successfully.", "host": hostInfo})
+		c.JSON(http.StatusOK, hostInfo)
 	}
 }
 
@@ -199,15 +199,15 @@ func hostUnregistrationHandler(c *gin.Context) {
 		return
 	}
 
-	var hostList mgmtmodel.HostList
-	common.CopyStructList(request, &hostList.Hosts)
+	var hostListModel mgmtmodel.HostList
+	common.CopyStructList(request, &hostListModel.Hosts)
 
-	if err := hostList.Unregister(); err != nil {
+	if err := hostListModel.Unregister(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to unregister the host.", "error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Unregister the host successfully.", "hosts": request})
+	c.Status(http.StatusOK)
 }
 
 func getSystemInfoOnAgentHandler(c *gin.Context) {

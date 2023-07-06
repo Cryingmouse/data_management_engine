@@ -52,7 +52,7 @@ func (d *AgentDriver) DeleteShare(hostContext common.HostContext, name string) (
 	return nil, nil
 }
 
-func (d *AgentDriver) CreateUser(hostContext common.HostContext, name, password string) (resp *http.Response, err error) {
+func (d *AgentDriver) CreateLocalUser(hostContext common.HostContext, name, password string) (resp *http.Response, err error) {
 	restClient := client.GetRestClient(hostContext, "agent")
 
 	// Create the request body as a string

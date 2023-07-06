@@ -184,7 +184,10 @@ func copyStructFields(src, dest reflect.Value) error {
 func IPValidator(fl validator.FieldLevel) bool {
 	IP := fl.Field().String()
 	ip := net.ParseIP(IP)
-	if ip != nil && ip.IsGlobalUnicast() {
+	// if ip != nil && ip.IsGlobalUnicast() {
+	// 	return true
+	// }
+	if ip != nil {
 		return true
 	}
 	return false

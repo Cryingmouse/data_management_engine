@@ -47,9 +47,9 @@ func Start() {
 	router.POST("/api/user/delete", deleteUserHandler)
 	router.GET("/api/users", getUserHandler)
 
-	router.POST("/agent/user/create", createUserOnAgentHandler)
-	router.POST("/agent/user/delete", deleteUserOnAgentHandler)
-	router.GET("/agent/users", getUserOnAgentHandler)
+	router.POST("/agent/user/create", createLocalUserOnAgentHandler)
+	router.POST("/agent/user/delete", deleteLocalUserOnAgentHandler)
+	router.GET("/agent/users", getLocalUserOnAgentHandler)
 
 	router.Static("/api/docs", "./docs/swagger-ui/dist")
 

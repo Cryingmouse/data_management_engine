@@ -74,7 +74,9 @@ func (hl *HostList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err
 	}
 
 	for _, host := range hl.Hosts {
-		host.Password, err = common.Decrypt(host.Password, common.SecurityKey)
+		if host.Password != "" {
+			host.Password, err = common.Decrypt(host.Password, common.SecurityKey)
+		}
 	}
 
 	return
@@ -99,7 +101,9 @@ func (hl *HostList) Pagination(engine *DatabaseEngine, filter *common.QueryFilte
 	}
 
 	for _, host := range hl.Hosts {
-		host.Password, err = common.Decrypt(host.Password, common.SecurityKey)
+		if host.Password != "" {
+			host.Password, err = common.Decrypt(host.Password, common.SecurityKey)
+		}
 	}
 
 	response = &PaginationHost{

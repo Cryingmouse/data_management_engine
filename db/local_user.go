@@ -9,13 +9,14 @@ import (
 	"gorm.io/gorm"
 )
 
-type User struct {
+type LocalUser struct {
 	gorm.Model
 	Name     string `gorm:"unique;column:name"`
 	Password string `gorm:"type:password;column:password"`
+	HostName string `gorm:"column:host_name"`
 }
 
-func (u *User) Get(engine *DatabaseEngine) (err error) {
+func (u *LocalUser) Get(engine *DatabaseEngine) (err error) {
 	if err = engine.DB.Where(u).First(u).Error; err != nil {
 		return err
 	}
@@ -25,30 +26,28 @@ func (u *User) Get(engine *DatabaseEngine) (err error) {
 	return err
 }
 
-func (u *User) Save(engine *DatabaseEngine) error {
-	user := User{
-		Name: u.Name,
-	}
-
+func (u *LocalUser) Save(engine *DatabaseEngine) error {
 	encrypted_password, err := common.Encrypt(u.Password, common.SecurityKey)
 	if err != nil {
 		return err
 	}
-	user.Password = string(encrypted_password)
 
-	return engine.DB.Save(&user).Error
+	u.Password = string(encrypted_password)
+
+	return engine.DB.Save(u).Error
 }
 
-func (u *User) Delete(engine *DatabaseEngine) error {
-	return engine.DB.Unscoped().Delete(&u, u).Error
+func (u *LocalUser) Delete(engine *DatabaseEngine) error {
+	err := engine.DB.Unscoped().Delete(&u, u).Error
+	return err
 }
 
-type UserList struct {
-	Users []User
+type LocalUserList struct {
+	Users []LocalUser
 }
 
-func (ul *UserList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
-	model := User{}
+func (ul *LocalUserList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
+	model := LocalUser{}
 
 	if filter.Pagination != nil {
 		return fmt.Errorf("invalid filter: there is pagination in the filter")
@@ -66,13 +65,13 @@ func (ul *UserList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err
 }
 
 type PaginationUser struct {
-	Users      []User
+	Users      []LocalUser
 	TotalCount int64
 }
 
-func (ul *UserList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (response *PaginationUser, err error) {
+func (ul *LocalUserList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (response *PaginationUser, err error) {
 	var totalCount int64
-	model := User{}
+	model := LocalUser{}
 
 	if filter.Pagination == nil {
 		return response, fmt.Errorf("invalid filter: missing pagination in the filter")
@@ -95,7 +94,7 @@ func (ul *UserList) Pagination(engine *DatabaseEngine, filter *common.QueryFilte
 	return response, err
 }
 
-func (ul *UserList) Save(engine *DatabaseEngine) (err error) {
+func (ul *LocalUserList) Save(engine *DatabaseEngine) (err error) {
 	if len(ul.Users) == 0 {
 		return errors.New("UserList is empty")
 	}
@@ -115,8 +114,8 @@ func (ul *UserList) Save(engine *DatabaseEngine) (err error) {
 	return nil
 }
 
-func (ul *UserList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
-	var users []User
+func (ul *LocalUserList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
+	var users []LocalUser
 
 	err = Delete(engine, filter, users)
 	if err != nil {

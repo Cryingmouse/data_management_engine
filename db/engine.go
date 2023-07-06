@@ -41,9 +41,10 @@ func GetDatabaseEngine() (*DatabaseEngine, error) {
 	engine.DB = db
 
 	engine.models = map[string]interface{}{
-		"host_info": &Host{},
-		"share":     &Share{},
-		"directory": &Directory{},
+		"host_info":  &Host{},
+		"share":      &Share{},
+		"directory":  &Directory{},
+		"local_user": &LocalUser{},
 	}
 
 	return engine, nil

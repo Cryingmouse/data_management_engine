@@ -105,52 +105,6 @@ type HostList struct {
 	Hosts []Host
 }
 
-func (hl *HostList) Get(filter *common.QueryFilter) ([]Host, error) {
-	engine, err := db.GetDatabaseEngine()
-	if err != nil {
-		panic(err)
-	}
-
-	hostList := db.HostList{}
-	if err := hostList.Get(engine, filter); err != nil {
-		return nil, err
-	}
-
-	common.CopyStructList(hostList.Hosts, &hl.Hosts)
-
-	return hl.Hosts, nil
-}
-
-type PaginationHost struct {
-	Hosts      []Host
-	Page       int
-	Limit      int
-	TotalCount int64
-}
-
-func (hl *HostList) Pagination(filter *common.QueryFilter) (*PaginationHost, error) {
-	engine, err := db.GetDatabaseEngine()
-	if err != nil {
-		return nil, err
-	}
-
-	hostList := db.HostList{}
-	paginationHosts, err := hostList.Pagination(engine, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	paginationHostList := PaginationHost{
-		Page:       filter.Pagination.Page,
-		Limit:      filter.Pagination.PageSize,
-		TotalCount: paginationHosts.TotalCount,
-	}
-
-	common.CopyStructList(paginationHosts.Hosts, &paginationHostList.Hosts)
-
-	return &paginationHostList, nil
-}
-
 func (hl *HostList) Register() error {
 	g, _ := errgroup.WithContext(context.Background())
 
@@ -210,6 +164,52 @@ func (hl *HostList) Unregister() error {
 	return hostList.Delete(engine)
 }
 
+func (hl *HostList) Get(filter *common.QueryFilter) ([]Host, error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		panic(err)
+	}
+
+	hostList := db.HostList{}
+	if err := hostList.Get(engine, filter); err != nil {
+		return nil, err
+	}
+
+	common.CopyStructList(hostList.Hosts, &hl.Hosts)
+
+	return hl.Hosts, nil
+}
+
+type PaginationHost struct {
+	Hosts      []Host
+	Page       int
+	Limit      int
+	TotalCount int64
+}
+
+func (hl *HostList) Pagination(filter *common.QueryFilter) (*PaginationHost, error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return nil, err
+	}
+
+	hostList := db.HostList{}
+	paginationHosts, err := hostList.Pagination(engine, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	paginationHostList := PaginationHost{
+		Page:       filter.Pagination.Page,
+		Limit:      filter.Pagination.PageSize,
+		TotalCount: paginationHosts.TotalCount,
+	}
+
+	common.CopyStructList(paginationHosts.Hosts, &paginationHostList.Hosts)
+
+	return &paginationHostList, nil
+}
+
 func (h *Host) getSystemInfo() (*common.SystemInfo, error) {
 	hostContext := common.HostContext{
 		IP:       h.IP,
@@ -239,7 +239,7 @@ func (h *Host) getSystemInfo() (*common.SystemInfo, error) {
 	}
 
 	var result struct {
-		Message    string            `json:"message"`
+		message    string            `json:"message"`
 		SystemInfo common.SystemInfo `json:"system-info"`
 	}
 

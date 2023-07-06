@@ -12,7 +12,7 @@ type Driver interface {
 	DeleteDirectory(hostContext common.HostContext, name string) (resp *http.Response, err error)
 	CreateShare(hostContext common.HostContext, name string) (resp *http.Response, err error)
 	DeleteShare(hostContext common.HostContext, name string) (resp *http.Response, err error)
-	CreateUser(hostContext common.HostContext, name, password string) (resp *http.Response, err error)
+	CreateLocalUser(hostContext common.HostContext, name, password string) (resp *http.Response, err error)
 	DeleteUser(hostContext common.HostContext, name string) (resp *http.Response, err error)
 	GetSystemInfo(hostContext common.HostContext) (resp *http.Response, err error)
 }
