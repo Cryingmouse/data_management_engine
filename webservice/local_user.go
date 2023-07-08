@@ -3,6 +3,7 @@ package webservice
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/cryingmouse/data_management_engine/agent"
@@ -24,7 +25,33 @@ type PaginationLocalUserResponse struct {
 	TotalCount int64               `json:"total_count"`
 }
 
-func createUserHandler(c *gin.Context) {
+func createLocalUserHandler(c *gin.Context) {
+	request := struct {
+		Name     string `json:"name" binding:"required"`
+		Password string `json:"password" binding:"required"`
+		HostName string `json:"host_name" binding:"required"`
+	}{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	var userModel mgmtmodel.LocalUser
+
+	common.CopyStructList(request, &userModel)
+
+	if err := userModel.Create(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to create the users.",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func createLocalUsersHandler(c *gin.Context) {
 	request := []struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required"`
@@ -47,10 +74,10 @@ func createUserHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Create the users successfully."})
+	c.Status(http.StatusOK)
 }
 
-func deleteUserHandler(c *gin.Context) {
+func deleteLocalUserHandler(c *gin.Context) {
 	type Request struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required"`
@@ -61,10 +88,9 @@ func deleteUserHandler(c *gin.Context) {
 		return
 	}
 
-	userModel := mgmtmodel.LocalUser{
-		Name:     request.Name,
-		Password: request.Password,
-	}
+	var userModel mgmtmodel.LocalUser
+
+	common.CopyStructList(request, &userModel)
 
 	if err := userModel.Delete(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -73,18 +99,44 @@ func deleteUserHandler(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Delete the user '%s' on host '%s' successfully.", request.Name, request.Password)})
+	c.Status(http.StatusOK)
 }
 
-func getUserHandler(c *gin.Context) {
+func deleteLocalUsersHandler(c *gin.Context) {
+	type Request []struct {
+		Name     string `json:"name" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+	var request Request
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	var userListModel mgmtmodel.LocalUserList
+
+	common.CopyStructList(request, &userListModel.Users)
+
+	if err := userListModel.Delete(nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to delete the users.",
+			"error":   err.Error(),
+		})
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func getlocalUsersHandler(c *gin.Context) {
 	userName := c.Query("name")
 	// isLockout := c.Query("is_lockout")
 	// computerName := c.Query("host_name")
 	fields := c.Query("fields")
 
-	page, limit, err := validatePagination(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request.", "error": err.Error()})
+	page, err_page := strconv.Atoi(c.Query("page"))
+	limit, err_limit := strconv.Atoi(c.Query("limit"))
+	if err_page != nil || err_limit != nil || validatePagination(page, limit) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request."})
 		return
 	}
 

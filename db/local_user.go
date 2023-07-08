@@ -117,9 +117,15 @@ func (ul *LocalUserList) Save(engine *DatabaseEngine) (err error) {
 func (ul *LocalUserList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
 	var users []LocalUser
 
-	err = Delete(engine, filter, users)
-	if err != nil {
-		return fmt.Errorf("failed to delete users by the filter %v in database: %w", filter, err)
+	if filter != nil {
+		err = Delete(engine, filter, users)
+		if err != nil {
+			return fmt.Errorf("failed to delete local users by the filter %v in database: %w", filter, err)
+		}
+	} else {
+		if err := engine.DB.Delete(ul.Users).Error; err != nil {
+			return err
+		}
 	}
 
 	return

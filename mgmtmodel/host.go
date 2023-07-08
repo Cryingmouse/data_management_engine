@@ -32,28 +32,21 @@ func (h *Host) Register() error {
 		return err
 	}
 
+	// Update mgmtmodel with system information
+	h.ComputerName = systemInfo.ComputerName
+	h.Caption = systemInfo.Caption
+	h.OSArchitecture = systemInfo.OSArchitecture
+	h.Version = systemInfo.Version
+	h.BuildNumber = systemInfo.BuildNumber
+
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	host := db.Host{
-		IP:             h.IP,
-		Username:       h.Username,
-		Password:       h.Password,
-		StorageType:    h.StorageType,
-		ComputerName:   systemInfo.ComputerName,
-		Caption:        systemInfo.Caption,
-		OSArchitecture: systemInfo.OSArchitecture,
-		Version:        systemInfo.Version,
-		BuildNumber:    systemInfo.BuildNumber,
-	}
+	var host db.Host
 
-	h.ComputerName = host.ComputerName
-	h.Caption = host.Caption
-	h.OSArchitecture = host.OSArchitecture
-	h.Version = host.Version
-	h.BuildNumber = host.BuildNumber
+	common.CopyStructList(h, &host)
 
 	return host.Save(engine)
 }
@@ -61,11 +54,11 @@ func (h *Host) Register() error {
 func (h *Host) Unregister() error {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	directoryList := db.DirectoryList{}
-
+	// Retur error if there is any directory on the host which will be unregistered.
+	directoryList := DirectoryList{}
 	filter := common.QueryFilter{
 		Conditions: struct {
 			HostIP string
@@ -73,12 +66,12 @@ func (h *Host) Unregister() error {
 			HostIP: h.IP,
 		},
 	}
-	directoryList.Delete(engine, &filter)
-
-	host := db.Host{
-		IP: h.IP,
+	if directories, err := directoryList.Get(&filter); err != nil || len(directories) != 0 {
+		return err
 	}
 
+	// Delete host from database.
+	host := db.Host{IP: h.IP}
 	return host.Delete(engine)
 }
 
@@ -143,12 +136,11 @@ func (hl *HostList) Register() error {
 		return err
 	}
 
-	engine, err := db.GetDatabaseEngine()
-	if err != nil {
+	if engine, err := db.GetDatabaseEngine(); err != nil {
 		return err
+	} else {
+		return dbHostList.Save(engine)
 	}
-
-	return dbHostList.Save(engine)
 }
 
 func (hl *HostList) Unregister() error {
@@ -156,6 +148,8 @@ func (hl *HostList) Unregister() error {
 	if err != nil {
 		return err
 	}
+
+	// TODO: Return error if there is any related directories.
 
 	hostList := db.HostList{}
 
@@ -239,7 +233,7 @@ func (h *Host) getSystemInfo() (*common.SystemInfo, error) {
 	}
 
 	var result struct {
-		message    string            `json:"message"`
+		Message    string            `json:"message"`
 		SystemInfo common.SystemInfo `json:"system-info"`
 	}
 

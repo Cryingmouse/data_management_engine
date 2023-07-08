@@ -3,7 +3,6 @@ package webservice
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/gin-contrib/cors"
@@ -23,35 +22,47 @@ func Start() {
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("validatePassword", passwordValidator)
+		v.RegisterValidation("validateStorageType", storageTypeValidator)
 	}
+
+	// Router 'portal' for Portal
+	portal := router.Group("/api")
+	// Router 'agent' for Agent
+	agent := router.Group("/agnet")
 
 	// 登录路由，验证用户凭证并生成JWT令牌
 	// router.POST("/login", getTokenHandler)
 
-	// API about hosts
-	router.POST("/api/hosts/register", hostRegistrationHandler)
-	router.GET("/api/hosts", getRegisteredHostsHandler)
-	router.POST("/api/hosts/unregister", hostUnregistrationHandler)
-	router.GET("/agent/system-info", getSystemInfoOnAgentHandler)
+	// Portal API about host
+	portal.POST("/hosts/register", registerHostHandler)
+	portal.POST("/hosts/batch-register", registerHostsHandler)
+	portal.POST("/hosts/unregister", unregisterHostHandler)
+	portal.POST("/hosts/batch-unregister", unregisterHostsHandler)
+	portal.GET("/hosts", getRegisteredHostsHandler)
+	// Portal API about directory
+	portal.POST("/directories/create", createDirectoryHandler)
+	portal.POST("/directories/batch-create", createDirectoriesHandler)
+	portal.POST("/directories/delete", deleteDirectoryHandler)
+	portal.POST("/directories/batch-delete", deleteDirectoriesHandler)
+	portal.GET("/directories", getDirectoriesHandler)
+	// Portal API about local user
+	portal.POST("/users/create", createLocalUserHandler)
+	portal.POST("/users/batch-create", createLocalUsersHandler)
+	portal.POST("/users/delete", deleteLocalUserHandler)
+	portal.POST("/users/batch-delete", deleteLocalUsersHandler)
+	portal.GET("/users", getlocalUsersHandler)
+	// Portal API about swagger-ui
+	portal.Static("/docs", "./docs/swagger-ui/dist")
 
-	// API about directory
-	router.POST("/api/directory/create", createDirectoryHandler)
-	router.POST("/api/directory/delete", deleteDirectoryHandler)
-	router.GET("/api/directories", getDirectoryHandler)
-
-	router.POST("/agent/directory/create", createDirectoryOnAgentHandler)
-	router.POST("/agent/directory/delete", deleteDirectoryOnAgentHandler)
-
-	// API about user
-	router.POST("/api/user/create", createUserHandler)
-	router.POST("/api/user/delete", deleteUserHandler)
-	router.GET("/api/users", getUserHandler)
-
-	router.POST("/agent/user/create", createLocalUserOnAgentHandler)
-	router.POST("/agent/user/delete", deleteLocalUserOnAgentHandler)
-	router.GET("/agent/users", getLocalUserOnAgentHandler)
-
-	router.Static("/api/docs", "./docs/swagger-ui/dist")
+	// Agent API about host
+	agent.GET("/system-info", getSystemInfoOnAgentHandler)
+	// Agent API about directory
+	agent.POST("/directories/create", createDirectoryOnAgentHandler)
+	agent.POST("/directories/delete", deleteDirectoryOnAgentHandler)
+	// Agent API about local user
+	agent.POST("/users/create", createLocalUserOnAgentHandler)
+	agent.POST("/users/delete", deleteLocalUserOnAgentHandler)
+	agent.GET("/users", getLocalUserOnAgentHandler)
 
 	addr := fmt.Sprintf(":%s", config.Webservice.Port)
 	router.Run(addr)
@@ -67,16 +78,14 @@ func passwordValidator(fl validator.FieldLevel) bool {
 	return false
 }
 
-func validatePagination(c *gin.Context) (page, limit int, err error) {
-	page, _ = strconv.Atoi(c.Query("page"))
-	limit, _ = strconv.Atoi(c.Query("limit"))
+func validatePagination(page, limit int) (err error) {
 
 	// Create a validator instance.
 	v := validator.New()
 
 	type Pagination struct {
-		Page  int `validate:"omitempty,gte=0"`
-		Limit int `validate:"omitempty,gte=0"`
+		Page  int
+		Limit int
 	}
 
 	// Define validation rules for page and limit.
@@ -84,7 +93,7 @@ func validatePagination(c *gin.Context) (page, limit int, err error) {
 
 	// Custom validation function to check if both page and limit have values or both are empty.
 	v.RegisterValidation("pageLimit", func(fl validator.FieldLevel) bool {
-		if pagination.Page != 0 && pagination.Limit != 0 {
+		if pagination.Page >= 0 && pagination.Limit > 0 {
 			return true
 		}
 		if pagination.Page == 0 && pagination.Limit == 0 {
@@ -94,5 +103,18 @@ func validatePagination(c *gin.Context) (page, limit int, err error) {
 	})
 
 	// Perform validation.
-	return page, limit, v.Struct(pagination)
+	return v.Struct(pagination)
+}
+
+func validateIPAddress(ip string) (err error) {
+	type IPAddress struct {
+		IP string `validate:"required,ip"`
+	}
+
+	validate := validator.New()
+
+	// 验证 IP 地址
+	ipAddress := IPAddress{IP: ip}
+
+	return validate.Struct(ipAddress)
 }

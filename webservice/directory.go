@@ -1,20 +1,19 @@
 package webservice
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
+	"strconv"
 
 	"github.com/cryingmouse/data_management_engine/agent"
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
-	
+
 	"github.com/gin-gonic/gin"
 )
 
 type DirectoryResponse struct {
 	Name   string `json:"name" binding:"required"`
-	HostIP string `json:"host_ip" binding:"required"`
+	HostIP string `json:"host_ip" binding:"required,validateIP"`
 }
 
 type PaginationDirectoryResponse struct {
@@ -25,126 +24,158 @@ type PaginationDirectoryResponse struct {
 }
 
 func createDirectoryHandler(c *gin.Context) {
-	type Request struct {
+	request := struct {
 		Name   string `json:"name" binding:"required"`
-		HostIP string `json:"host_ip" binding:"required"`
-	}
-	var request Request
+		HostIP string `json:"host_ip" binding:"required,ip"`
+	}{}
+
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	directoryModel := mgmtmodel.Directory{
-		Name:   request.Name,
-		HostIP: request.HostIP,
-	}
-
+	var directoryModel mgmtmodel.Directory
+	common.CopyStructList(request, &directoryModel)
 	if err := directoryModel.Create(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Failed to create the directory with the parameters: host_ip=%s,name=%s", request.HostIP, request.Name),
+			"message": "Failed to create the directories.",
 			"error":   err.Error(),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Create the directory '%s' on host '%s' successfully.", request.Name, request.HostIP)})
+	c.Status(http.StatusOK)
+}
+
+func createDirectoriesHandler(c *gin.Context) {
+	request := []struct {
+		Name   string `json:"name" binding:"required"`
+		HostIP string `json:"host_ip" binding:"required,ip"`
+	}{}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	var directoryListModel mgmtmodel.DirectoryList
+	common.CopyStructList(request, &directoryListModel.Directories)
+	if err := directoryListModel.Create(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to create the directories.",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
 func deleteDirectoryHandler(c *gin.Context) {
-	type Request struct {
+	request := struct {
 		Name   string `json:"name" binding:"required"`
-		HostIP string `json:"host_ip" binding:"required"`
-	}
-	var request Request
+		HostIP string `json:"host_ip" binding:"required,ip"`
+	}{}
+
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	directoryModel := mgmtmodel.Directory{
-		Name:   request.Name,
-		HostIP: request.HostIP,
-	}
-
+	var directoryModel mgmtmodel.Directory
+	common.CopyStructList(request, &directoryModel)
 	if err := directoryModel.Delete(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Failed to delete the directory '%s' on host '%s'.", request.Name, request.HostIP),
+			"message": "Failed to create the directories.",
 			"error":   err.Error(),
 		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Delete the directory '%s' on host '%s' successfully.", request.Name, request.HostIP)})
-}
-
-func getDirectoryHandler(c *gin.Context) {
-	dirName := c.Query("name")
-	hostIp := c.Query("host_ip")
-	fields := c.Query("fields")
-	nameKeyword := c.Query("q")
-
-	page, limit, err := validatePagination(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request.", "error": err.Error()})
 		return
 	}
 
-	if dirName == "" {
+	c.Status(http.StatusOK)
+}
+
+func deleteDirectoriesHandler(c *gin.Context) {
+	request := []struct {
+		Name   string `json:"name" binding:"required"`
+		HostIP string `json:"host_ip" binding:"required,ip"`
+	}{}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	var directoryListModel mgmtmodel.DirectoryList
+	common.CopyStructList(request, &directoryListModel.Directories)
+	if err := directoryListModel.Delete(nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to create the directories.",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func getDirectoriesHandler(c *gin.Context) {
+	dirName := c.Query("name")
+	hostIP := c.Query("host_ip")
+	fields := c.Query("fields")
+	nameKeyword := c.Query("q")
+	page, err_page := strconv.Atoi(c.Query("page"))
+	limit, err_limit := strconv.Atoi(c.Query("limit"))
+
+	if err_page != nil || err_limit != nil || validatePagination(page, limit) != nil || validateIPAddress(hostIP) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request."})
+		return
+	}
+
+	if dirName == "" || hostIP == "" {
 		directoryListModel := mgmtmodel.DirectoryList{}
+
+		filter := common.QueryFilter{
+			Fields: common.SplitToList(fields),
+			Keyword: map[string]string{
+				"name": nameKeyword,
+			},
+			Conditions: struct {
+				HostIP string
+				Name   string
+			}{
+				HostIP: hostIP,
+				Name:   dirName,
+			},
+		}
+
 		if page == 0 && limit == 0 {
 			// Query directories without pagination.
-			filter := common.QueryFilter{
-				Fields: common.SplitToList(fields),
-				Keyword: map[string]string{
-					"name": nameKeyword,
-				},
-				Conditions: struct {
-					HostIP string
-				}{
-					HostIP: hostIp,
-				},
-			}
 			directories, err := directoryListModel.Get(&filter)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": fmt.Sprintf("Failed to get the directories with the parameters: host_ip=%s", hostIp),
+					"message": "Failed to get the directories.",
 					"error":   err.Error(),
 				})
 				return
 			}
 
-			directoryList := []DirectoryResponse{}
-			for _, directory := range directories {
-				directoryList = append(directoryList, DirectoryResponse{
-					Name:   directory.Name,
-					HostIP: directory.HostIP,
-				})
-			}
+			var directoryList []DirectoryResponse
 
-			c.JSON(http.StatusOK, gin.H{"message": "Get the directories successfully.", "directories": directoryList})
-			return
+			common.CopyStructList(directories, &directoryList)
 
+			c.JSON(http.StatusOK, directoryList)
 		} else {
 			// Query directories with pagination.
-			filter := common.QueryFilter{
-				Fields: strings.Split(fields, ","),
-				Keyword: map[string]string{
-					"name": nameKeyword,
-				},
-				Pagination: &common.Pagination{
-					Page:     page,
-					PageSize: limit,
-				},
-				Conditions: struct {
-					HostIP string
-				}{
-					HostIP: hostIp,
-				},
+			filter.Pagination = &common.Pagination{
+				Page:     page,
+				PageSize: limit,
 			}
+
 			paginationDirs, err := directoryListModel.Pagination(&filter)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": fmt.Sprintf("Failed to get the directories with the parameters: host_ip=%s,page=%d,limit=%d", hostIp, page, limit),
+					"message": "Failed to get the directories.",
 					"error":   err.Error(),
 				})
 				return
@@ -156,40 +187,31 @@ func getDirectoryHandler(c *gin.Context) {
 				TotalCount: paginationDirs.TotalCount,
 			}
 
-			for _, _directory := range paginationDirs.Directories {
-				directory := DirectoryResponse{
-					Name:   _directory.Name,
-					HostIP: _directory.HostIP,
-				}
+			common.CopyStructList(paginationDirs.Directories, &paginationDirList.Directories)
 
-				paginationDirList.Directories = append(paginationDirList.Directories, directory)
-			}
-
-			c.JSON(http.StatusOK, gin.H{"message": "Get the directories successfully.", "pagination": paginationDirList})
-			return
+			c.JSON(http.StatusOK, paginationDirList)
 		}
 	} else {
 		directoryModel := mgmtmodel.Directory{
 			Name:   dirName,
-			HostIP: hostIp,
+			HostIP: hostIP,
 		}
 
 		directory, err := directoryModel.Get()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": fmt.Sprintf("Failed to get the directories with parameters: name=%s,host_ip=%s", dirName, hostIp),
+				"message": "Failed to get the directories.",
 				"error":   err.Error(),
 			})
 			return
 		}
 
 		// Convert to DirectoryResponse as REST API response.
-		directoryInfo := DirectoryResponse{
-			Name:   directory.Name,
-			HostIP: directory.HostIP,
-		}
+		var directoryInfo DirectoryResponse
 
-		c.JSON(http.StatusOK, gin.H{"message": "Get the directory successfully.", "directory": directoryInfo})
+		common.CopyStructList(directory, &directoryInfo)
+
+		c.JSON(http.StatusOK, directoryInfo)
 	}
 }
 

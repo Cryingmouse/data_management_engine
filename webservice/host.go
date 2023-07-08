@@ -3,6 +3,7 @@ package webservice
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"errors"
 
@@ -32,9 +33,48 @@ type PaginationHostResponse struct {
 	TotalCount int64          `json:"total_count"`
 }
 
-func hostRegistrationHandler(c *gin.Context) {
+func registerHostHandler(c *gin.Context) {
+	request := struct {
+		IP          string `json:"ip" binding:"required,ip"`
+		Username    string `json:"username" binding:"required"`
+		Password    string `json:"password" binding:"required,validatePassword"`
+		StorageType string `json:"storage_type" binding:"required,validateStorageType"`
+	}{}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
+		return
+	}
+
+	var hostModel mgmtmodel.Host
+	common.CopyStructList(request, &hostModel)
+
+	if err := hostModel.Register(); err != nil {
+		for err != nil {
+			err = errors.Unwrap(err)
+			if sqliteErr, ok := err.(sqlite3.Error); ok {
+				switch sqliteErr.ExtendedCode {
+				// Map SQLite ErrNo to specific error scenarios
+				case sqlite3.ErrConstraintUnique: // SQLite constraint violation
+					c.JSON(http.StatusBadRequest, gin.H{"message": "The hosts have already been registered.", "error": err.Error()})
+					return
+				}
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
+				return
+			}
+		}
+	}
+
+	var response []HostResponse
+	common.CopyStructList(hostModel, &response)
+
+	c.JSON(http.StatusOK, response)
+}
+
+func registerHostsHandler(c *gin.Context) {
 	request := []struct {
-		IP          string `json:"ip" binding:"required,validateIP"`
+		IP          string `json:"ip" binding:"required,ip"`
 		Username    string `json:"username" binding:"required"`
 		Password    string `json:"password" binding:"required,validatePassword"`
 		StorageType string `json:"storage_type" binding:"required,validateStorageType"`
@@ -42,7 +82,6 @@ func hostRegistrationHandler(c *gin.Context) {
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("validateStorageType", storageTypeValidator)
-		v.RegisterValidation("validateIP", common.IPValidator)
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -70,17 +109,52 @@ func hostRegistrationHandler(c *gin.Context) {
 		}
 	}
 
-	if len(hostListModel.Hosts) == 1 {
-		var host HostResponse
-		common.CopyStructList(hostListModel.Hosts[0], &host)
+	var response []HostResponse
+	common.CopyStructList(hostListModel.Hosts, &response)
 
-		c.JSON(http.StatusOK, host)
-	} else {
-		var response []HostResponse
-		common.CopyStructList(hostListModel.Hosts, &response)
+	c.JSON(http.StatusOK, response)
+}
 
-		c.JSON(http.StatusOK, response)
+func unregisterHostHandler(c *gin.Context) {
+	request := struct {
+		IP string `json:"ip" binding:"required,ip"`
+	}{}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
+		return
 	}
+
+	var hostModel mgmtmodel.Host
+	common.CopyStructList(request, &hostModel)
+
+	if err := hostModel.Unregister(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to unregister the host.", "error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func unregisterHostsHandler(c *gin.Context) {
+	request := []struct {
+		IP string `json:"ip" binding:"required,ip"`
+	}{}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
+		return
+	}
+
+	var hostListModel mgmtmodel.HostList
+	common.CopyStructList(request, &hostListModel.Hosts)
+
+	if err := hostListModel.Unregister(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to unregister the host.", "error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
 func getRegisteredHostsHandler(c *gin.Context) {
@@ -88,23 +162,25 @@ func getRegisteredHostsHandler(c *gin.Context) {
 	hostIp := c.Query("ip")
 	storageType := c.Query("storage_type")
 	fields := c.Query("fields")
-	hostNameKeyword := c.Query("q")
+	nameLikeKeyword := c.Query("name-like")
+	page, err_page := strconv.Atoi(c.Query("page"))
+	limit, err_limit := strconv.Atoi(c.Query("limit"))
 
-	page, limit, err := validatePagination(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request.", "error": err.Error()})
+	if err_page != nil || err_limit != nil || validatePagination(page, limit) != nil || validateIPAddress(hostIp) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request."})
 		return
 	}
 
-	if hostName == "" && hostIp == "" {
-		// Using mgmtmodel.HostList, to get the list of the host.
+	if hostIp == "" && hostName == "" {
+
+		// Using mgmtmodel.HostList, to get the list of the host with filter.
 		hostListModel := mgmtmodel.HostList{}
 		if page == 0 && limit == 0 {
 			// Query hosts without pagination.
 			filter := common.QueryFilter{
 				Fields: common.SplitToList(fields),
 				Keyword: map[string]string{
-					"name": hostNameKeyword,
+					"name": nameLikeKeyword,
 				},
 				Conditions: struct {
 					StorageType string
@@ -125,14 +201,13 @@ func getRegisteredHostsHandler(c *gin.Context) {
 
 			common.CopyStructList(hosts, &hostInfoList)
 
-			c.JSON(http.StatusOK, gin.H{"hosts": hostInfoList})
-			return
+			c.JSON(http.StatusOK, hostInfoList)
 		} else {
 			// Query hosts with pagination.
 			filter := common.QueryFilter{
 				Fields: common.SplitToList(fields),
 				Keyword: map[string]string{
-					"name": hostNameKeyword,
+					"name": nameLikeKeyword,
 				},
 				Pagination: &common.Pagination{
 					Page:     page,
@@ -162,11 +237,9 @@ func getRegisteredHostsHandler(c *gin.Context) {
 			common.CopyStructList(paginationHosts.Hosts, &paginationHostList.Hosts)
 
 			c.JSON(http.StatusOK, paginationHostList)
-			return
-
 		}
 	} else {
-		// Using mgmtmodel.Host, to get the host.
+		// Using mgmtmodel.Host to get the host
 		hostModel := mgmtmodel.Host{
 			IP:           hostIp,
 			ComputerName: hostName,
@@ -181,33 +254,11 @@ func getRegisteredHostsHandler(c *gin.Context) {
 		var hostInfo HostResponse
 		common.CopyStructList(host, &hostInfo)
 
-		c.JSON(http.StatusOK, hostInfo)
+		hostInfoList := []HostResponse{}
+		hostInfoList = append(hostInfoList, hostInfo)
+
+		c.JSON(http.StatusOK, hostInfoList)
 	}
-}
-
-func hostUnregistrationHandler(c *gin.Context) {
-	request := []struct {
-		IP string `json:"ip" binding:"required,validateIP"`
-	}{}
-
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("validateIP", common.IPValidator)
-	}
-
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
-		return
-	}
-
-	var hostListModel mgmtmodel.HostList
-	common.CopyStructList(request, &hostListModel.Hosts)
-
-	if err := hostListModel.Unregister(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to unregister the host.", "error": err.Error()})
-		return
-	}
-
-	c.Status(http.StatusOK)
 }
 
 func getSystemInfoOnAgentHandler(c *gin.Context) {
@@ -224,7 +275,6 @@ func getSystemInfoOnAgentHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Get system info on agent successfully.", "system-info": systemInfo})
 	}
-
 }
 
 func storageTypeValidator(fl validator.FieldLevel) bool {

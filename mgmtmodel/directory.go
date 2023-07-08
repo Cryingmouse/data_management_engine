@@ -1,9 +1,13 @@
 package mgmtmodel
 
 import (
+	"context"
+	"errors"
+
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/db"
 	"github.com/cryingmouse/data_management_engine/driver"
+	"golang.org/x/sync/errgroup"
 )
 
 type Directory struct {
@@ -123,6 +127,65 @@ func (dl *DirectoryList) Get(filter *common.QueryFilter) ([]Directory, error) {
 	return dl.Directories, nil
 }
 
+func (dl *DirectoryList) Create() error {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return err
+	}
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	results := make([]Directory, len(dl.Directories))
+	var resultErr error
+
+	for i, d := range dl.Directories {
+		index := i     // 避免闭包问题
+		directory := d // 避免闭包问题
+		g.Go(func() error {
+			host := db.Host{IP: directory.HostIP}
+			if err = host.Get(engine); err != nil {
+				resultErr = errors.Join(resultErr, err)
+				return err
+			}
+
+			hostContext := common.HostContext{
+				IP:       host.IP,
+				Username: host.Username,
+				Password: host.Password,
+			}
+
+			driver := driver.GetDriver(host.StorageType)
+			if _, err := driver.CreateDirectory(hostContext, directory.Name); err != nil {
+				resultErr = errors.Join(resultErr, err)
+				return err
+			}
+
+			results[index] = directory // 保存协程的返回值
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		if resultErr != nil {
+			return resultErr
+		}
+		return err
+	}
+
+	if err := common.CopyStructList(results, &dl.Directories); err != nil {
+		return err
+	}
+
+	dbDirectoryList := db.DirectoryList{}
+
+	if err := common.CopyStructList(dl.Directories, &dbDirectoryList.Directories); err != nil {
+		return err
+	}
+
+	return dbDirectoryList.Save(engine)
+}
+
 type PaginationDirectory struct {
 	Directories []Directory
 	Page        int
@@ -183,6 +246,56 @@ func (dl *DirectoryList) Save() (err error) {
 func (dl *DirectoryList) Delete(filter *common.QueryFilter) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
+		return err
+	}
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	results := make([]Directory, len(dl.Directories))
+	var resultErr error
+
+	for i, d := range dl.Directories {
+		index := i     // 避免闭包问题
+		directory := d // 避免闭包问题
+		g.Go(func() error {
+			host := db.Host{IP: directory.HostIP}
+			if err = host.Get(engine); err != nil {
+				resultErr = errors.Join(resultErr, err)
+				return err
+			}
+
+			hostContext := common.HostContext{
+				IP:       host.IP,
+				Username: host.Username,
+				Password: host.Password,
+			}
+
+			driver := driver.GetDriver(host.StorageType)
+			if _, err := driver.DeleteDirectory(hostContext, directory.Name); err != nil {
+				resultErr = errors.Join(resultErr, err)
+				return err
+			}
+
+			results[index] = directory // 保存协程的返回值
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		if resultErr != nil {
+			return resultErr
+		}
+		return err
+	}
+
+	if err := common.CopyStructList(results, &dl.Directories); err != nil {
+		return err
+	}
+
+	dbDirectoryList := db.DirectoryList{}
+
+	if err := common.CopyStructList(dl.Directories, &dbDirectoryList.Directories); err != nil {
 		return err
 	}
 

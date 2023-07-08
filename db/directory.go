@@ -87,9 +87,15 @@ func (dl *DirectoryList) Save(engine *DatabaseEngine) (err error) {
 func (dl *DirectoryList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
 	var directories []Directory
 
-	err = Delete(engine, filter, directories)
-	if err != nil {
-		return fmt.Errorf("failed to delete directories by the filter %v in database: %w", filter, err)
+	if filter != nil {
+		err = Delete(engine, filter, directories)
+		if err != nil {
+			return fmt.Errorf("failed to delete directories by the filter %v in database: %w", filter, err)
+		}
+	} else {
+		if err := engine.DB.Delete(dl.Directories).Error; err != nil {
+			return err
+		}
 	}
 
 	return
