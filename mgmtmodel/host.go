@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/cryingmouse/data_management_engine/common"
@@ -54,7 +54,7 @@ func (h *Host) Register() error {
 		switch sqliteErr.ExtendedCode {
 		// Map SQLite ErrNo to specific error scenarios
 		case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-			return fmt.Errorf("the host %s have already been registered.", host.IP)
+			return fmt.Errorf("the host %v have already been registered", host.IP)
 		}
 	}
 
@@ -154,7 +154,7 @@ func (hl *HostList) Register() error {
 			switch sqliteErr.ExtendedCode {
 			// Map SQLite ErrNo to specific error scenarios
 			case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-				return fmt.Errorf("some hosts have already been registered.")
+				return fmt.Errorf("some hosts have already been registered")
 			}
 		}
 
@@ -245,7 +245,7 @@ func (h *Host) getSystemInfo() (*common.SystemInfo, error) {
 		return nil, fmt.Errorf("Failed")
 	}
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error:", err, body)
 		return nil, err
