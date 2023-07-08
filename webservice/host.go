@@ -5,15 +5,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"errors"
-
 	"github.com/cryingmouse/data_management_engine/agent"
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
-	"github.com/mattn/go-sqlite3"
 )
 
 type HostResponse struct {
@@ -50,20 +47,8 @@ func registerHostHandler(c *gin.Context) {
 	common.CopyStructList(request, &hostModel)
 
 	if err := hostModel.Register(); err != nil {
-		for err != nil {
-			err = errors.Unwrap(err)
-			if sqliteErr, ok := err.(sqlite3.Error); ok {
-				switch sqliteErr.ExtendedCode {
-				// Map SQLite ErrNo to specific error scenarios
-				case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-					c.JSON(http.StatusBadRequest, gin.H{"message": "The hosts have already been registered.", "error": err.Error()})
-					return
-				}
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
-				return
-			}
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
+		return
 	}
 
 	var response []HostResponse
@@ -93,20 +78,8 @@ func registerHostsHandler(c *gin.Context) {
 	common.CopyStructList(request, &hostListModel.Hosts)
 
 	if err := hostListModel.Register(); err != nil {
-		for err != nil {
-			err = errors.Unwrap(err)
-			if sqliteErr, ok := err.(sqlite3.Error); ok {
-				switch sqliteErr.ExtendedCode {
-				// Map SQLite ErrNo to specific error scenarios
-				case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-					c.JSON(http.StatusBadRequest, gin.H{"message": "The hosts have already been registered.", "error": err.Error()})
-					return
-				}
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
-				return
-			}
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
+		return
 	}
 
 	var response []HostResponse
@@ -172,22 +145,23 @@ func getRegisteredHostsHandler(c *gin.Context) {
 	}
 
 	if hostIp == "" && hostName == "" {
-
 		// Using mgmtmodel.HostList, to get the list of the host with filter.
 		hostListModel := mgmtmodel.HostList{}
+
+		filter := common.QueryFilter{
+			Fields: common.SplitToList(fields),
+			Keyword: map[string]string{
+				"name": nameLikeKeyword,
+			},
+			Conditions: struct {
+				StorageType string
+			}{
+				StorageType: storageType,
+			},
+		}
+
 		if page == 0 && limit == 0 {
 			// Query hosts without pagination.
-			filter := common.QueryFilter{
-				Fields: common.SplitToList(fields),
-				Keyword: map[string]string{
-					"name": nameLikeKeyword,
-				},
-				Conditions: struct {
-					StorageType string
-				}{
-					StorageType: storageType,
-				},
-			}
 			hosts, err := hostListModel.Get(&filter)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -203,22 +177,12 @@ func getRegisteredHostsHandler(c *gin.Context) {
 
 			c.JSON(http.StatusOK, hostInfoList)
 		} else {
-			// Query hosts with pagination.
-			filter := common.QueryFilter{
-				Fields: common.SplitToList(fields),
-				Keyword: map[string]string{
-					"name": nameLikeKeyword,
-				},
-				Pagination: &common.Pagination{
-					Page:     page,
-					PageSize: limit,
-				},
-				Conditions: struct {
-					StorageType string
-				}{
-					StorageType: storageType,
-				},
+			// Add the pagination into filter, and then query hosts with pagination.
+			filter.Pagination = &common.Pagination{
+				Page:     page,
+				PageSize: limit,
 			}
+
 			paginationHosts, err := hostListModel.Pagination(&filter)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{

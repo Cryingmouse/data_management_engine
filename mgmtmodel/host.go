@@ -11,6 +11,7 @@ import (
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/db"
 	"github.com/cryingmouse/data_management_engine/driver"
+	"github.com/mattn/go-sqlite3"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -48,7 +49,16 @@ func (h *Host) Register() error {
 
 	common.CopyStructList(h, &host)
 
-	return host.Save(engine)
+	err = host.Save(engine)
+	if sqliteErr, ok := err.(sqlite3.Error); ok {
+		switch sqliteErr.ExtendedCode {
+		// Map SQLite ErrNo to specific error scenarios
+		case sqlite3.ErrConstraintUnique: // SQLite constraint violation
+			return fmt.Errorf("the host %s have already been registered.", host.IP)
+		}
+	}
+
+	return err
 }
 
 func (h *Host) Unregister() error {
@@ -139,7 +149,16 @@ func (hl *HostList) Register() error {
 	if engine, err := db.GetDatabaseEngine(); err != nil {
 		return err
 	} else {
-		return dbHostList.Save(engine)
+		err := dbHostList.Save(engine)
+		if sqliteErr, ok := err.(sqlite3.Error); ok {
+			switch sqliteErr.ExtendedCode {
+			// Map SQLite ErrNo to specific error scenarios
+			case sqlite3.ErrConstraintUnique: // SQLite constraint violation
+				return fmt.Errorf("some hosts have already been registered.")
+			}
+		}
+
+		return err
 	}
 }
 

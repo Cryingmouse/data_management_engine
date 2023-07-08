@@ -12,8 +12,8 @@ import (
 )
 
 type DirectoryResponse struct {
-	Name   string `json:"name" binding:"required"`
-	HostIP string `json:"host_ip" binding:"required,validateIP"`
+	Name   string `json:"name,omitempty"`
+	HostIP string `json:"host_ip,omitempty"`
 }
 
 type PaginationDirectoryResponse struct {
@@ -216,10 +216,9 @@ func getDirectoriesHandler(c *gin.Context) {
 }
 
 func createDirectoryOnAgentHandler(c *gin.Context) {
-	type Request struct {
+	request := struct {
 		Name string `json:"name"`
-	}
-	var request Request
+	}{}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
@@ -237,10 +236,9 @@ func createDirectoryOnAgentHandler(c *gin.Context) {
 }
 
 func deleteDirectoryOnAgentHandler(c *gin.Context) {
-	type Request struct {
+	request := struct {
 		Name string `json:"name"`
-	}
-	var request Request
+	}{}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return

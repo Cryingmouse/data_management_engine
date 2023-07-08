@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/cryingmouse/data_management_engine/agent"
 	"github.com/cryingmouse/data_management_engine/common"
@@ -14,8 +13,7 @@ import (
 )
 
 type LocalUserResponse struct {
-	Name     string `json:"name" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Name string `json:"name,omitempty"`
 }
 
 type PaginationLocalUserResponse struct {
@@ -28,7 +26,7 @@ type PaginationLocalUserResponse struct {
 func createLocalUserHandler(c *gin.Context) {
 	request := struct {
 		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required"`
+		Password string `json:"password" binding:"required,validatePassword"`
 		HostName string `json:"host_name" binding:"required"`
 	}{}
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -54,7 +52,7 @@ func createLocalUserHandler(c *gin.Context) {
 func createLocalUsersHandler(c *gin.Context) {
 	request := []struct {
 		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required"`
+		Password string `json:"password" binding:"required,validatePassword"`
 		HostName string `json:"host_name" binding:"required"`
 	}{}
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -78,11 +76,10 @@ func createLocalUsersHandler(c *gin.Context) {
 }
 
 func deleteLocalUserHandler(c *gin.Context) {
-	type Request struct {
+	request := struct {
 		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
-	var request Request
+		Password string `json:"password" binding:"required,validatePassword"`
+	}{}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
@@ -103,11 +100,10 @@ func deleteLocalUserHandler(c *gin.Context) {
 }
 
 func deleteLocalUsersHandler(c *gin.Context) {
-	type Request []struct {
+	request := []struct {
 		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
-	var request Request
+		Password string `json:"password" binding:"required,validatePassword"`
+	}{}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
@@ -142,16 +138,19 @@ func getlocalUsersHandler(c *gin.Context) {
 
 	if userName == "" {
 		userListModel := mgmtmodel.LocalUserList{}
+
+		filter := common.QueryFilter{
+			Fields: common.SplitToList(fields),
+			// Conditions: struct {
+			// 	Password string
+			// }{
+			// 	Password: hostIp,
+			// },
+		}
+
 		if page == 0 && limit == 0 {
 			// Query users without pagination.
-			filter := common.QueryFilter{
-				Fields: common.SplitToList(fields),
-				// Conditions: struct {
-				// 	Password string
-				// }{
-				// 	Password: hostIp,
-				// },
-			}
+
 			users, err := userListModel.Get(&filter)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -164,8 +163,7 @@ func getlocalUsersHandler(c *gin.Context) {
 			userInfoList := []LocalUserResponse{}
 			for _, user := range users {
 				userInfoList = append(userInfoList, LocalUserResponse{
-					Name:     user.Name,
-					Password: user.Password,
+					Name: user.Name,
 				})
 			}
 
@@ -173,18 +171,11 @@ func getlocalUsersHandler(c *gin.Context) {
 			return
 		} else {
 			// Query users with pagination.
-			filter := common.QueryFilter{
-				Fields: strings.Split(fields, ","),
-				Pagination: &common.Pagination{
-					Page:     page,
-					PageSize: limit,
-				},
-				// Conditions: struct {
-				// 	Password string
-				// }{
-				// 	Password: hostIp,
-				// },
+			filter.Pagination = &common.Pagination{
+				Page:     page,
+				PageSize: limit,
 			}
+
 			paginationDirs, err := userListModel.Pagination(&filter)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -202,8 +193,7 @@ func getlocalUsersHandler(c *gin.Context) {
 
 			for _, _user := range paginationDirs.Users {
 				user := LocalUserResponse{
-					Name:     _user.Name,
-					Password: _user.Password,
+					Name: _user.Name,
 				}
 
 				paginationDirList.Users = append(paginationDirList.Users, user)
@@ -229,8 +219,7 @@ func getlocalUsersHandler(c *gin.Context) {
 
 		// Convert to UserInfo as REST API response.
 		userInfo := LocalUserResponse{
-			Name:     user.Name,
-			Password: user.Password,
+			Name: user.Name,
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "Get the user successfully.", "user": userInfo})
@@ -238,12 +227,11 @@ func getlocalUsersHandler(c *gin.Context) {
 }
 
 func createLocalUserOnAgentHandler(c *gin.Context) {
-	type Request struct {
-		Name     string `json:"name"`
-		Password string `json:"password"`
-	}
+	request := struct {
+		Name     string `json:"name" binding:"required"`
+		Password string `json:"password" binding:"required,validatePassword"`
+	}{}
 
-	var request Request
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
@@ -261,11 +249,11 @@ func createLocalUserOnAgentHandler(c *gin.Context) {
 }
 
 func deleteLocalUserOnAgentHandler(c *gin.Context) {
-	type Request struct {
-		Name string `json:"name"`
-	}
+	request := struct {
+		Name     string `json:"name" binding:"required"`
+		Password string `json:"password" binding:"required,validatePassword"`
+	}{}
 
-	var request Request
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
