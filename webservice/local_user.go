@@ -131,7 +131,7 @@ func getlocalUsersHandler(c *gin.Context) {
 
 	page, err_page := strconv.Atoi(c.Query("page"))
 	limit, err_limit := strconv.Atoi(c.Query("limit"))
-	if err_page != nil || err_limit != nil || validatePagination(page, limit) != nil {
+	if (err_page != nil && err_limit == nil) || (err_page == nil && err_limit != nil) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request."})
 		return
 	}

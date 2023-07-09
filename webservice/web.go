@@ -78,34 +78,6 @@ func passwordValidator(fl validator.FieldLevel) bool {
 	return false
 }
 
-func validatePagination(page, limit int) (err error) {
-
-	// Create a validator instance.
-	v := validator.New()
-
-	type Pagination struct {
-		Page  int
-		Limit int
-	}
-
-	// Define validation rules for page and limit.
-	pagination := Pagination{Page: page, Limit: limit}
-
-	// Custom validation function to check if both page and limit have values or both are empty.
-	v.RegisterValidation("pageLimit", func(fl validator.FieldLevel) bool {
-		if pagination.Page >= 0 && pagination.Limit > 0 {
-			return true
-		}
-		if pagination.Page == 0 && pagination.Limit == 0 {
-			return true
-		}
-		return false
-	})
-
-	// Perform validation.
-	return v.Struct(pagination)
-}
-
 func validateIPAddress(ip string) (err error) {
 	type IPAddress struct {
 		IP string `validate:"required,ip"`

@@ -127,7 +127,7 @@ func getDirectoriesHandler(c *gin.Context) {
 	page, err_page := strconv.Atoi(c.Query("page"))
 	limit, err_limit := strconv.Atoi(c.Query("limit"))
 
-	if err_page != nil || err_limit != nil || validatePagination(page, limit) != nil || validateIPAddress(hostIP) != nil {
+	if (err_page != nil && err_limit == nil) || (err_page == nil && err_limit != nil) || (hostIP != "" && validateIPAddress(hostIP) != nil) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request."})
 		return
 	}
@@ -211,7 +211,10 @@ func getDirectoriesHandler(c *gin.Context) {
 
 		common.CopyStructList(directory, &directoryInfo)
 
-		c.JSON(http.StatusOK, directoryInfo)
+		directoryInfoList := []DirectoryResponse{}
+		directoryInfoList = append(directoryInfoList, directoryInfo)
+
+		c.JSON(http.StatusOK, directoryInfoList)
 	}
 }
 

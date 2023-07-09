@@ -13,6 +13,7 @@ type Directory struct {
 	gorm.Model
 	Name   string `gorm:"uniqueIndex:idx_name_host_ip;column:name"`
 	HostIP string `gorm:"uniqueIndex:idx_name_host_ip;column:host_ip"`
+	Host   Host   `gorm:"foreignKey:HostIP"`
 }
 
 func (d *Directory) Get(engine *DatabaseEngine) error {

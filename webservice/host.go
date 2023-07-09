@@ -132,26 +132,28 @@ func unregisterHostsHandler(c *gin.Context) {
 
 func getRegisteredHostsHandler(c *gin.Context) {
 	hostName := c.Query("name")
-	hostIp := c.Query("ip")
-	storageType := c.Query("storage_type")
+	hostIP := c.Query("ip")
 	fields := c.Query("fields")
-	nameLikeKeyword := c.Query("name-like")
+	storageType := c.DefaultQuery("storage_type", "agent")
+	nameKeyword := c.Query("name-like")
+	osTypeKeyword := c.Query("os_type-like")
 	page, err_page := strconv.Atoi(c.Query("page"))
 	limit, err_limit := strconv.Atoi(c.Query("limit"))
 
-	if err_page != nil || err_limit != nil || validatePagination(page, limit) != nil || validateIPAddress(hostIp) != nil {
+	if (err_page != nil && err_limit == nil) || (err_page == nil && err_limit != nil) || (hostIP != "" && validateIPAddress(hostIP) != nil) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request."})
 		return
 	}
 
-	if hostIp == "" && hostName == "" {
+	if hostIP == "" && hostName == "" {
 		// Using mgmtmodel.HostList, to get the list of the host with filter.
 		hostListModel := mgmtmodel.HostList{}
 
 		filter := common.QueryFilter{
 			Fields: common.SplitToList(fields),
 			Keyword: map[string]string{
-				"name": nameLikeKeyword,
+				"name":    nameKeyword,
+				"os_type": osTypeKeyword,
 			},
 			Conditions: struct {
 				StorageType string
@@ -205,7 +207,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 	} else {
 		// Using mgmtmodel.Host to get the host
 		hostModel := mgmtmodel.Host{
-			IP:           hostIp,
+			IP:           hostIP,
 			ComputerName: hostName,
 		}
 
