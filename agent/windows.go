@@ -176,7 +176,7 @@ func (agent *WindowsAgent) GetSystemInfo(hostContext common.HostContext) (system
 		ComputerName:   result["ComputerName"],
 		Caption:        result["Caption"],
 		OSArchitecture: result["OSArchitecture"],
-		Version:        result["Version"],
+		OSVersion:      result["Version"],
 		BuildNumber:    result["BuildNumber"],
 	}
 

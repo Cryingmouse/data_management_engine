@@ -28,7 +28,7 @@ func Start() {
 	// Router 'portal' for Portal
 	portal := router.Group("/api")
 	// Router 'agent' for Agent
-	agent := router.Group("/agnet")
+	agent := router.Group("/agent")
 
 	// 登录路由，验证用户凭证并生成JWT令牌
 	// router.POST("/login", getTokenHandler)

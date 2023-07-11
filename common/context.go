@@ -26,7 +26,7 @@ type SystemInfo struct {
 	ComputerName   string `json:"host_name"`
 	Caption        string `json:"os_type"`
 	OSArchitecture string `json:"os_arch"`
-	Version        string `json:"version"`
+	OSVersion      string `json:"os_version"`
 	BuildNumber    string `json:"build_number"`
 }
 

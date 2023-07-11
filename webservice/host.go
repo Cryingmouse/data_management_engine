@@ -19,7 +19,7 @@ type HostResponse struct {
 	StorageType    string `json:"storage_type,omitempty"`
 	Caption        string `json:"os_type,omitempty"`
 	OSArchitecture string `json:"os_arch,omitempty"`
-	Version        string `json:"os_version,omitempty"`
+	OSVersion      string `json:"os_version,omitempty"`
 	BuildNumber    string `json:"build_number,omitempty"`
 }
 
@@ -51,7 +51,7 @@ func registerHostHandler(c *gin.Context) {
 		return
 	}
 
-	var response []HostResponse
+	var response HostResponse
 	common.CopyStructList(hostModel, &response)
 
 	c.JSON(http.StatusOK, response)

@@ -19,7 +19,7 @@ type Host struct {
 	StorageType    string `gorm:"column:storage_type"`
 	Caption        string `gorm:"column:os_type"`
 	OSArchitecture string `gorm:"column:os_arch"`
-	Version        string `gorm:"column:version"`
+	OSVersion      string `gorm:"column:os_version"`
 	BuildNumber    string `gorm:"column:build_number"`
 }
 
@@ -33,6 +33,14 @@ func (h *Host) Get(engine *DatabaseEngine) (err error) {
 	return err
 }
 
+func BeforeCreate(tx *gorm.DB) {
+	fmt.Println("Before Create: Jay")
+}
+
+func AfterCreate(tx *gorm.DB) {
+	fmt.Println("After Create: Jay")
+}
+
 func (h *Host) Save(engine *DatabaseEngine) error {
 	host := Host{
 		IP:             h.IP,
@@ -41,7 +49,7 @@ func (h *Host) Save(engine *DatabaseEngine) error {
 		StorageType:    h.StorageType,
 		Caption:        h.Caption,
 		OSArchitecture: h.OSArchitecture,
-		Version:        h.Version,
+		OSVersion:      h.OSVersion,
 		BuildNumber:    h.BuildNumber,
 	}
 
@@ -51,7 +59,7 @@ func (h *Host) Save(engine *DatabaseEngine) error {
 	}
 	host.Password = string(encrypted_password)
 
-	return engine.DB.Save(&host).Error
+	return engine.DB.Create(&host).Error
 }
 
 func (h *Host) Delete(engine *DatabaseEngine) error {
@@ -129,7 +137,7 @@ func (hl *HostList) Save(engine *DatabaseEngine) (err error) {
 
 	err = engine.DB.CreateInBatches(hl.Hosts, len(hl.Hosts)).Error
 	if err != nil {
-		return fmt.Errorf("failed to create hosts in database: %w", err)
+		return err
 	}
 	return nil
 }

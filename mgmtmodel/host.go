@@ -23,7 +23,7 @@ type Host struct {
 	StorageType    string
 	Caption        string
 	OSArchitecture string
-	Version        string
+	OSVersion      string
 	BuildNumber    string
 }
 
@@ -37,7 +37,7 @@ func (h *Host) Register() error {
 	h.ComputerName = systemInfo.ComputerName
 	h.Caption = systemInfo.Caption
 	h.OSArchitecture = systemInfo.OSArchitecture
-	h.Version = systemInfo.Version
+	h.OSVersion = systemInfo.OSVersion
 	h.BuildNumber = systemInfo.BuildNumber
 
 	engine, err := db.GetDatabaseEngine()
@@ -54,7 +54,7 @@ func (h *Host) Register() error {
 		switch sqliteErr.ExtendedCode {
 		// Map SQLite ErrNo to specific error scenarios
 		case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-			return fmt.Errorf("the host %v have already been registered", host.IP)
+			return fmt.Errorf("the host %v has already been registered", host.IP)
 		}
 	}
 
