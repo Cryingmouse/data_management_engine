@@ -63,12 +63,30 @@ func Test_Windows_GetLocalUsers(t *testing.T) {
 	}
 }
 
+func Test_Windows_GetDirectoryDetails(t *testing.T) {
+
+	agent := GetAgent()
+
+	hostContext := common.HostContext{
+		IP:       "127.0.0.1",
+		Username: "admin",
+		Password: "password",
+	}
+
+	path := "c:\\test\\directory-1"
+
+	DirectoryDetails, err := agent.GetDirectoryDetail(hostContext, path)
+	if err != nil {
+		t.Errorf("Failed to get directory detail: %v. Error: %v", DirectoryDetails, err)
+	}
+}
+
 func Test_Windows_GetSystemInfo(t *testing.T) {
 
 	agent := GetAgent()
 
 	hostContext := common.HostContext{
-		IP:       "127.09.0.1",
+		IP:       "127.0.0.1",
 		Username: "admin",
 		Password: "password",
 	}

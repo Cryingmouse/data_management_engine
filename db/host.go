@@ -33,14 +33,6 @@ func (h *Host) Get(engine *DatabaseEngine) (err error) {
 	return err
 }
 
-func BeforeCreate(tx *gorm.DB) {
-	fmt.Println("Before Create: Jay")
-}
-
-func AfterCreate(tx *gorm.DB) {
-	fmt.Println("After Create: Jay")
-}
-
 func (h *Host) Save(engine *DatabaseEngine) error {
 	host := Host{
 		IP:             h.IP,

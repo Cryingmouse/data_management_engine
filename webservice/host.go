@@ -236,10 +236,9 @@ func getSystemInfoOnAgentHandler(c *gin.Context) {
 	agent := agent.GetAgent()
 
 	if systemInfo, err := agent.GetSystemInfo(hostContext); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to get system info on agent.", "error": err})
-
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "Get system info on agent successfully.", "system-info": systemInfo})
+		c.JSON(http.StatusOK, systemInfo)
 	}
 }
 

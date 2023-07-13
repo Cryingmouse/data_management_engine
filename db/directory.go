@@ -11,9 +11,15 @@ import (
 
 type Directory struct {
 	gorm.Model
-	Name   string `gorm:"uniqueIndex:idx_name_host_ip;column:name"`
-	HostIP string `gorm:"uniqueIndex:idx_name_host_ip;column:host_ip"`
-	Host   Host   `gorm:"foreignKey:HostIP"`
+	Name           string `gorm:"uniqueIndex:idx_name_host_ip;column:name"`
+	CreationTime   string `gorm:"column:creation_time"`
+	LastAccessTime string `gorm:"column:last_access_time"`
+	LastWriteTime  string `gorm:"column:last_write_time"`
+	Exist          bool   `gorm:"column:exist"`
+	FullPath       string `gorm:"column:full_path"`
+	ParentFullPath string `gorm:"column:parent_full_path"`
+	HostIP         string `gorm:"uniqueIndex:idx_name_host_ip;column:host_ip"`
+	// Host           Host   `gorm:"foreignKey:HostIP"`
 }
 
 func (d *Directory) Get(engine *DatabaseEngine) error {
@@ -44,7 +50,7 @@ func (dl *DirectoryList) Get(engine *DatabaseEngine, filter *common.QueryFilter)
 		return fmt.Errorf("failed to query the directories by the filter %v in database: %w", filter, err)
 	}
 
-	return
+	return nil
 }
 
 type PaginationDirectory struct {

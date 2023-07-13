@@ -8,8 +8,12 @@ import (
 
 type Agent interface {
 	// The area method returns the area of the shape.
+	GetDirectoryDetail(hostContext common.HostContext, path string) (details common.DirectoryDetail, err error)
+	GetDirectoriesDetail(hostContext common.HostContext, paths []string) (details []common.DirectoryDetail, err error)
 	CreateDirectory(hostContext common.HostContext, name string) (dirPath string, err error)
+	CreateDirectories(hostContext common.HostContext, names []string) (dirPaths []string, err error)
 	DeleteDirectory(hostContext common.HostContext, name string) (err error)
+	DeleteDirectories(hostContext common.HostContext, names []string) (err error)
 	CreateShare(hostContext common.HostContext, name, directory_name string) (err error)
 	CreateLocalUser(hostContext common.HostContext, username, password string) (err error)
 	DeleteLocalUser(hostContext common.HostContext, username string) (err error)

@@ -11,8 +11,14 @@ import (
 )
 
 type Directory struct {
-	Name   string
-	HostIP string
+	Name           string
+	HostIP         string
+	CreationTime   string
+	LastAccessTime string
+	LastWriteTime  string
+	Exist          bool
+	FullPath       string
+	ParentFullPath string
 }
 
 func (d *Directory) Create() (err error) {
@@ -21,30 +27,38 @@ func (d *Directory) Create() (err error) {
 		return err
 	}
 
+	// Get the right driver and call driver to create directory.
 	host := db.Host{IP: d.HostIP}
 	if err = host.Get(engine); err != nil {
 		return err
 	}
+	driver := driver.GetDriver(host.StorageType)
 
 	hostContext := common.HostContext{
 		IP:       host.IP,
 		Username: host.Username,
 		Password: host.Password,
 	}
-
-	driver := driver.GetDriver(host.StorageType)
-	driver.CreateDirectory(hostContext, d.Name)
-
-	directory := db.Directory{
-		Name:   d.Name,
-		HostIP: host.IP,
-	}
-
-	if err = directory.Save(engine); err != nil {
+	directoryDetails, err := driver.CreateDirectory(hostContext, d.Name)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	// Save the details of the directory into database.
+	directory := db.Directory{
+		Name:           d.Name,
+		HostIP:         host.IP,
+		CreationTime:   directoryDetails.CreationTime,
+		LastAccessTime: directoryDetails.LastAccessTime,
+		LastWriteTime:  directoryDetails.LastWriteTime,
+		Exist:          directoryDetails.Exist,
+		FullPath:       directoryDetails.FullPath,
+		ParentFullPath: directoryDetails.ParentFullPath,
+	}
+
+	common.CopyStructList(directory, d)
+
+	return directory.Save(engine)
 }
 
 func (d *Directory) Delete() (err error) {
@@ -65,18 +79,15 @@ func (d *Directory) Delete() (err error) {
 	}
 
 	driver := driver.GetDriver(host.StorageType)
-	driver.DeleteDirectory(hostContext, d.Name)
+	if err := driver.DeleteDirectory(hostContext, d.Name); err != nil {
+		return err
+	}
 
 	directory := db.Directory{
 		Name:   d.Name,
 		HostIP: host.IP,
 	}
-
-	if err = directory.Delete(engine); err != nil {
-		return err
-	}
-
-	return nil
+	return directory.Delete(engine)
 }
 
 func (d *Directory) Get() (*Directory, error) {
@@ -115,14 +126,7 @@ func (dl *DirectoryList) Get(filter *common.QueryFilter) ([]Directory, error) {
 		return nil, err
 	}
 
-	for _, _directory := range directoryList.Directories {
-		directory := Directory{
-			Name:   _directory.Name,
-			HostIP: _directory.HostIP,
-		}
-
-		dl.Directories = append(dl.Directories, directory)
-	}
+	common.CopyStructList(directoryList.Directories, &dl.Directories)
 
 	return dl.Directories, nil
 }
@@ -131,6 +135,11 @@ func (dl *DirectoryList) Create() error {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
+	}
+
+	input := make([]interface{}, len(dl.Directories))
+	for index, directory := range dl.Directories {
+		input[index] = directory
 	}
 
 	g, _ := errgroup.WithContext(context.Background())
@@ -271,7 +280,7 @@ func (dl *DirectoryList) Delete(filter *common.QueryFilter) (err error) {
 			}
 
 			driver := driver.GetDriver(host.StorageType)
-			if _, err := driver.DeleteDirectory(hostContext, directory.Name); err != nil {
+			if err := driver.DeleteDirectory(hostContext, directory.Name); err != nil {
 				resultErr = errors.Join(resultErr, err)
 				return err
 			}

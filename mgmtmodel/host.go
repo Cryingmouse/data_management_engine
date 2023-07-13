@@ -2,11 +2,8 @@ package mgmtmodel
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/db"
@@ -111,7 +108,7 @@ type HostList struct {
 func (hl *HostList) Register() error {
 	g, _ := errgroup.WithContext(context.Background())
 
-	results := make([]*common.SystemInfo, len(hl.Hosts))
+	results := make([]common.SystemInfo, len(hl.Hosts))
 	var resultErr error
 
 	for i, h := range hl.Hosts {
@@ -223,7 +220,7 @@ func (hl *HostList) Pagination(filter *common.QueryFilter) (*PaginationHost, err
 	return &paginationHostList, nil
 }
 
-func (h *Host) getSystemInfo() (*common.SystemInfo, error) {
+func (h *Host) getSystemInfo() (systemInfo common.SystemInfo, err error) {
 	hostContext := common.HostContext{
 		IP:       h.IP,
 		Username: h.Username,
@@ -231,36 +228,5 @@ func (h *Host) getSystemInfo() (*common.SystemInfo, error) {
 	}
 	driver := driver.GetDriver(h.StorageType)
 
-	response, err := driver.GetSystemInfo(hostContext)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return nil, err
-	}
-
-	defer response.Body.Close()
-
-	// 检查响应状态码
-	if response.StatusCode != http.StatusOK {
-		fmt.Printf("请求失败，状态码：%d\n", response.StatusCode)
-		return nil, fmt.Errorf("Failed")
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		fmt.Println("Error:", err, body)
-		return nil, err
-	}
-
-	var result struct {
-		Message    string            `json:"message"`
-		SystemInfo common.SystemInfo `json:"system-info"`
-	}
-
-	err = json.Unmarshal([]byte(body), &result)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return nil, err
-	}
-
-	return &result.SystemInfo, nil
+	return driver.GetSystemInfo(hostContext)
 }

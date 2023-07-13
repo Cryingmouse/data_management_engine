@@ -1,6 +1,7 @@
 package webservice
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -12,8 +13,14 @@ import (
 )
 
 type DirectoryResponse struct {
-	Name   string `json:"name,omitempty"`
-	HostIP string `json:"host_ip,omitempty"`
+	Name           string `json:"name,omitempty"`
+	HostIP         string `json:"host_ip,omitempty"`
+	CreationTime   string `json:"creation_time,omitempty"`
+	LastAccessTime string `json:"last_access_time,omitempty"`
+	LastWriteTime  string `json:"last_write_time,omitempty"`
+	Exist          bool   `json:"exist,omitempty"`
+	FullPath       string `json:"full_path,omitempty"`
+	ParentFullPath string `json:"parent_full_path,omitempty"`
 }
 
 type PaginationDirectoryResponse struct {
@@ -44,7 +51,10 @@ func createDirectoryHandler(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusOK)
+	var response DirectoryResponse
+	common.CopyStructList(directoryModel, &response)
+
+	c.JSON(http.StatusOK, response)
 }
 
 func createDirectoriesHandler(c *gin.Context) {
@@ -86,7 +96,7 @@ func deleteDirectoryHandler(c *gin.Context) {
 	common.CopyStructList(request, &directoryModel)
 	if err := directoryModel.Delete(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to create the directories.",
+			"message": "Failed to delete the directories.",
 			"error":   err.Error(),
 		})
 		return
@@ -233,9 +243,19 @@ func createDirectoryOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	dirPath, _ := agent.CreateDirectory(hostContext, request.Name)
+	dirPath, err := agent.CreateDirectory(hostContext, request.Name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Create directory on agent successfully.", "directory": dirPath})
+	DirectoryDetails, err := agent.GetDirectoryDetail(hostContext, dirPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, DirectoryDetails)
 }
 
 func deleteDirectoryOnAgentHandler(c *gin.Context) {
@@ -253,7 +273,99 @@ func deleteDirectoryOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	agent.DeleteDirectory(hostContext, request.Name)
+	if err := agent.DeleteDirectory(hostContext, request.Name); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Delete directory on agent successfully.", "directory": request.Name})
+	c.Status(http.StatusOK)
+}
+
+func createDirectoriesOnAgentHandler(c *gin.Context) {
+	request := []struct {
+		Name string `json:"name"`
+	}{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	names := []string{}
+	for _, item := range request {
+		names = append(names, item.Name)
+	}
+
+	hostContext := common.HostContext{
+		Username: c.Request.Header.Get("X-agent-username"),
+		Password: c.Request.Header.Get("X-agent-password"),
+	}
+
+	agent := agent.GetAgent()
+	dirPaths, err := agent.CreateDirectories(hostContext, names)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	DirectoryDetails, err := agent.GetDirectoriesDetail(hostContext, dirPaths)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, DirectoryDetails)
+}
+
+func deleteDirectoriesOnAgentHandler(c *gin.Context) {
+	request := struct {
+		Name string `json:"name"`
+	}{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	hostContext := common.HostContext{
+		Username: c.Request.Header.Get("X-agent-username"),
+		Password: c.Request.Header.Get("X-agent-password"),
+	}
+
+	agent := agent.GetAgent()
+	if err := agent.DeleteDirectory(hostContext, request.Name); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func getDirectoryDetailsOnAgentHandler(c *gin.Context) {
+	name := c.Query("name")
+	names := common.SplitToList(name)
+
+	hostContext := common.HostContext{
+		Username: c.Request.Header.Get("X-agent-username"),
+		Password: c.Request.Header.Get("X-agent-password"),
+	}
+
+	agent := agent.GetAgent()
+	if len(names) == 0 {
+		c.JSON(http.StatusInternalServerError, fmt.Errorf(".nvalid request"))
+	} else if len(names) == 1 {
+		DirectoryDetail, err := agent.GetDirectoryDetail(hostContext, name)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, DirectoryDetail)
+	} else {
+		DirectoriesDetail, err := agent.GetDirectoriesDetail(hostContext, names)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, DirectoriesDetail)
+	}
 }

@@ -30,4 +30,18 @@ type SystemInfo struct {
 	BuildNumber    string `json:"build_number"`
 }
 
+type DirectoryDetail struct {
+	Name           string `json:"name"`
+	CreationTime   string `json:"creation_time"`
+	LastAccessTime string `json:"last_access_time"`
+	LastWriteTime  string `json:"last_write_time"`
+	Exist          bool   `json:"exist"`
+	FullPath       string `json:"full_path"`
+	ParentFullPath string `json:"parent_full_path"`
+}
+
+type FailedRESTResponse struct {
+	Error string `json:"error"`
+}
+
 var SecurityKey = "MySecretForMagnascale!!!"

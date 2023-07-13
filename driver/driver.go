@@ -8,13 +8,14 @@ import (
 
 type Driver interface {
 	// The area method returns the area of the shape.
-	CreateDirectory(hostContext common.HostContext, name string) (resp *http.Response, err error)
-	DeleteDirectory(hostContext common.HostContext, name string) (resp *http.Response, err error)
+	GetDirectoryDetail(hostContext common.HostContext, name string) (directoryDetail common.DirectoryDetail, err error)
+	CreateDirectory(hostContext common.HostContext, name string) (directoryDetails common.DirectoryDetail, err error)
+	DeleteDirectory(hostContext common.HostContext, name string) (err error)
 	CreateShare(hostContext common.HostContext, name string) (resp *http.Response, err error)
 	DeleteShare(hostContext common.HostContext, name string) (resp *http.Response, err error)
 	CreateLocalUser(hostContext common.HostContext, name, password string) (resp *http.Response, err error)
 	DeleteUser(hostContext common.HostContext, name string) (resp *http.Response, err error)
-	GetSystemInfo(hostContext common.HostContext) (resp *http.Response, err error)
+	GetSystemInfo(hostContext common.HostContext) (systemInfo common.SystemInfo, err error)
 }
 
 func GetDriver(storageType string) Driver {

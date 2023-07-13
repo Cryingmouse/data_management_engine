@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/cryingmouse/data_management_engine/common"
 	"golang.org/x/text/encoding/simplifiedchinese"
@@ -13,6 +14,76 @@ import (
 )
 
 type WindowsAgent struct {
+}
+
+func (agent *WindowsAgent) GetDirectoryDetail(hostContext common.HostContext, name string) (detail common.DirectoryDetail, err error) {
+	// 设置要执行的脚本和参数
+	script := "./agent/windows/Get-DirectoryDetails.ps1"
+
+	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
+	output, err := execPowerShellCmdlet(script, dirPath)
+	if err != nil {
+		return detail, err
+	}
+
+	var result map[string]map[string]interface{}
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return detail, err
+	}
+
+	var directories []common.DirectoryDetail
+	for _, value := range result {
+		directory := common.DirectoryDetail{
+			Name:           value["Name"].(string),
+			FullPath:       value["FullPath"].(string),
+			CreationTime:   value["CreationTime"].(string),
+			LastWriteTime:  value["LastWriteTime"].(string),
+			LastAccessTime: value["LastAccessTime"].(string),
+			Exist:          value["Exist"].(bool),
+			ParentFullPath: value["ParentFullPath"].(string),
+		}
+		directories = append(directories, directory)
+	}
+
+	return directories[0], err
+}
+
+func (agent *WindowsAgent) GetDirectoriesDetail(hostContext common.HostContext, names []string) (detail []common.DirectoryDetail, err error) {
+	// 设置要执行的脚本和参数
+	script := "./agent/windows/Get-DirectoryDetails.ps1"
+
+	var dirPaths []string
+	for _, name := range names {
+		dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
+		dirPaths = append(dirPaths, dirPath)
+	}
+
+	output, err := execPowerShellCmdlet(script, strings.Join(dirPaths, ";"))
+	if err != nil {
+		return detail, err
+	}
+
+	var result map[string]map[string]interface{}
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return detail, err
+	}
+
+	for _, value := range result {
+		directory := common.DirectoryDetail{
+			Name:           value["Name"].(string),
+			FullPath:       value["FullPath"].(string),
+			CreationTime:   value["CreationTime"].(string),
+			LastWriteTime:  value["LastWriteTime"].(string),
+			LastAccessTime: value["LastAccessTime"].(string),
+			Exist:          value["Exist"].(bool),
+			ParentFullPath: value["ParentFullPath"].(string),
+		}
+		detail = append(detail, directory)
+	}
+
+	return detail, err
 }
 
 func (agent *WindowsAgent) CreateDirectory(hostContext common.HostContext, name string) (dirPath string, err error) {
@@ -26,10 +97,34 @@ func (agent *WindowsAgent) CreateDirectory(hostContext common.HostContext, name 
 	return dirPath, nil
 }
 
+func (agent *WindowsAgent) CreateDirectories(hostContext common.HostContext, names []string) (dirPaths []string, err error) {
+	for index, name := range names {
+		dirPath, err := agent.CreateDirectory(hostContext, name)
+		if err != nil {
+			return dirPaths, err
+		}
+
+		dirPaths[index] = dirPath
+	}
+
+	return dirPaths, err
+}
+
 func (agent *WindowsAgent) DeleteDirectory(hostContext common.HostContext, name string) (err error) {
 	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
 
 	return os.Remove(dirPath)
+}
+
+func (agent *WindowsAgent) DeleteDirectories(hostContext common.HostContext, names []string) (err error) {
+	for _, name := range names {
+		if err = agent.DeleteDirectory(hostContext, name); err != nil {
+			return err
+		}
+
+	}
+
+	return err
 }
 
 func (agent *WindowsAgent) CreateShare(hostContext common.HostContext, name, directory_name string) (err error) {

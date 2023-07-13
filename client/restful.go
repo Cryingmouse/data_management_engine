@@ -1,6 +1,7 @@
 package client
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 type RestfulAPI interface {
 	Get(url string, contentType string) (*http.Response, error)
 	Post(url, contentType string, body io.Reader) (*http.Response, error)
+	GetResponseBody(response *http.Response, result interface{}) (err error)
 }
 
 type RestClient struct {
@@ -57,4 +59,14 @@ func (c *RestClient) Post(url, contentType string, body io.Reader) (resp *http.R
 
 	req.Header.Set("Content-Type", contentType)
 	return c.client.Do(req)
+}
+
+func (c *RestClient) GetResponseBody(response *http.Response, result interface{}) (err error) {
+	defer response.Body.Close()
+
+	response_body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(response_body), &result)
 }
