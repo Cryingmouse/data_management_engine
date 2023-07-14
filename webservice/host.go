@@ -13,6 +13,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+const (
+	StorageTypeAgent      = "agent"
+	StorageTypeOntap      = "ontap"
+	StorageTypeMagnascale = "magnascale"
+)
+
 type HostResponse struct {
 	IP             string `json:"ip,omitempty"`
 	ComputerName   string `json:"name,omitempty"`
@@ -32,123 +38,122 @@ type PaginationHostResponse struct {
 	TotalCount int64          `json:"total_count"`
 }
 
-func registerHostHandler(c *gin.Context) {
-	request := struct {
+func RegisterHostHandler(c *gin.Context) {
+	var request struct {
 		IP          string `json:"ip" binding:"required,ip"`
 		Username    string `json:"username" binding:"required"`
 		Password    string `json:"password" binding:"required,validatePassword"`
-		StorageType string `json:"storage_type" binding:"required,validateStorageType"`
-	}{}
+		StorageType string `json:"storage_type" binding:"required,oneof=agent ontap magnascale"`
+	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	var hostModel mgmtmodel.Host
+	hostModel := mgmtmodel.Host{}
 	common.CopyStructList(request, &hostModel)
 
 	if err := hostModel.Register(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to register the host", err.Error())
 		return
 	}
 
-	var hostResponse HostResponse
+	hostResponse := HostResponse{}
 	common.CopyStructList(hostModel, &hostResponse)
 
 	c.JSON(http.StatusOK, hostResponse)
 }
 
-func registerHostsHandler(c *gin.Context) {
-	request := []struct {
+func RegisterHostsHandler(c *gin.Context) {
+	var request []struct {
 		IP          string `json:"ip" binding:"required,ip"`
 		Username    string `json:"username" binding:"required"`
 		Password    string `json:"password" binding:"required,validatePassword"`
-		StorageType string `json:"storage_type" binding:"required,validateStorageType"`
-	}{}
+		StorageType string `json:"storage_type" binding:"required,oneof=agent ontap magnascale"`
+	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("validateStorageType", storageTypeValidator)
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	var hostListModel mgmtmodel.HostList
+	hostListModel := mgmtmodel.HostList{}
 	common.CopyStructList(request, &hostListModel.Hosts)
 
 	if err := hostListModel.Register(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to register the hosts.", "error": err.Error()})
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to register the hosts", err.Error())
 		return
 	}
 
-	var hostResponseList []HostResponse
+	hostResponseList := make([]HostResponse, len(hostListModel.Hosts))
 	common.CopyStructList(hostListModel.Hosts, &hostResponseList)
 
 	c.JSON(http.StatusOK, hostResponseList)
 }
 
-func unregisterHostHandler(c *gin.Context) {
-	request := struct {
+func UnregisterHostHandler(c *gin.Context) {
+	var request struct {
 		IP string `json:"ip" binding:"required,ip"`
-	}{}
+	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	var hostModel mgmtmodel.Host
+	hostModel := mgmtmodel.Host{}
 	common.CopyStructList(request, &hostModel)
 
 	if err := hostModel.Unregister(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to unregister the host.", "error": err.Error()})
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to unregister the host", err.Error())
 		return
 	}
 
 	c.Status(http.StatusOK)
 }
 
-func unregisterHostsHandler(c *gin.Context) {
-	request := []struct {
+func UnregisterHostsHandler(c *gin.Context) {
+	var request []struct {
 		IP string `json:"ip" binding:"required,ip"`
-	}{}
+	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request", "error": err.Error()})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	var hostListModel mgmtmodel.HostList
+	hostListModel := mgmtmodel.HostList{}
 	common.CopyStructList(request, &hostListModel.Hosts)
 
 	if err := hostListModel.Unregister(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to unregister the host.", "error": err.Error()})
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to unregister the hosts", err.Error())
 		return
 	}
 
 	c.Status(http.StatusOK)
 }
 
-func getRegisteredHostsHandler(c *gin.Context) {
+func GetRegisteredHostsHandler(c *gin.Context) {
 	hostName := c.Query("name")
 	hostIP := c.Query("ip")
 	fields := c.Query("fields")
-	storageType := c.DefaultQuery("storage_type", "agent")
+	storageType := c.DefaultQuery("storage_type", StorageTypeAgent)
 	nameKeyword := c.Query("name-like")
 	osTypeKeyword := c.Query("os_type-like")
-	page, err_page := strconv.Atoi(c.Query("page"))
-	limit, err_limit := strconv.Atoi(c.Query("limit"))
+	page, errPage := strconv.Atoi(c.Query("page"))
+	limit, errLimit := strconv.Atoi(c.Query("limit"))
 
-	if (err_page != nil && err_limit == nil) || (err_page == nil && err_limit != nil) || (hostIP != "" && validateIPAddress(hostIP) != nil) {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request."})
+	if (errPage != nil && errLimit == nil) || (errPage == nil && errLimit != nil) || (hostIP != "" && validateIPAddress(hostIP) != nil) {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 		return
 	}
 
 	if hostIP == "" && hostName == "" {
-		// Using mgmtmodel.HostList, to get the list of the host with filter.
 		hostListModel := mgmtmodel.HostList{}
 
 		filter := common.QueryFilter{
@@ -165,23 +170,17 @@ func getRegisteredHostsHandler(c *gin.Context) {
 		}
 
 		if page == 0 && limit == 0 {
-			// Query hosts without pagination.
 			hosts, err := hostListModel.Get(&filter)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": fmt.Sprintf("Failed to get the hosts with the parameters: storage_type=%s", storageType),
-					"error":   err.Error(),
-				})
+				ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to get the hosts with the parameters: storage_type=%s", storageType), err.Error())
 				return
 			}
 
-			var hostResposeList []HostResponse
+			hostResponseList := make([]HostResponse, len(hosts))
+			common.CopyStructList(hosts, &hostResponseList)
 
-			common.CopyStructList(hosts, &hostResposeList)
-
-			c.JSON(http.StatusOK, hostResposeList)
+			c.JSON(http.StatusOK, hostResponseList)
 		} else {
-			// Add the pagination into filter, and then query hosts with pagination.
 			filter.Pagination = &common.Pagination{
 				Page:     page,
 				PageSize: limit,
@@ -189,10 +188,7 @@ func getRegisteredHostsHandler(c *gin.Context) {
 
 			paginationHosts, err := hostListModel.Pagination(&filter)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": fmt.Sprintf("Failed to get the host with the parameters: storage_type=%s,page=%d,limit=%d", storageType, page, limit),
-					"error":   err.Error(),
-				})
+				ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to get the hosts with the parameters: storage_type=%s, page=%d, limit=%d", storageType, page, limit), err.Error())
 				return
 			}
 
@@ -201,13 +197,11 @@ func getRegisteredHostsHandler(c *gin.Context) {
 				Limit:      limit,
 				TotalCount: paginationHosts.TotalCount,
 			}
-
 			common.CopyStructList(paginationHosts.Hosts, &paginationHostResponse.Hosts)
 
 			c.JSON(http.StatusOK, paginationHostResponse)
 		}
 	} else {
-		// Using mgmtmodel.Host to get the host
 		hostModel := mgmtmodel.Host{
 			IP:           hostIP,
 			ComputerName: hostName,
@@ -215,21 +209,20 @@ func getRegisteredHostsHandler(c *gin.Context) {
 
 		host, err := hostModel.Get()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to get the registered host.", "error": err.Error()})
+			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the registered host", err.Error())
 			return
 		}
 
-		var hostResponse HostResponse
+		hostResponse := HostResponse{}
 		common.CopyStructList(host, &hostResponse)
 
-		HostResponseList := []HostResponse{}
-		HostResponseList = append(HostResponseList, hostResponse)
+		hostResponseList := []HostResponse{hostResponse}
 
-		c.JSON(http.StatusOK, HostResponseList)
+		c.JSON(http.StatusOK, hostResponseList)
 	}
 }
 
-func getSystemInfoOnAgentHandler(c *gin.Context) {
+func GetSystemInfoOnAgentHandler(c *gin.Context) {
 	hostContext := common.HostContext{
 		Username: c.Request.Header.Get("X-agent-username"),
 		Password: c.Request.Header.Get("X-agent-password"),
@@ -238,7 +231,7 @@ func getSystemInfoOnAgentHandler(c *gin.Context) {
 	agent := agent.GetAgent()
 
 	if systemInfo, err := agent.GetSystemInfo(hostContext); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to get system info on agent", err.Error())
 	} else {
 		c.JSON(http.StatusOK, systemInfo)
 	}
@@ -247,7 +240,7 @@ func getSystemInfoOnAgentHandler(c *gin.Context) {
 func storageTypeValidator(fl validator.FieldLevel) bool {
 	storageType := fl.Field().String()
 
-	storageTypeList := []string{"agent", "ontap", "magnascale"}
+	storageTypeList := []string{StorageTypeAgent, StorageTypeOntap, StorageTypeMagnascale}
 
 	return common.In(storageType, storageTypeList)
 }

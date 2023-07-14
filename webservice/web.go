@@ -34,11 +34,11 @@ func Start() {
 	// router.POST("/login", getTokenHandler)
 
 	// Portal API about host
-	portal.POST("/hosts/register", registerHostHandler)
-	portal.POST("/hosts/batch-register", registerHostsHandler)
-	portal.POST("/hosts/unregister", unregisterHostHandler)
-	portal.POST("/hosts/batch-unregister", unregisterHostsHandler)
-	portal.GET("/hosts", getRegisteredHostsHandler)
+	portal.POST("/hosts/register", RegisterHostHandler)
+	portal.POST("/hosts/batch-register", RegisterHostsHandler)
+	portal.POST("/hosts/unregister", UnregisterHostHandler)
+	portal.POST("/hosts/batch-unregister", UnregisterHostsHandler)
+	portal.GET("/hosts", GetRegisteredHostsHandler)
 	// Portal API about directory
 	portal.POST("/directories/create", createDirectoryHandler)
 	portal.POST("/directories/batch-create", createDirectoriesHandler)
@@ -55,7 +55,7 @@ func Start() {
 	portal.Static("/docs", "./docs/swagger-ui/dist")
 
 	// Agent API about host
-	agent.GET("/system-info", getSystemInfoOnAgentHandler)
+	agent.GET("/system-info", GetSystemInfoOnAgentHandler)
 	// Agent API about directory
 	agent.GET("/directories/detail", getDirectoryDetailsOnAgentHandler)
 	agent.POST("/directories/create", createDirectoryOnAgentHandler)
@@ -92,4 +92,13 @@ func validateIPAddress(ip string) (err error) {
 	ipAddress := IPAddress{IP: ip}
 
 	return validate.Struct(ipAddress)
+}
+
+func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage string) {
+	response := gin.H{"message": message}
+	if errMessage != "" {
+		response["error"] = errMessage
+	}
+
+	c.JSON(statusCode, response)
 }
