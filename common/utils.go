@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"io"
 	"reflect"
 	"sort"
@@ -25,64 +24,81 @@ func In(target string, str_array []string) bool {
 	return false
 }
 
+// 定义常量
+const (
+	KeySize   = 32 // AES-256
+	NonceSize = 12 // GCM Nonce Size
+	TagSize   = 16 // GCM Tag Size
+)
+
 func Encrypt(plaintext, key string) (string, error) {
-	// Generate a new AES cipher block using the provided key
+	// 验证密钥长度
+	if len(key) != KeySize {
+		return "", errors.New("invalid key length")
+	}
+
+	// 生成 AES 密码块
 	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		return "", err
 	}
 
-	// Create a new Galois/Counter Mode (GCM) cipher using the block cipher
-	// GCM provides authenticated encryption and is generally recommended
+	// 创建 GCM 密码器
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return "", err
 	}
 
-	// Generate a random nonce (IV)
-	nonce := make([]byte, gcm.NonceSize())
+	// 生成随机 nonce
+	nonce := make([]byte, NonceSize)
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return "", err
 	}
 
-	// Encrypt the plaintext using the GCM cipher
+	// 加密明文
 	ciphertext := gcm.Seal(nil, nonce, []byte(plaintext), nil)
 
-	// Concatenate the nonce and ciphertext to create the final encrypted message
+	// 拼接 nonce 和 ciphertext
 	encryptedMessage := append(nonce, ciphertext...)
 
-	// Encode the encrypted message in base64 for convenient storage or transmission
+	// Base64 编码
 	return base64.StdEncoding.EncodeToString(encryptedMessage), nil
 }
 
-func Decrypt(encrypted_text, key string) (string, error) {
-	// Decode the encrypted message from base64
-	encryptedMessage, err := base64.StdEncoding.DecodeString(encrypted_text)
+func Decrypt(encryptedText, key string) (string, error) {
+	// 验证密钥长度
+	if len(key) != KeySize {
+		return "", errors.New("invalid key length")
+	}
+
+	// Base64 解码
+	encryptedMessage, err := base64.StdEncoding.DecodeString(encryptedText)
 	if err != nil {
 		return "", err
 	}
 
-	// Generate a new AES cipher block using the provided key
+	// 生成 AES 密码块
 	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		return "", err
 	}
 
+	// 创建 GCM 密码器
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return "", err
 	}
 
-	nonceSize := gcm.NonceSize()
-
-	if len(encryptedMessage) < nonceSize {
-		return "", fmt.Errorf("failed to decrypt the sensitive informaiton")
+	// 验证长度
+	if len(encryptedMessage) < NonceSize+TagSize {
+		return "", errors.New("invalid encrypted message")
 	}
 
-	nonce := encryptedMessage[:nonceSize]
-	ciphertext := encryptedMessage[nonceSize:]
+	// 提取 nonce 和 ciphertext
+	nonce := encryptedMessage[:NonceSize]
+	ciphertext := encryptedMessage[NonceSize:]
 
-	// Decrypt the ciphertext using the GCM cipher
+	// 解密密文
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		return "", err

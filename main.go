@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		panic(err)

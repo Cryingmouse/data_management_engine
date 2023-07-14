@@ -144,11 +144,10 @@ func (dl *DirectoryList) Create() error {
 
 	g, _ := errgroup.WithContext(context.Background())
 
-	results := make([]Directory, len(dl.Directories))
+	results := make([]common.DirectoryDetail, len(dl.Directories))
 	var resultErr error
 
-	for i, d := range dl.Directories {
-		index := i     // 避免闭包问题
+	for _, d := range dl.Directories {
 		directory := d // 避免闭包问题
 		g.Go(func() error {
 			host := db.Host{IP: directory.HostIP}
@@ -164,12 +163,13 @@ func (dl *DirectoryList) Create() error {
 			}
 
 			driver := driver.GetDriver(host.StorageType)
-			if _, err := driver.CreateDirectory(hostContext, directory.Name); err != nil {
+			directoryDetail, err := driver.CreateDirectory(hostContext, directory.Name)
+			if err != nil {
 				resultErr = errors.Join(resultErr, err)
 				return err
 			}
 
-			results[index] = directory // 保存协程的返回值
+			results = append(results, directoryDetail) // 保存协程的返回值
 
 			return nil
 		})
@@ -186,6 +186,7 @@ func (dl *DirectoryList) Create() error {
 		return err
 	}
 
+	// Save to database.
 	dbDirectoryList := db.DirectoryList{}
 
 	if err := common.CopyStructList(dl.Directories, &dbDirectoryList.Directories); err != nil {

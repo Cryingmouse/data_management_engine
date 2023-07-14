@@ -39,3 +39,38 @@ func TestCopyStructList(t *testing.T) {
 		t.Errorf("Copied individual struct is not equal to the source")
 	}
 }
+
+func TestEncrypt(t *testing.T) {
+	type args struct {
+		plaintext string
+		key       string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "test_password",
+			args: args{
+				plaintext: "Password123",
+				key:       "MySecretForMagnascale!!!",
+			},
+			want:    "",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Encrypt(tt.args.plaintext, tt.args.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Encrypt() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Encrypt() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

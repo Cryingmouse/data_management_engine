@@ -73,9 +73,13 @@ func (hl *HostList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err
 		return fmt.Errorf("failed to query the hosts by the filter %v in database: %w", filter, err)
 	}
 
-	for _, host := range hl.Hosts {
-		if host.Password != "" {
-			host.Password, err = common.Decrypt(host.Password, common.SecurityKey)
+	for i := range hl.Hosts {
+		if hl.Hosts[i].Password != "" {
+			hl.Hosts[i].Password, err = common.Decrypt(hl.Hosts[i].Password, common.SecurityKey)
+			if err != nil {
+				// 处理解密错误，可以返回错误或采取其他措施
+				return fmt.Errorf("failed to decrypt password: %w", err)
+			}
 		}
 	}
 

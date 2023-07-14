@@ -51,10 +51,10 @@ func createDirectoryHandler(c *gin.Context) {
 		return
 	}
 
-	var response DirectoryResponse
-	common.CopyStructList(directoryModel, &response)
+	var directoryResponse DirectoryResponse
+	common.CopyStructList(directoryModel, &directoryResponse)
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, directoryResponse)
 }
 
 func createDirectoriesHandler(c *gin.Context) {

@@ -44,7 +44,7 @@ func (d *AgentDriver) CreateDirectory(hostContext common.HostContext, name strin
 func (d *AgentDriver) GetDirectoryDetail(hostContext common.HostContext, name string) (detail common.DirectoryDetail, err error) {
 	restClient := client.GetRestClient(hostContext, "agent")
 
-	url := fmt.Sprintf(`"directories/detail?name=%s"`, name)
+	url := fmt.Sprintf("directories/detail?name=%s", name)
 
 	response, err := restClient.Get(url, "application/json")
 	if err != nil {
@@ -69,7 +69,7 @@ func (d *AgentDriver) GetDirectoryDetail(hostContext common.HostContext, name st
 func (d *AgentDriver) GetDirectoriesDetail(hostContext common.HostContext, names []string) (detail []common.DirectoryDetail, err error) {
 	restClient := client.GetRestClient(hostContext, "agent")
 
-	url := fmt.Sprintf(`"directories/detail?name=%s"`, strings.Join(names, ","))
+	url := fmt.Sprintf("directories/detail?name=%s", strings.Join(names, ","))
 
 	response, err := restClient.Get(url, "application/json")
 	if err != nil {

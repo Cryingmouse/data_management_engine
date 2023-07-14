@@ -21,32 +21,29 @@ func (agent *WindowsAgent) GetDirectoryDetail(hostContext common.HostContext, na
 	script := "./agent/windows/Get-DirectoryDetails.ps1"
 
 	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
-	output, err := execPowerShellCmdlet(script, dirPath)
+	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", dirPath)
 	if err != nil {
 		return detail, err
 	}
 
-	var result map[string]map[string]interface{}
+	var result map[string]interface{}
 	err = json.Unmarshal(output, &result)
 	if err != nil {
 		return detail, err
 	}
 
-	var directories []common.DirectoryDetail
-	for _, value := range result {
-		directory := common.DirectoryDetail{
-			Name:           value["Name"].(string),
-			FullPath:       value["FullPath"].(string),
-			CreationTime:   value["CreationTime"].(string),
-			LastWriteTime:  value["LastWriteTime"].(string),
-			LastAccessTime: value["LastAccessTime"].(string),
-			Exist:          value["Exist"].(bool),
-			ParentFullPath: value["ParentFullPath"].(string),
-		}
-		directories = append(directories, directory)
+	detail = common.DirectoryDetail{
+		HostIP:         hostContext.IP,
+		Name:           result["Name"].(string),
+		FullPath:       result["FullPath"].(string),
+		CreationTime:   result["CreationTime"].(string),
+		LastWriteTime:  result["LastWriteTime"].(string),
+		LastAccessTime: result["LastAccessTime"].(string),
+		Exist:          result["Exist"].(bool),
+		ParentFullPath: result["ParentFullPath"].(string),
 	}
 
-	return directories[0], err
+	return detail, err
 }
 
 func (agent *WindowsAgent) GetDirectoriesDetail(hostContext common.HostContext, names []string) (detail []common.DirectoryDetail, err error) {
@@ -59,26 +56,27 @@ func (agent *WindowsAgent) GetDirectoriesDetail(hostContext common.HostContext, 
 		dirPaths = append(dirPaths, dirPath)
 	}
 
-	output, err := execPowerShellCmdlet(script, strings.Join(dirPaths, ";"))
+	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", strings.Join(dirPaths, ","))
 	if err != nil {
 		return detail, err
 	}
 
-	var result map[string]map[string]interface{}
+	var result []map[string]interface{}
 	err = json.Unmarshal(output, &result)
 	if err != nil {
 		return detail, err
 	}
 
-	for _, value := range result {
+	for _, item := range result {
 		directory := common.DirectoryDetail{
-			Name:           value["Name"].(string),
-			FullPath:       value["FullPath"].(string),
-			CreationTime:   value["CreationTime"].(string),
-			LastWriteTime:  value["LastWriteTime"].(string),
-			LastAccessTime: value["LastAccessTime"].(string),
-			Exist:          value["Exist"].(bool),
-			ParentFullPath: value["ParentFullPath"].(string),
+			HostIP:         hostContext.IP,
+			Name:           item["Name"].(string),
+			FullPath:       item["FullPath"].(string),
+			CreationTime:   item["CreationTime"].(string),
+			LastWriteTime:  item["LastWriteTime"].(string),
+			LastAccessTime: item["LastAccessTime"].(string),
+			Exist:          item["Exist"].(bool),
+			ParentFullPath: item["ParentFullPath"].(string),
 		}
 		detail = append(detail, directory)
 	}
@@ -275,7 +273,7 @@ func (agent *WindowsAgent) GetSystemInfo(hostContext common.HostContext) (system
 		BuildNumber:    result["BuildNumber"],
 	}
 
-	return systemInfo, nil
+	return systemInfo, err
 }
 
 func execPowerShellCmdlet(script string, args ...string) (output []byte, err error) {

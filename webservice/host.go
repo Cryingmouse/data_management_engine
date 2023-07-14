@@ -21,6 +21,8 @@ type HostResponse struct {
 	OSArchitecture string `json:"os_arch,omitempty"`
 	OSVersion      string `json:"os_version,omitempty"`
 	BuildNumber    string `json:"build_number,omitempty"`
+	Username       string `json:"username,omitempty"`
+	Password       string `json:"password,omitempty"`
 }
 
 type PaginationHostResponse struct {
@@ -51,10 +53,10 @@ func registerHostHandler(c *gin.Context) {
 		return
 	}
 
-	var response HostResponse
-	common.CopyStructList(hostModel, &response)
+	var hostResponse HostResponse
+	common.CopyStructList(hostModel, &hostResponse)
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, hostResponse)
 }
 
 func registerHostsHandler(c *gin.Context) {
@@ -82,10 +84,10 @@ func registerHostsHandler(c *gin.Context) {
 		return
 	}
 
-	var response []HostResponse
-	common.CopyStructList(hostListModel.Hosts, &response)
+	var hostResponseList []HostResponse
+	common.CopyStructList(hostListModel.Hosts, &hostResponseList)
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, hostResponseList)
 }
 
 func unregisterHostHandler(c *gin.Context) {
@@ -173,11 +175,11 @@ func getRegisteredHostsHandler(c *gin.Context) {
 				return
 			}
 
-			var hostInfoList []HostResponse
+			var hostResposeList []HostResponse
 
-			common.CopyStructList(hosts, &hostInfoList)
+			common.CopyStructList(hosts, &hostResposeList)
 
-			c.JSON(http.StatusOK, hostInfoList)
+			c.JSON(http.StatusOK, hostResposeList)
 		} else {
 			// Add the pagination into filter, and then query hosts with pagination.
 			filter.Pagination = &common.Pagination{
@@ -194,15 +196,15 @@ func getRegisteredHostsHandler(c *gin.Context) {
 				return
 			}
 
-			paginationHostList := PaginationHostResponse{
+			paginationHostResponse := PaginationHostResponse{
 				Page:       page,
 				Limit:      limit,
 				TotalCount: paginationHosts.TotalCount,
 			}
 
-			common.CopyStructList(paginationHosts.Hosts, &paginationHostList.Hosts)
+			common.CopyStructList(paginationHosts.Hosts, &paginationHostResponse.Hosts)
 
-			c.JSON(http.StatusOK, paginationHostList)
+			c.JSON(http.StatusOK, paginationHostResponse)
 		}
 	} else {
 		// Using mgmtmodel.Host to get the host
@@ -217,13 +219,13 @@ func getRegisteredHostsHandler(c *gin.Context) {
 			return
 		}
 
-		var hostInfo HostResponse
-		common.CopyStructList(host, &hostInfo)
+		var hostResponse HostResponse
+		common.CopyStructList(host, &hostResponse)
 
-		hostInfoList := []HostResponse{}
-		hostInfoList = append(hostInfoList, hostInfo)
+		HostResponseList := []HostResponse{}
+		HostResponseList = append(HostResponseList, hostResponse)
 
-		c.JSON(http.StatusOK, hostInfoList)
+		c.JSON(http.StatusOK, HostResponseList)
 	}
 }
 

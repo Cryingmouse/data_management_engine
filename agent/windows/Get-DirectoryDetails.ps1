@@ -1,5 +1,5 @@
 param (
-    [string]$DirectoryPaths
+    [String] $DirectoryPaths
 )
 
 function Get-DirectoryAttributes {
@@ -56,34 +56,27 @@ function Get-DirectoryAttributes {
     }
 }
 
-function Get-DirectoryDetails {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$DirectoryPaths
-    )
+$directoryPathsArray = $DirectoryPaths -split ','
 
-    $directoryPathsArray = $DirectoryPaths -split ';'
-    $directoryDetails = @{}
+$directoryDetails = @()
 
-    foreach ($directoryPath in $directoryPathsArray) {
-        if (Test-Path -Path $directoryPath -PathType Container) {
-            $directory = Get-Item -Path $directoryPath | Select-Object Name, FullName, CreationTime, LastWriteTime, LastAccessTime, Exists, Attributes, Root, Parent
-            $attributesDetails = Get-DirectoryAttributes -Attributes $directory.Attributes
+foreach ($directoryPath in $directoryPathsArray) {
+    if (Test-Path -Path $directoryPath -PathType Container) {
+        $directory = Get-Item -Path $directoryPath | Select-Object Name, FullName, CreationTime, LastWriteTime, LastAccessTime, Exists, Attributes, Root, Parent
+        $attributesDetails = Get-DirectoryAttributes -Attributes $directory.Attributes
 
-            $directoryDetails[$directory.Name] = @{
-                "Name"           = $directory.Name
-                "FullPath"       = $directory.FullName
-                "CreationTime"   = $directory.CreationTime.DateTime
-                "LastWriteTime"  = $directory.LastWriteTime.DateTime
-                "LastAccessTime" = $directory.LastAccessTime.DateTime
-                "Exist"          = $directory.Exists
-                "Attributes"     = $attributesDetails
-                "ParentFullPath" = $directory.Parent.FullName
-            }
+        $directoryDetails += @{
+            "Name"           = $directory.Name
+            "FullPath"       = $directory.FullName
+            "CreationTime"   = $directory.CreationTime.DateTime
+            "LastWriteTime"  = $directory.LastWriteTime.DateTime
+            "LastAccessTime" = $directory.LastAccessTime.DateTime
+            "Exist"          = $directory.Exists
+            "Attributes"     = $attributesDetails
+            "ParentFullPath" = $directory.Parent.FullName
         }
     }
-
-    $directoryDetails | ConvertTo-Json
 }
 
-Get-DirectoryDetails -DirectoryPaths $DirectoryPaths
+# Output directory details in JSON format
+$directoryDetails | ConvertTo-Json
