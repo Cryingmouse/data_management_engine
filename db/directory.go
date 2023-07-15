@@ -32,7 +32,7 @@ func (d *Directory) Save(engine *DatabaseEngine) error {
 }
 
 func (d *Directory) Delete(engine *DatabaseEngine) error {
-	return engine.DB.Unscoped().Delete(&d, d).Error
+	return engine.DB.Unscoped().Where(d).Delete(d).Error
 }
 
 type DirectoryList struct {

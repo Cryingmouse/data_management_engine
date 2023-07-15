@@ -6,7 +6,6 @@ import (
 
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/thoas/go-funk"
-
 	"gorm.io/gorm"
 )
 
@@ -23,18 +22,29 @@ type Host struct {
 	BuildNumber    string `gorm:"column:build_number"`
 }
 
-func (h *Host) Get(engine *DatabaseEngine) (err error) {
-	if err = engine.DB.Where(h).First(h).Error; err != nil {
+// Get retrieves a Host from the database.
+func (h *Host) Get(engine *DatabaseEngine) error {
+	err := engine.DB.Where(h).First(h).Error
+	if err != nil {
 		return err
 	}
 
 	h.Password, err = common.Decrypt(h.Password, common.SecurityKey)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt password: %w", err)
+	}
 
-	return err
+	return nil
 }
 
+// Save a Host to the database.
 func (h *Host) Save(engine *DatabaseEngine) error {
-	host := Host{
+	encryptedPassword, err := common.Encrypt(h.Password, common.SecurityKey)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt password: %w", err)
+	}
+
+	host := &Host{
 		IP:             h.IP,
 		ComputerName:   h.ComputerName,
 		Username:       h.Username,
@@ -43,47 +53,44 @@ func (h *Host) Save(engine *DatabaseEngine) error {
 		OSArchitecture: h.OSArchitecture,
 		OSVersion:      h.OSVersion,
 		BuildNumber:    h.BuildNumber,
+		Password:       string(encryptedPassword),
 	}
 
-	encrypted_password, err := common.Encrypt(h.Password, common.SecurityKey)
-	if err != nil {
-		return err
-	}
-	host.Password = string(encrypted_password)
-
-	return engine.DB.Create(&host).Error
+	return engine.DB.Create(host).Error
 }
 
+// Delete a Host from the database.
 func (h *Host) Delete(engine *DatabaseEngine) error {
-	return engine.DB.Unscoped().Delete(&h, h).Error
+	return engine.DB.Unscoped().Where(h).Delete(h).Error
 }
 
 type HostList struct {
 	Hosts []Host
 }
 
-func (hl *HostList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
+// Get a list of Hosts from the database.
+func (hl *HostList) Get(engine *DatabaseEngine, filter *common.QueryFilter) error {
 	model := Host{}
 
 	if filter.Pagination != nil {
-		return fmt.Errorf("invalid filter: there is pagination in the filter")
+		return errors.New("invalid filter: pagination is not supported")
 	}
 
 	if _, err := Query(engine, model, filter, &hl.Hosts); err != nil {
-		return fmt.Errorf("failed to query the hosts by the filter %v in database: %w", filter, err)
+		return fmt.Errorf("failed to query hosts from the database: %w", err)
 	}
 
 	for i := range hl.Hosts {
 		if hl.Hosts[i].Password != "" {
+			var err error
 			hl.Hosts[i].Password, err = common.Decrypt(hl.Hosts[i].Password, common.SecurityKey)
 			if err != nil {
-				// 处理解密错误，可以返回错误或采取其他措施
 				return fmt.Errorf("failed to decrypt password: %w", err)
 			}
 		}
 	}
 
-	return
+	return nil
 }
 
 type PaginationHost struct {
@@ -91,64 +98,66 @@ type PaginationHost struct {
 	TotalCount int64
 }
 
-func (hl *HostList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (response *PaginationHost, err error) {
-	var totalCount int64
-	model := Host{}
-
+// Pagination retrieves a paginated list of Hosts from the database.
+func (hl *HostList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (*PaginationHost, error) {
 	if filter.Pagination == nil {
-		return response, fmt.Errorf("invalid filter: missing pagination in the filter")
+		return nil, errors.New("invalid filter: pagination is required")
 	}
+
+	model := Host{}
+	var totalCount int64
+	var err error
 
 	totalCount, err = Query(engine, model, filter, &hl.Hosts)
 	if err != nil {
-		return response, fmt.Errorf("failed to query the hosts by the filter %v in database: %w", filter, err)
+		return nil, fmt.Errorf("failed to query hosts from the database: %w", err)
 	}
 
-	for _, host := range hl.Hosts {
-		if host.Password != "" {
-			host.Password, err = common.Decrypt(host.Password, common.SecurityKey)
+	for i := range hl.Hosts {
+		if hl.Hosts[i].Password != "" {
+			var err error
+			hl.Hosts[i].Password, err = common.Decrypt(hl.Hosts[i].Password, common.SecurityKey)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decrypt password: %w", err)
+			}
 		}
 	}
 
-	response = &PaginationHost{
+	response := &PaginationHost{
 		Hosts:      hl.Hosts,
 		TotalCount: totalCount,
 	}
 
-	return response, err
+	return response, nil
 }
 
-func (hl *HostList) Save(engine *DatabaseEngine) (err error) {
+// Save saves a list of Hosts to the database.
+func (hl *HostList) Save(engine *DatabaseEngine) error {
 	if len(hl.Hosts) == 0 {
 		return errors.New("HostList is empty")
 	}
 
 	for i, host := range hl.Hosts {
-		// Encrypt the password
-		hl.Hosts[i].Password, err = common.Encrypt(host.Password, common.SecurityKey)
+		encryptedPassword, err := common.Encrypt(host.Password, common.SecurityKey)
 		if err != nil {
 			return fmt.Errorf("failed to encrypt password for host %v: %w", host.ComputerName, err)
 		}
+
+		hl.Hosts[i].Password = string(encryptedPassword)
 	}
 
-	err = engine.DB.CreateInBatches(hl.Hosts, len(hl.Hosts)).Error
-	if err != nil {
-		return err
-	}
-	return nil
+	return engine.DB.CreateInBatches(hl.Hosts, len(hl.Hosts)).Error
 }
 
+// Delete deletes a list of Hosts from the database.
 func (hl *HostList) Delete(engine *DatabaseEngine) error {
-	var host Host
-
-	query := engine.DB.Where("1 = 1")
-
+	var hosts []Host
 	ips := funk.Map(hl.Hosts, func(host Host) string {
 		return host.IP
 	}).([]string)
 	if ips != nil {
-		query.Where("ip IN (?)", ips)
+		return engine.DB.Where("ip IN (?)", ips).Unscoped().Delete(&hosts).Error
 	}
 
-	return query.Unscoped().Delete(&host).Error
+	return nil
 }
