@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -11,6 +12,7 @@ func TestAgentDriver_GetDirectoriesDetail(t *testing.T) {
 	type args struct {
 		hostContext common.HostContext
 		names       []string
+		ctx         context.Context
 	}
 	tests := []struct {
 		name       string
@@ -27,6 +29,7 @@ func TestAgentDriver_GetDirectoriesDetail(t *testing.T) {
 					IP: "localhost",
 				},
 				names: []string{"Directory-1", "Directory-2"},
+				ctx:   nil,
 			},
 			wantDetail: []common.DirectoryDetail{
 				{
@@ -53,7 +56,7 @@ func TestAgentDriver_GetDirectoriesDetail(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotDetail, err := tt.d.GetDirectoriesDetail(tt.args.hostContext, tt.args.names)
+			gotDetail, err := tt.d.GetDirectoriesDetail(tt.args.ctx, tt.args.names)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AgentDriver.GetDirectoriesDetail() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -69,6 +72,7 @@ func TestAgentDriver_GetDirectoryDetail(t *testing.T) {
 	type args struct {
 		hostContext common.HostContext
 		name        string
+		ctx         context.Context
 	}
 	tests := []struct {
 		name       string
@@ -85,6 +89,7 @@ func TestAgentDriver_GetDirectoryDetail(t *testing.T) {
 					IP: "127.0.0.1",
 				},
 				name: "Directory-1",
+				ctx:  nil,
 			},
 			wantDetail: common.DirectoryDetail{
 				Name:           "Directory-1",
@@ -100,7 +105,7 @@ func TestAgentDriver_GetDirectoryDetail(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotDetail, err := tt.d.GetDirectoryDetail(tt.args.hostContext, tt.args.name)
+			gotDetail, err := tt.d.GetDirectoryDetail(tt.args.ctx, tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AgentDriver.GetDirectoryDetail() error = %v, wantErr %v", err, tt.wantErr)
 				return

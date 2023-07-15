@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,8 +13,11 @@ import (
 type AgentDriver struct {
 }
 
-func (d *AgentDriver) CreateDirectory(hostContext common.HostContext, name string) (directoryDetails common.DirectoryDetail, err error) {
-	restClient := client.GetRestClient(hostContext, "agent")
+func (d *AgentDriver) CreateDirectory(ctx context.Context, name string) (directoryDetails common.DirectoryDetail, err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
+
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
 	// Create the request body as a string
 	request_body := fmt.Sprintf(`{"name": "%s"}`, name)
@@ -41,8 +45,11 @@ func (d *AgentDriver) CreateDirectory(hostContext common.HostContext, name strin
 	return directoryDetails, err
 }
 
-func (d *AgentDriver) GetDirectoryDetail(hostContext common.HostContext, name string) (detail common.DirectoryDetail, err error) {
-	restClient := client.GetRestClient(hostContext, "agent")
+func (d *AgentDriver) GetDirectoryDetail(ctx context.Context, name string) (detail common.DirectoryDetail, err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
+
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
 	url := fmt.Sprintf("directories/detail?name=%s", name)
 
@@ -66,8 +73,11 @@ func (d *AgentDriver) GetDirectoryDetail(hostContext common.HostContext, name st
 	return detail, err
 }
 
-func (d *AgentDriver) GetDirectoriesDetail(hostContext common.HostContext, names []string) (detail []common.DirectoryDetail, err error) {
-	restClient := client.GetRestClient(hostContext, "agent")
+func (d *AgentDriver) GetDirectoriesDetail(ctx context.Context, names []string) (detail []common.DirectoryDetail, err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
+
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
 	url := fmt.Sprintf("directories/detail?name=%s", strings.Join(names, ","))
 
@@ -87,8 +97,11 @@ func (d *AgentDriver) GetDirectoriesDetail(hostContext common.HostContext, names
 	return detail, err
 }
 
-func (d *AgentDriver) DeleteDirectory(hostContext common.HostContext, name string) (err error) {
-	restClient := client.GetRestClient(hostContext, "agent")
+func (d *AgentDriver) DeleteDirectory(ctx context.Context, name string) (err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
+
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
 	// Create the request body as a string
 	body := fmt.Sprintf(`{"name": "%s"}`, name)
@@ -109,7 +122,7 @@ func (d *AgentDriver) DeleteDirectory(hostContext common.HostContext, name strin
 	return nil
 }
 
-func (d *AgentDriver) CreateShare(hostContext common.HostContext, name string) (resp *http.Response, err error) {
+func (d *AgentDriver) CreateShare(ctx context.Context, name string) (resp *http.Response, err error) {
 	// TODO: Check if the root path and directory name is valid
 
 	// Create a new folder called `newFolderName` in the current working directory.
@@ -117,7 +130,7 @@ func (d *AgentDriver) CreateShare(hostContext common.HostContext, name string) (
 	return nil, nil
 }
 
-func (d *AgentDriver) DeleteShare(hostContext common.HostContext, name string) (resp *http.Response, err error) {
+func (d *AgentDriver) DeleteShare(ctx context.Context, name string) (resp *http.Response, err error) {
 	// TODO: Check if the root path and directory name is valid
 
 	// Delete a new folder called `newFolderName` in the current working directory.
@@ -125,8 +138,11 @@ func (d *AgentDriver) DeleteShare(hostContext common.HostContext, name string) (
 	return nil, nil
 }
 
-func (d *AgentDriver) CreateLocalUser(hostContext common.HostContext, name, password string) (resp *http.Response, err error) {
-	restClient := client.GetRestClient(hostContext, "agent")
+func (d *AgentDriver) CreateLocalUser(ctx context.Context, name, password string) (resp *http.Response, err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
+
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
 	// Create the request body as a string
 	body := fmt.Sprintf(`{"name": "%s", "password": "%s"}`, name, password)
@@ -137,8 +153,11 @@ func (d *AgentDriver) CreateLocalUser(hostContext common.HostContext, name, pass
 	return restClient.Post("user/create", "application/json", reader)
 }
 
-func (d *AgentDriver) DeleteUser(hostContext common.HostContext, name string) (resp *http.Response, err error) {
-	restClient := client.GetRestClient(hostContext, "agent")
+func (d *AgentDriver) DeleteUser(ctx context.Context, name string) (resp *http.Response, err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
+
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
 	// Create the request body as a string
 	body := fmt.Sprintf(`{"name": "%s"}`, name)
@@ -149,8 +168,11 @@ func (d *AgentDriver) DeleteUser(hostContext common.HostContext, name string) (r
 	return restClient.Post("user/delete", "application/json", reader)
 }
 
-func (d *AgentDriver) GetSystemInfo(hostContext common.HostContext) (systemInfo common.SystemInfo, err error) {
-	restClient := client.GetRestClient(hostContext, "agent")
+func (d *AgentDriver) GetSystemInfo(ctx context.Context) (systemInfo common.SystemInfo, err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
+
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
 	response, err := restClient.Get("system-info", "application/json")
 

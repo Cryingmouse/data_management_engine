@@ -24,8 +24,8 @@ type Host struct {
 	BuildNumber    string
 }
 
-func (h *Host) Register() error {
-	systemInfo, err := h.getSystemInfo()
+func (h *Host) Register(ctx context.Context) error {
+	systemInfo, err := h.getSystemInfo(ctx)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (h *Host) Register() error {
 	return err
 }
 
-func (h *Host) Unregister() error {
+func (h *Host) Unregister(ctx context.Context) error {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -73,7 +73,7 @@ func (h *Host) Unregister() error {
 			HostIP: h.IP,
 		},
 	}
-	if directories, err := directoryList.Get(&filter); err != nil || len(directories) != 0 {
+	if directories, err := directoryList.Get(ctx, &filter); err != nil || len(directories) != 0 {
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (h *Host) Unregister() error {
 	return host.Delete(engine)
 }
 
-func (h *Host) Get() (*Host, error) {
+func (h *Host) Get(ctx context.Context) (*Host, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ type HostList struct {
 	Hosts []Host
 }
 
-func (hl *HostList) Register() error {
+func (hl *HostList) Register(ctx context.Context) error {
 	g, _ := errgroup.WithContext(context.Background())
 
 	results := make([]common.SystemInfo, len(hl.Hosts))
@@ -115,7 +115,7 @@ func (hl *HostList) Register() error {
 		index := i // 避免闭包问题
 		host := h  // 避免闭包问题
 		g.Go(func() error {
-			systemInfo, err := host.getSystemInfo()
+			systemInfo, err := host.getSystemInfo(ctx)
 			if err != nil {
 				resultErr = errors.Join(resultErr, err)
 				return err
@@ -159,7 +159,7 @@ func (hl *HostList) Register() error {
 	}
 }
 
-func (hl *HostList) Unregister() error {
+func (hl *HostList) Unregister(ctx context.Context) error {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -174,7 +174,7 @@ func (hl *HostList) Unregister() error {
 	return hostList.Delete(engine)
 }
 
-func (hl *HostList) Get(filter *common.QueryFilter) ([]Host, error) {
+func (hl *HostList) Get(ctx context.Context, filter *common.QueryFilter) ([]Host, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		panic(err)
@@ -197,7 +197,7 @@ type PaginationHost struct {
 	TotalCount int64
 }
 
-func (hl *HostList) Pagination(filter *common.QueryFilter) (*PaginationHost, error) {
+func (hl *HostList) Pagination(ctx context.Context, filter *common.QueryFilter) (*PaginationHost, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -220,13 +220,16 @@ func (hl *HostList) Pagination(filter *common.QueryFilter) (*PaginationHost, err
 	return &paginationHostList, nil
 }
 
-func (h *Host) getSystemInfo() (systemInfo common.SystemInfo, err error) {
+func (h *Host) getSystemInfo(ctx context.Context) (systemInfo common.SystemInfo, err error) {
 	hostContext := common.HostContext{
 		IP:       h.IP,
 		Username: h.Username,
 		Password: h.Password,
 	}
+
+	ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
+
 	driver := driver.GetDriver(h.StorageType)
 
-	return driver.GetSystemInfo(hostContext)
+	return driver.GetSystemInfo(ctx)
 }

@@ -1,6 +1,8 @@
 package mgmtmodel
 
 import (
+	"context"
+
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/db"
 	"github.com/cryingmouse/data_management_engine/driver"
@@ -12,7 +14,7 @@ type LocalUser struct {
 	HostName string
 }
 
-func (u *LocalUser) Create() (err error) {
+func (u *LocalUser) Create(ctx context.Context) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -29,10 +31,11 @@ func (u *LocalUser) Create() (err error) {
 		Username: host.Username,
 		Password: host.Password,
 	}
+	ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
 
 	// Create local user on agent host.
 	driver := driver.GetDriver(host.StorageType)
-	driver.CreateLocalUser(hostContext, u.Name, u.Password)
+	driver.CreateLocalUser(ctx, u.Name, u.Password)
 
 	// Save to database.
 	var user db.LocalUser
@@ -40,7 +43,7 @@ func (u *LocalUser) Create() (err error) {
 	return user.Save(engine)
 }
 
-func (u *LocalUser) Delete() (err error) {
+func (u *LocalUser) Delete(ctx context.Context) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -57,10 +60,11 @@ func (u *LocalUser) Delete() (err error) {
 		Username: host.Username,
 		Password: host.Password,
 	}
+	ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
 
 	// Create local user on agent host.
 	driver := driver.GetDriver(host.StorageType)
-	driver.DeleteUser(hostContext, u.Name)
+	driver.DeleteUser(ctx, u.Name)
 
 	// Delete from database.
 	var user db.LocalUser
@@ -68,7 +72,7 @@ func (u *LocalUser) Delete() (err error) {
 	return user.Delete(engine)
 }
 
-func (u *LocalUser) Get() (*LocalUser, error) {
+func (u *LocalUser) Get(ctx context.Context) (*LocalUser, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -90,7 +94,7 @@ type LocalUserList struct {
 	Users []LocalUser
 }
 
-func (ul *LocalUserList) Create() error {
+func (ul *LocalUserList) Create(ctx context.Context) error {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -106,7 +110,7 @@ func (ul *LocalUserList) Create() error {
 	return userList.Save(engine)
 }
 
-func (dl *LocalUserList) Delete(filter *common.QueryFilter) (err error) {
+func (dl *LocalUserList) Delete(ctx context.Context, filter *common.QueryFilter) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -120,7 +124,7 @@ func (dl *LocalUserList) Delete(filter *common.QueryFilter) (err error) {
 	return userList.Delete(engine, filter)
 }
 
-func (ul *LocalUserList) Get(filter *common.QueryFilter) ([]LocalUser, error) {
+func (ul *LocalUserList) Get(ctx context.Context, filter *common.QueryFilter) ([]LocalUser, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -144,7 +148,7 @@ type PaginationUser struct {
 	TotalCount int64
 }
 
-func (dl *LocalUserList) Pagination(filter *common.QueryFilter) (*PaginationUser, error) {
+func (dl *LocalUserList) Pagination(ctx context.Context, filter *common.QueryFilter) (*PaginationUser, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err

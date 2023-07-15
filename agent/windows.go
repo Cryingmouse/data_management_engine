@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -28,7 +29,7 @@ type User struct {
 	ComputerName         string `json:"host_name"`
 }
 
-func (agent *WindowsAgent) GetDirectoryDetail(hostContext common.HostContext, path string) (detail common.DirectoryDetail, err error) {
+func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, hostContext common.HostContext, path string) (detail common.DirectoryDetail, err error) {
 	script := "./agent/windows/Get-DirectoryDetails.ps1"
 
 	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", path)
@@ -55,7 +56,7 @@ func (agent *WindowsAgent) GetDirectoryDetail(hostContext common.HostContext, pa
 	return detail, err
 }
 
-func (agent *WindowsAgent) GetDirectoriesDetail(hostContext common.HostContext, paths []string) (detail []common.DirectoryDetail, err error) {
+func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, hostContext common.HostContext, paths []string) (detail []common.DirectoryDetail, err error) {
 	script := "./agent/windows/Get-DirectoryDetails.ps1"
 
 	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", strings.Join(paths, ","))
@@ -85,7 +86,7 @@ func (agent *WindowsAgent) GetDirectoriesDetail(hostContext common.HostContext, 
 	return detail, err
 }
 
-func (agent *WindowsAgent) CreateDirectory(hostContext common.HostContext, name string) (dirPath string, err error) {
+func (agent *WindowsAgent) CreateDirectory(ctx context.Context, hostContext common.HostContext, name string) (dirPath string, err error) {
 	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
 
 	err = os.Mkdir(dirPath, os.ModePerm)
@@ -96,9 +97,9 @@ func (agent *WindowsAgent) CreateDirectory(hostContext common.HostContext, name 
 	return dirPath, nil
 }
 
-func (agent *WindowsAgent) CreateDirectories(hostContext common.HostContext, names []string) (dirPaths []string, err error) {
+func (agent *WindowsAgent) CreateDirectories(ctx context.Context, hostContext common.HostContext, names []string) (dirPaths []string, err error) {
 	for _, name := range names {
-		dirPath, err := agent.CreateDirectory(hostContext, name)
+		dirPath, err := agent.CreateDirectory(ctx, hostContext, name)
 		if err != nil {
 			return dirPaths, err
 		}
@@ -109,15 +110,15 @@ func (agent *WindowsAgent) CreateDirectories(hostContext common.HostContext, nam
 	return dirPaths, err
 }
 
-func (agent *WindowsAgent) DeleteDirectory(hostContext common.HostContext, name string) (err error) {
+func (agent *WindowsAgent) DeleteDirectory(ctx context.Context, hostContext common.HostContext, name string) (err error) {
 	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
 
 	return os.Remove(dirPath)
 }
 
-func (agent *WindowsAgent) DeleteDirectories(hostContext common.HostContext, names []string) (err error) {
+func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, hostContext common.HostContext, names []string) (err error) {
 	for _, name := range names {
-		if err = agent.DeleteDirectory(hostContext, name); err != nil {
+		if err = agent.DeleteDirectory(ctx, hostContext, name); err != nil {
 			return err
 		}
 	}
@@ -125,7 +126,7 @@ func (agent *WindowsAgent) DeleteDirectories(hostContext common.HostContext, nam
 	return err
 }
 
-func (agent *WindowsAgent) CreateShare(hostContext common.HostContext, name, directoryName string) (err error) {
+func (agent *WindowsAgent) CreateShare(ctx context.Context, hostContext common.HostContext, name, directoryName string) (err error) {
 	cmdlet := "New-SmbShare"
 
 	// Define the arguments
@@ -148,7 +149,7 @@ func (agent *WindowsAgent) CreateShare(hostContext common.HostContext, name, dir
 	return err
 }
 
-func (agent *WindowsAgent) CreateLocalUser(hostContext common.HostContext, username, password string) (err error) {
+func (agent *WindowsAgent) CreateLocalUser(ctx context.Context, hostContext common.HostContext, username, password string) (err error) {
 	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("New-LocalUser -Name '%s' -Password (ConvertTo-SecureString -String '%s' -AsPlainText -Force)", username, password))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
@@ -158,7 +159,7 @@ func (agent *WindowsAgent) CreateLocalUser(hostContext common.HostContext, usern
 	return err
 }
 
-func (agent *WindowsAgent) DeleteLocalUser(hostContext common.HostContext, username string) (err error) {
+func (agent *WindowsAgent) DeleteLocalUser(ctx context.Context, hostContext common.HostContext, username string) (err error) {
 	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("Remove-LocalUser -Name '%s'", username))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
@@ -168,7 +169,7 @@ func (agent *WindowsAgent) DeleteLocalUser(hostContext common.HostContext, usern
 	return err
 }
 
-func (agent *WindowsAgent) GetLocalUsers(hostContext common.HostContext) (users []User, err error) {
+func (agent *WindowsAgent) GetLocalUsers(ctx context.Context, hostContext common.HostContext) (users []User, err error) {
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
 	if err != nil {
@@ -200,7 +201,7 @@ func (agent *WindowsAgent) GetLocalUsers(hostContext common.HostContext) (users 
 	return users, nil
 }
 
-func (agent *WindowsAgent) GetLocalUser(hostContext common.HostContext, username string) (user User, err error) {
+func (agent *WindowsAgent) GetLocalUser(ctx context.Context, hostContext common.HostContext, username string) (user User, err error) {
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script, "-UserName", username)
 	if err != nil {
@@ -233,7 +234,7 @@ func (agent *WindowsAgent) GetLocalUser(hostContext common.HostContext, username
 	return user, fmt.Errorf("unable to get the user %s", username)
 }
 
-func (agent *WindowsAgent) GetSystemInfo(hostContext common.HostContext) (systemInfo common.SystemInfo, err error) {
+func (agent *WindowsAgent) GetSystemInfo(ctx context.Context, hostContext common.HostContext) (systemInfo common.SystemInfo, err error) {
 	script := "./agent/windows/Get-SystemDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
 	if err != nil {

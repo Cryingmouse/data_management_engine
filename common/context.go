@@ -1,5 +1,8 @@
 package common
 
+type TraceIDKey string
+type HostContextkey string
+
 type HostContext struct {
 	IP       string
 	Username string

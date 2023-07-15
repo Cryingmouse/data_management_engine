@@ -34,6 +34,8 @@ type requestDirectory struct {
 }
 
 func createDirectoryHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request requestDirectory
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
@@ -43,7 +45,7 @@ func createDirectoryHandler(c *gin.Context) {
 	directoryModel := mgmtmodel.Directory{}
 	common.CopyStructList(request, &directoryModel)
 
-	if err := directoryModel.Create(); err != nil {
+	if err := directoryModel.Create(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directory", err.Error())
 		return
 	}
@@ -55,6 +57,8 @@ func createDirectoryHandler(c *gin.Context) {
 }
 
 func createDirectoriesHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request []requestDirectory
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
@@ -64,7 +68,7 @@ func createDirectoriesHandler(c *gin.Context) {
 	directoryListModel := mgmtmodel.DirectoryList{}
 	common.CopyStructList(request, &directoryListModel.Directories)
 
-	if err := directoryListModel.Create(); err != nil {
+	if err := directoryListModel.Create(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directories", err.Error())
 		return
 	}
@@ -76,6 +80,8 @@ func createDirectoriesHandler(c *gin.Context) {
 }
 
 func deleteDirectoryHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request requestDirectory
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
@@ -85,7 +91,7 @@ func deleteDirectoryHandler(c *gin.Context) {
 	directoryModel := mgmtmodel.Directory{}
 	common.CopyStructList(request, &directoryModel)
 
-	if err := directoryModel.Delete(); err != nil {
+	if err := directoryModel.Delete(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the directory", err.Error())
 		return
 	}
@@ -94,6 +100,8 @@ func deleteDirectoryHandler(c *gin.Context) {
 }
 
 func deleteDirectoriesHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request []requestDirectory
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
@@ -103,7 +111,7 @@ func deleteDirectoriesHandler(c *gin.Context) {
 	directoryListModel := mgmtmodel.DirectoryList{}
 	common.CopyStructList(request, &directoryListModel.Directories)
 
-	if err := directoryListModel.Delete(nil); err != nil {
+	if err := directoryListModel.Delete(ctx, nil); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the directories", err.Error())
 		return
 	}
@@ -112,6 +120,8 @@ func deleteDirectoriesHandler(c *gin.Context) {
 }
 
 func getDirectoriesHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	dirName := c.Query("name")
 	hostIP := c.Query("host_ip")
 	fields := c.Query("fields")
@@ -142,7 +152,7 @@ func getDirectoriesHandler(c *gin.Context) {
 
 		if page == 0 && limit == 0 {
 			// Query directories without pagination.
-			directories, err := directoryListModel.Get(&filter)
+			directories, err := directoryListModel.Get(ctx, &filter)
 			if err != nil {
 				ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directories", err.Error())
 				return
@@ -159,7 +169,7 @@ func getDirectoriesHandler(c *gin.Context) {
 				PageSize: limit,
 			}
 
-			paginationDirs, err := directoryListModel.Pagination(&filter)
+			paginationDirs, err := directoryListModel.Pagination(ctx, &filter)
 			if err != nil {
 				ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directories", err.Error())
 				return
@@ -181,7 +191,7 @@ func getDirectoriesHandler(c *gin.Context) {
 			HostIP: hostIP,
 		}
 
-		directory, err := directoryModel.Get()
+		directory, err := directoryModel.Get(ctx)
 		if err != nil {
 			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directories", err.Error())
 			return
@@ -197,6 +207,8 @@ func getDirectoriesHandler(c *gin.Context) {
 }
 
 func createDirectoryOnAgentHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request struct {
 		Name string `json:"name"`
 	}
@@ -211,13 +223,13 @@ func createDirectoryOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	dirPath, err := agent.CreateDirectory(hostContext, request.Name)
+	dirPath, err := agent.CreateDirectory(ctx, hostContext, request.Name)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directory", err.Error())
 		return
 	}
 
-	directoryDetails, err := agent.GetDirectoryDetail(hostContext, dirPath)
+	directoryDetails, err := agent.GetDirectoryDetail(ctx, hostContext, dirPath)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directory details", err.Error())
 		return
@@ -227,6 +239,8 @@ func createDirectoryOnAgentHandler(c *gin.Context) {
 }
 
 func deleteDirectoryOnAgentHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request struct {
 		Name string `json:"name"`
 	}
@@ -241,7 +255,7 @@ func deleteDirectoryOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	if err := agent.DeleteDirectory(hostContext, request.Name); err != nil {
+	if err := agent.DeleteDirectory(ctx, hostContext, request.Name); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the directory", err.Error())
 		return
 	}
@@ -250,6 +264,8 @@ func deleteDirectoryOnAgentHandler(c *gin.Context) {
 }
 
 func createDirectoriesOnAgentHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request []struct {
 		Name string `json:"name"`
 	}
@@ -269,13 +285,13 @@ func createDirectoriesOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	dirPaths, err := agent.CreateDirectories(hostContext, names)
+	dirPaths, err := agent.CreateDirectories(ctx, hostContext, names)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directories", err.Error())
 		return
 	}
 
-	DirectoryDetails, err := agent.GetDirectoriesDetail(hostContext, dirPaths)
+	DirectoryDetails, err := agent.GetDirectoriesDetail(ctx, hostContext, dirPaths)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directories details", err.Error())
 		return
@@ -285,6 +301,8 @@ func createDirectoriesOnAgentHandler(c *gin.Context) {
 }
 
 func deleteDirectoriesOnAgentHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request struct {
 		Name string `json:"name"`
 	}
@@ -299,7 +317,7 @@ func deleteDirectoriesOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	if err := agent.DeleteDirectory(hostContext, request.Name); err != nil {
+	if err := agent.DeleteDirectory(ctx, hostContext, request.Name); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the directories", err.Error())
 		return
 	}
@@ -308,6 +326,8 @@ func deleteDirectoriesOnAgentHandler(c *gin.Context) {
 }
 
 func getDirectoryDetailsOnAgentHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	name := c.Query("name")
 	names := common.SplitToList(name)
 
@@ -320,7 +340,7 @@ func getDirectoryDetailsOnAgentHandler(c *gin.Context) {
 	if len(names) == 0 {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 	} else if len(names) == 1 {
-		directoryDetail, err := agent.GetDirectoryDetail(hostContext, name)
+		directoryDetail, err := agent.GetDirectoryDetail(ctx, hostContext, name)
 		if err != nil {
 			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directory details", err.Error())
 			return
@@ -328,7 +348,7 @@ func getDirectoryDetailsOnAgentHandler(c *gin.Context) {
 
 		c.JSON(http.StatusOK, directoryDetail)
 	} else {
-		directoriesDetail, err := agent.GetDirectoriesDetail(hostContext, names)
+		directoriesDetail, err := agent.GetDirectoriesDetail(ctx, hostContext, names)
 		if err != nil {
 			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directories details", err.Error())
 			return

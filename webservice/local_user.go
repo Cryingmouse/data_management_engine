@@ -24,6 +24,8 @@ type PaginationLocalUserResponse struct {
 }
 
 func createLocalUserHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	request := struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required,validatePassword"`
@@ -38,7 +40,7 @@ func createLocalUserHandler(c *gin.Context) {
 
 	common.CopyStructList(request, &userModel)
 
-	if err := userModel.Create(); err != nil {
+	if err := userModel.Create(ctx); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Failed to create the users.",
 			"error":   err.Error(),
@@ -50,6 +52,8 @@ func createLocalUserHandler(c *gin.Context) {
 }
 
 func createLocalUsersHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	request := []struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required,validatePassword"`
@@ -64,7 +68,7 @@ func createLocalUsersHandler(c *gin.Context) {
 
 	common.CopyStructList(request, &userListModel.Users)
 
-	if err := userListModel.Create(); err != nil {
+	if err := userListModel.Create(ctx); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Failed to create the users.",
 			"error":   err.Error(),
@@ -76,6 +80,8 @@ func createLocalUsersHandler(c *gin.Context) {
 }
 
 func deleteLocalUserHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	request := struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required,validatePassword"`
@@ -89,7 +95,7 @@ func deleteLocalUserHandler(c *gin.Context) {
 
 	common.CopyStructList(request, &userModel)
 
-	if err := userModel.Delete(); err != nil {
+	if err := userModel.Delete(ctx); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": fmt.Sprintf("Failed to delete the user '%s' on host '%s'.", request.Name, request.Password),
 			"error":   err.Error(),
@@ -100,6 +106,8 @@ func deleteLocalUserHandler(c *gin.Context) {
 }
 
 func deleteLocalUsersHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	request := []struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required,validatePassword"`
@@ -113,7 +121,7 @@ func deleteLocalUsersHandler(c *gin.Context) {
 
 	common.CopyStructList(request, &userListModel.Users)
 
-	if err := userListModel.Delete(nil); err != nil {
+	if err := userListModel.Delete(ctx, nil); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Failed to delete the users.",
 			"error":   err.Error(),
@@ -124,6 +132,8 @@ func deleteLocalUsersHandler(c *gin.Context) {
 }
 
 func getlocalUsersHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	userName := c.Query("name")
 	// isLockout := c.Query("is_lockout")
 	// computerName := c.Query("host_name")
@@ -151,7 +161,7 @@ func getlocalUsersHandler(c *gin.Context) {
 		if page == 0 && limit == 0 {
 			// Query users without pagination.
 
-			users, err := userListModel.Get(&filter)
+			users, err := userListModel.Get(ctx, &filter)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"message": "Failed to get the users",
@@ -176,7 +186,7 @@ func getlocalUsersHandler(c *gin.Context) {
 				PageSize: limit,
 			}
 
-			paginationDirs, err := userListModel.Pagination(&filter)
+			paginationDirs, err := userListModel.Pagination(ctx, &filter)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"message": "Failed to get the users.",
@@ -208,7 +218,7 @@ func getlocalUsersHandler(c *gin.Context) {
 			// Password: hostIp,
 		}
 
-		user, err := userModel.Get()
+		user, err := userModel.Get(ctx)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Failed to get the users",
@@ -227,6 +237,8 @@ func getlocalUsersHandler(c *gin.Context) {
 }
 
 func createLocalUserOnAgentHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	request := struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required,validatePassword"`
@@ -243,12 +255,14 @@ func createLocalUserOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	agent.CreateLocalUser(hostContext, request.Name, request.Password)
+	agent.CreateLocalUser(ctx, hostContext, request.Name, request.Password)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Create user on agent successfully."})
 }
 
 func deleteLocalUserOnAgentHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	request := struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required,validatePassword"`
@@ -265,12 +279,14 @@ func deleteLocalUserOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	agent.DeleteLocalUser(hostContext, request.Name)
+	agent.DeleteLocalUser(ctx, hostContext, request.Name)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Delete user on agent successfully.", "user": request.Name})
 }
 
 func getLocalUserOnAgentHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	username := c.Query("name")
 
 	hostContext := common.HostContext{
@@ -281,11 +297,11 @@ func getLocalUserOnAgentHandler(c *gin.Context) {
 	agent := agent.GetAgent()
 
 	if username != "" {
-		user, _ := agent.GetLocalUser(hostContext, username)
+		user, _ := agent.GetLocalUser(ctx, hostContext, username)
 		c.JSON(http.StatusOK, gin.H{"message": "Get the user on agent successfully.", "user": user})
 
 	} else {
-		users, _ := agent.GetLocalUsers(hostContext)
+		users, _ := agent.GetLocalUsers(ctx, hostContext)
 		c.JSON(http.StatusOK, gin.H{"message": "Get the users on agent successfully.", "users": users})
 	}
 }

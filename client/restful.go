@@ -17,14 +17,16 @@ type RestClient struct {
 	client      *http.Client
 	hostContext common.HostContext
 	prefixURL   string
+	traceID     string
 }
 
 // GetRestClient returns a new instance of the RestClient.
-func GetRestClient(hostContext common.HostContext, prefixURL string) *RestClient {
+func GetRestClient(hostContext common.HostContext, traceID, prefixURL string) *RestClient {
 	return &RestClient{
 		client:      &http.Client{},
 		hostContext: hostContext,
 		prefixURL:   prefixURL,
+		traceID:     traceID,
 	}
 }
 

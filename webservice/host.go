@@ -39,6 +39,8 @@ type PaginationHostResponse struct {
 }
 
 func RegisterHostHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request struct {
 		IP          string `json:"ip" binding:"required,ip"`
 		Username    string `json:"username" binding:"required"`
@@ -54,7 +56,7 @@ func RegisterHostHandler(c *gin.Context) {
 	hostModel := mgmtmodel.Host{}
 	common.CopyStructList(request, &hostModel)
 
-	if err := hostModel.Register(); err != nil {
+	if err := hostModel.Register(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to register the host", err.Error())
 		return
 	}
@@ -66,6 +68,8 @@ func RegisterHostHandler(c *gin.Context) {
 }
 
 func RegisterHostsHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request []struct {
 		IP          string `json:"ip" binding:"required,ip"`
 		Username    string `json:"username" binding:"required"`
@@ -85,7 +89,7 @@ func RegisterHostsHandler(c *gin.Context) {
 	hostListModel := mgmtmodel.HostList{}
 	common.CopyStructList(request, &hostListModel.Hosts)
 
-	if err := hostListModel.Register(); err != nil {
+	if err := hostListModel.Register(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to register the hosts", err.Error())
 		return
 	}
@@ -97,6 +101,8 @@ func RegisterHostsHandler(c *gin.Context) {
 }
 
 func UnregisterHostHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request struct {
 		IP string `json:"ip" binding:"required,ip"`
 	}
@@ -109,7 +115,7 @@ func UnregisterHostHandler(c *gin.Context) {
 	hostModel := mgmtmodel.Host{}
 	common.CopyStructList(request, &hostModel)
 
-	if err := hostModel.Unregister(); err != nil {
+	if err := hostModel.Unregister(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to unregister the host", err.Error())
 		return
 	}
@@ -118,6 +124,8 @@ func UnregisterHostHandler(c *gin.Context) {
 }
 
 func UnregisterHostsHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	var request []struct {
 		IP string `json:"ip" binding:"required,ip"`
 	}
@@ -130,7 +138,7 @@ func UnregisterHostsHandler(c *gin.Context) {
 	hostListModel := mgmtmodel.HostList{}
 	common.CopyStructList(request, &hostListModel.Hosts)
 
-	if err := hostListModel.Unregister(); err != nil {
+	if err := hostListModel.Unregister(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to unregister the hosts", err.Error())
 		return
 	}
@@ -139,6 +147,8 @@ func UnregisterHostsHandler(c *gin.Context) {
 }
 
 func GetRegisteredHostsHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	hostName := c.Query("name")
 	hostIP := c.Query("ip")
 	fields := c.Query("fields")
@@ -170,7 +180,7 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 		}
 
 		if page == 0 && limit == 0 {
-			hosts, err := hostListModel.Get(&filter)
+			hosts, err := hostListModel.Get(ctx, &filter)
 			if err != nil {
 				ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to get the hosts with the parameters: storage_type=%s", storageType), err.Error())
 				return
@@ -186,7 +196,7 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 				PageSize: limit,
 			}
 
-			paginationHosts, err := hostListModel.Pagination(&filter)
+			paginationHosts, err := hostListModel.Pagination(ctx, &filter)
 			if err != nil {
 				ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to get the hosts with the parameters: storage_type=%s, page=%d, limit=%d", storageType, page, limit), err.Error())
 				return
@@ -207,7 +217,7 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 			ComputerName: hostName,
 		}
 
-		host, err := hostModel.Get()
+		host, err := hostModel.Get(ctx)
 		if err != nil {
 			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the registered host", err.Error())
 			return
@@ -223,6 +233,8 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 }
 
 func GetSystemInfoOnAgentHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
 	hostContext := common.HostContext{
 		Username: c.Request.Header.Get("X-agent-username"),
 		Password: c.Request.Header.Get("X-agent-password"),
@@ -230,7 +242,7 @@ func GetSystemInfoOnAgentHandler(c *gin.Context) {
 
 	agent := agent.GetAgent()
 
-	if systemInfo, err := agent.GetSystemInfo(hostContext); err != nil {
+	if systemInfo, err := agent.GetSystemInfo(ctx, hostContext); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get system info on agent", err.Error())
 	} else {
 		c.JSON(http.StatusOK, systemInfo)

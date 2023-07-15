@@ -1,6 +1,7 @@
 package webservice
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cryingmouse/data_management_engine/common"
@@ -26,8 +27,11 @@ func Start() {
 
 	// Router 'portal' for Portal
 	portal := router.Group("/api")
+	portal.Use(TraceMiddleware(), LoggingMiddleware())
+
 	// Router 'agent' for Agent
 	agent := router.Group("/agent")
+	agent.Use(LoggingMiddleware())
 
 	// 登录路由，验证用户凭证并生成JWT令牌
 	// router.POST("/login", getTokenHandler)
@@ -78,4 +82,9 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage st
 	}
 
 	c.JSON(statusCode, response)
+}
+
+func SetTraceIDInContext(c *gin.Context) context.Context {
+	traceID, _ := c.Request.Context().Value(common.TraceIDKey("TraceID")).(string)
+	return context.WithValue(context.Background(), common.TraceIDKey("TraceID"), traceID)
 }

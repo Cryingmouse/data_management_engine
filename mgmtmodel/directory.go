@@ -21,7 +21,7 @@ type Directory struct {
 	ParentFullPath string
 }
 
-func (d *Directory) Create() (err error) {
+func (d *Directory) Create(ctx context.Context) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -39,7 +39,8 @@ func (d *Directory) Create() (err error) {
 		Username: host.Username,
 		Password: host.Password,
 	}
-	directoryDetails, err := driver.CreateDirectory(hostContext, d.Name)
+	ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
+	directoryDetails, err := driver.CreateDirectory(ctx, d.Name)
 	if err != nil {
 		return err
 	}
@@ -61,7 +62,7 @@ func (d *Directory) Create() (err error) {
 	return directory.Save(engine)
 }
 
-func (d *Directory) Delete() (err error) {
+func (d *Directory) Delete(ctx context.Context) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -77,9 +78,10 @@ func (d *Directory) Delete() (err error) {
 		Username: host.Username,
 		Password: host.Password,
 	}
+	ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
 
 	driver := driver.GetDriver(host.StorageType)
-	if err := driver.DeleteDirectory(hostContext, d.Name); err != nil {
+	if err := driver.DeleteDirectory(ctx, d.Name); err != nil {
 		return err
 	}
 
@@ -90,7 +92,7 @@ func (d *Directory) Delete() (err error) {
 	return directory.Delete(engine)
 }
 
-func (d *Directory) Get() (*Directory, error) {
+func (d *Directory) Get(ctx context.Context) (*Directory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -113,7 +115,7 @@ type DirectoryList struct {
 	Directories []Directory
 }
 
-func (dl *DirectoryList) Get(filter *common.QueryFilter) ([]Directory, error) {
+func (dl *DirectoryList) Get(ctx context.Context, filter *common.QueryFilter) ([]Directory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -130,7 +132,7 @@ func (dl *DirectoryList) Get(filter *common.QueryFilter) ([]Directory, error) {
 	return dl.Directories, nil
 }
 
-func (dl *DirectoryList) Create() error {
+func (dl *DirectoryList) Create(ctx context.Context) error {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -161,9 +163,10 @@ func (dl *DirectoryList) Create() error {
 				Username: host.Username,
 				Password: host.Password,
 			}
+			ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
 
 			driver := driver.GetDriver(host.StorageType)
-			directoryDetail, err := driver.CreateDirectory(hostContext, directory.Name)
+			directoryDetail, err := driver.CreateDirectory(ctx, directory.Name)
 			if err != nil {
 				resultErr = errors.Join(resultErr, err)
 				return err
@@ -203,7 +206,7 @@ type PaginationDirectory struct {
 	TotalCount  int64
 }
 
-func (dl *DirectoryList) Pagination(filter *common.QueryFilter) (*PaginationDirectory, error) {
+func (dl *DirectoryList) Pagination(ctx context.Context, filter *common.QueryFilter) (*PaginationDirectory, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return nil, err
@@ -233,7 +236,7 @@ func (dl *DirectoryList) Pagination(filter *common.QueryFilter) (*PaginationDire
 	return &paginationDirList, nil
 }
 
-func (dl *DirectoryList) Save() (err error) {
+func (dl *DirectoryList) Save(ctx context.Context) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -253,7 +256,7 @@ func (dl *DirectoryList) Save() (err error) {
 	return directoryList.Save(engine)
 }
 
-func (dl *DirectoryList) Delete(filter *common.QueryFilter) (err error) {
+func (dl *DirectoryList) Delete(ctx context.Context, filter *common.QueryFilter) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
 		return err
@@ -279,9 +282,10 @@ func (dl *DirectoryList) Delete(filter *common.QueryFilter) (err error) {
 				Username: host.Username,
 				Password: host.Password,
 			}
+			ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
 
 			driver := driver.GetDriver(host.StorageType)
-			if err := driver.DeleteDirectory(hostContext, directory.Name); err != nil {
+			if err := driver.DeleteDirectory(ctx, directory.Name); err != nil {
 				resultErr = errors.Join(resultErr, err)
 				return err
 			}
