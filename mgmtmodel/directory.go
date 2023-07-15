@@ -104,8 +104,7 @@ func (d *Directory) Get() (*Directory, error) {
 		return nil, err
 	}
 
-	d.Name = directory.Name
-	d.HostIP = directory.HostIP
+	common.CopyStructList(directory, d)
 
 	return d, nil
 }
@@ -147,7 +146,8 @@ func (dl *DirectoryList) Create() error {
 	results := make([]common.DirectoryDetail, len(dl.Directories))
 	var resultErr error
 
-	for _, d := range dl.Directories {
+	for i, d := range dl.Directories {
+		index := i
 		directory := d // 避免闭包问题
 		g.Go(func() error {
 			host := db.Host{IP: directory.HostIP}
@@ -169,7 +169,7 @@ func (dl *DirectoryList) Create() error {
 				return err
 			}
 
-			results = append(results, directoryDetail) // 保存协程的返回值
+			results[index] = directoryDetail // 保存协程的返回值
 
 			return nil
 		})
@@ -303,13 +303,10 @@ func (dl *DirectoryList) Delete(filter *common.QueryFilter) (err error) {
 		return err
 	}
 
-	dbDirectoryList := db.DirectoryList{}
-
-	if err := common.CopyStructList(dl.Directories, &dbDirectoryList.Directories); err != nil {
+	directoryList := db.DirectoryList{}
+	if err := common.CopyStructList(dl.Directories, &directoryList.Directories); err != nil {
 		return err
 	}
-
-	directoryList := db.DirectoryList{}
 
 	return directoryList.Delete(engine, filter)
 }

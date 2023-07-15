@@ -9,11 +9,9 @@ import (
 	"github.com/cryingmouse/data_management_engine/common"
 )
 
-type RestfulAPI interface {
-	Get(url string, contentType string) (*http.Response, error)
-	Post(url, contentType string, body io.Reader) (*http.Response, error)
-	GetResponseBody(response *http.Response, result interface{}) (err error)
-}
+const (
+	baseURL = "http://%s:8080/"
+)
 
 type RestClient struct {
 	client      *http.Client
@@ -21,7 +19,8 @@ type RestClient struct {
 	prefixURL   string
 }
 
-func GetRestClient(hostContext common.HostContext, prefixURL string) RestfulAPI {
+// GetRestClient returns a new instance of the RestClient.
+func GetRestClient(hostContext common.HostContext, prefixURL string) *RestClient {
 	return &RestClient{
 		client:      &http.Client{},
 		hostContext: hostContext,
@@ -29,44 +28,46 @@ func GetRestClient(hostContext common.HostContext, prefixURL string) RestfulAPI 
 	}
 }
 
+// Get performs an HTTP GET request.
 func (c *RestClient) Get(url string, contentType string) (*http.Response, error) {
-	// Append the base URL to the input URL.
-	fullURL := fmt.Sprintf("http://%s:8080/%s/%s", c.hostContext.IP, c.prefixURL, url)
+	fullURL := fmt.Sprintf(baseURL+c.prefixURL+"/%s", c.hostContext.IP, url)
 
-	req, err := http.NewRequest("GET", fullURL, nil)
+	req, err := http.NewRequest(http.MethodGet, fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("X-agent-username", c.hostContext.Username)
-	req.Header.Add("X-agent-password", c.hostContext.Password)
-
+	req.Header.Set("X-agent-username", c.hostContext.Username)
+	req.Header.Set("X-agent-password", c.hostContext.Password)
 	req.Header.Set("Content-Type", contentType)
+
 	return c.client.Do(req)
 }
 
-func (c *RestClient) Post(url, contentType string, body io.Reader) (resp *http.Response, err error) {
-	// Append the base URL to the input URL.
-	fullURL := fmt.Sprintf("http://%s:8080/%s/%s", c.hostContext.IP, c.prefixURL, url)
+// Post performs an HTTP POST request.
+func (c *RestClient) Post(url, contentType string, body io.Reader) (*http.Response, error) {
+	fullURL := fmt.Sprintf(baseURL+c.prefixURL+"/%s", c.hostContext.IP, url)
 
-	req, err := http.NewRequest("POST", fullURL, body)
+	req, err := http.NewRequest(http.MethodPost, fullURL, body)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("X-agent-username", c.hostContext.Username)
-	req.Header.Add("X-agent-password", c.hostContext.Password)
-
+	req.Header.Set("X-agent-username", c.hostContext.Username)
+	req.Header.Set("X-agent-password", c.hostContext.Password)
 	req.Header.Set("Content-Type", contentType)
+
 	return c.client.Do(req)
 }
 
-func (c *RestClient) GetResponseBody(response *http.Response, result interface{}) (err error) {
+// GetResponseBody reads the response body and unmarshals it into the provided result.
+func (c *RestClient) GetResponseBody(response *http.Response, result interface{}) error {
 	defer response.Body.Close()
 
-	response_body, err := io.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal([]byte(response_body), &result)
+
+	return json.Unmarshal(responseBody, result)
 }

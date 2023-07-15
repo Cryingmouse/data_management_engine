@@ -9,6 +9,7 @@ import (
 	"github.com/cryingmouse/data_management_engine/common"
 )
 
+// parseGormTag 解析 GORM 标签，提取列名
 func parseGormTag(tag string) string {
 	if tag == "" {
 		return ""
@@ -25,6 +26,7 @@ func parseGormTag(tag string) string {
 	return ""
 }
 
+// getTagToFieldMap 获取 GORM 标签和字段名的映射关系
 func getTagToFieldMap(model interface{}) map[string]string {
 	tagToFieldMap := make(map[string]string)
 
@@ -45,19 +47,20 @@ func getTagToFieldMap(model interface{}) map[string]string {
 	return tagToFieldMap
 }
 
+// Query 根据过滤条件查询数据
 func Query(engine *DatabaseEngine, model interface{}, filter *common.QueryFilter, items interface{}) (totalCount int64, err error) {
 	db := engine.DB.Debug()
 
-	// Add the keyword to the conditions for the fuzzy search
+	// 添加关键字条件进行模糊搜索
 	for key, value := range filter.Keyword {
 		if value != "" {
 			db = db.Where(key+" LIKE ?", "%"+value+"%")
 		}
 	}
 
-	// Build the SELECT statement dynamically based on the input attributes or retrieve all attributes
+	// 根据输入的属性构建动态的 SELECT 语句，或者选择所有属性
 	if len(filter.Fields) > 0 {
-		// Validate attributes exist in the Directory struct
+		// 验证属性是否存在于模型结构体中
 		var validAttributes []string
 		tagToFieldMap := getTagToFieldMap(model)
 		for _, attr := range filter.Fields {
@@ -72,7 +75,6 @@ func Query(engine *DatabaseEngine, model interface{}, filter *common.QueryFilter
 		}
 		// Use the provided attributes
 		selectStatement := strings.Join(validAttributes, ", ")
-		// selectStatement := strings.Join(filter.attributes, ", ")
 		db = db.Select(selectStatement)
 	} else {
 		// Select all attributes if no specific attributes are provided
@@ -83,29 +85,35 @@ func Query(engine *DatabaseEngine, model interface{}, filter *common.QueryFilter
 		page := filter.Pagination.Page
 		pageSize := filter.Pagination.PageSize
 
-		if err = db.Model(&model).Find(items, filter.Conditions).Count(&totalCount).Error; err != nil {
+		// 获取符合条件的记录总数
+		if err = db.Model(model).Where(filter.Conditions).Count(&totalCount).Error; err != nil {
 			return totalCount, err
 		}
 
-		err = db.Model(&model).Offset((page-1)*pageSize).Limit(pageSize).Find(items, filter.Conditions).Error
+		// 分页查询记录
+		err = db.Model(model).Where(filter.Conditions).Offset((page - 1) * pageSize).Limit(pageSize).Find(items).Error
 	} else {
-		err = db.Model(&model).Find(items, filter.Conditions).Error
+		// 不进行分页，查询所有符合条件的记录
+		err = db.Model(model).Where(filter.Conditions).Find(items).Error
 	}
 	return totalCount, err
 }
 
+// Delete 根据过滤条件删除数据
 func Delete(engine *DatabaseEngine, filter *common.QueryFilter, items interface{}) (err error) {
 	db := engine.DB.Debug().Where("1 = 1")
 
+	// 添加关键字条件进行模糊搜索
 	for key, value := range filter.Keyword {
 		if value != "" {
 			db = db.Where(key+" LIKE ?", "%"+value+"%")
 		}
 	}
 
-	if err = db.Unscoped().Delete(items, filter.Conditions).Error; err != nil {
+	// 执行删除操作
+	if err = db.Unscoped().Where(filter.Conditions).Delete(items).Error; err != nil {
 		return fmt.Errorf("failed to delete items:%v in database: %w", items, err)
 	}
 
-	return
+	return nil
 }

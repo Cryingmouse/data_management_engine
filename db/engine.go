@@ -9,50 +9,51 @@ import (
 	"gorm.io/gorm"
 )
 
+var engine *DatabaseEngine
+
+// DatabaseEngine struct holds the database connection and models.
 type DatabaseEngine struct {
 	DB     *gorm.DB
-	models map[string]interface{}
+	Models map[string]interface{}
 }
 
-var engine *DatabaseEngine = &DatabaseEngine{}
-
+// GetDatabaseEngine returns the instance of DatabaseEngine.
 func GetDatabaseEngine() (*DatabaseEngine, error) {
 	if engine != nil && engine.DB != nil {
 		return engine, nil
 	}
 
-	// 获取当前工作目录
+	// Get the current working directory. Assuming the root directory of the project is the current directory
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
 
-	// 构建项目路径
-	projectPath := filepath.Join(dir, "./") // 假设项目的根目录在当前目录的上一级目录
-
-	// 构建SQLite数据库文件路径
-	dbPath := filepath.Join(projectPath, "db/sqlite3.db")
+	// Construct the SQLite database file path
+	dbPath := filepath.Join(dir, "db/sqlite3.db")
 
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("error occurred during open sqlite database: %w", err)
+		return nil, fmt.Errorf("error occurred while opening SQLite database: %w", err)
 	}
 
-	engine.DB = db
-
-	engine.models = map[string]interface{}{
-		"host_info":  &Host{},
-		"share":      &Share{},
-		"directory":  &Directory{},
-		"local_user": &LocalUser{},
+	engine = &DatabaseEngine{
+		DB: db,
+		Models: map[string]interface{}{
+			"host_info":  &Host{},
+			"share":      &Share{},
+			"directory":  &Directory{},
+			"local_user": &LocalUser{},
+		},
 	}
 
 	return engine, nil
 }
 
+// Migrate performs auto migration for all registered models.
 func (engine *DatabaseEngine) Migrate() error {
-	models := make([]interface{}, 0, len(engine.models))
-	for _, model := range engine.models {
+	models := make([]interface{}, 0, len(engine.Models))
+	for _, model := range engine.Models {
 		models = append(models, model)
 	}
 

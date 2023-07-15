@@ -31,7 +31,6 @@ type SystemInfo struct {
 }
 
 type DirectoryDetail struct {
-	HostIP         string `json:"host_ip"`
 	Name           string `json:"name"`
 	CreationTime   string `json:"creation_time"`
 	LastAccessTime string `json:"last_access_time"`

@@ -13,15 +13,25 @@ import (
 	"golang.org/x/text/transform"
 )
 
-type WindowsAgent struct {
+type WindowsAgent struct{}
+
+type User struct {
+	Name                 string `json:"name"`
+	ID                   string `json:"id"`
+	Fullname             string `json:"fullname"`
+	Description          string `json:"description"`
+	Status               string `json:"status"`
+	IsPasswordExpired    bool   `json:"is_password_expired"`
+	IsPasswordChangeable bool   `json:"is_password_changeable"`
+	IsPasswordRequired   bool   `json:"is_password_required"`
+	IsLockout            bool   `json:"is_lockout"`
+	ComputerName         string `json:"host_name"`
 }
 
-func (agent *WindowsAgent) GetDirectoryDetail(hostContext common.HostContext, name string) (detail common.DirectoryDetail, err error) {
-	// 设置要执行的脚本和参数
+func (agent *WindowsAgent) GetDirectoryDetail(hostContext common.HostContext, path string) (detail common.DirectoryDetail, err error) {
 	script := "./agent/windows/Get-DirectoryDetails.ps1"
 
-	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
-	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", dirPath)
+	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", path)
 	if err != nil {
 		return detail, err
 	}
@@ -33,7 +43,6 @@ func (agent *WindowsAgent) GetDirectoryDetail(hostContext common.HostContext, na
 	}
 
 	detail = common.DirectoryDetail{
-		HostIP:         hostContext.IP,
 		Name:           result["Name"].(string),
 		FullPath:       result["FullPath"].(string),
 		CreationTime:   result["CreationTime"].(string),
@@ -46,17 +55,10 @@ func (agent *WindowsAgent) GetDirectoryDetail(hostContext common.HostContext, na
 	return detail, err
 }
 
-func (agent *WindowsAgent) GetDirectoriesDetail(hostContext common.HostContext, names []string) (detail []common.DirectoryDetail, err error) {
-	// 设置要执行的脚本和参数
+func (agent *WindowsAgent) GetDirectoriesDetail(hostContext common.HostContext, paths []string) (detail []common.DirectoryDetail, err error) {
 	script := "./agent/windows/Get-DirectoryDetails.ps1"
 
-	var dirPaths []string
-	for _, name := range names {
-		dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
-		dirPaths = append(dirPaths, dirPath)
-	}
-
-	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", strings.Join(dirPaths, ","))
+	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", strings.Join(paths, ","))
 	if err != nil {
 		return detail, err
 	}
@@ -69,7 +71,6 @@ func (agent *WindowsAgent) GetDirectoriesDetail(hostContext common.HostContext, 
 
 	for _, item := range result {
 		directory := common.DirectoryDetail{
-			HostIP:         hostContext.IP,
 			Name:           item["Name"].(string),
 			FullPath:       item["FullPath"].(string),
 			CreationTime:   item["CreationTime"].(string),
@@ -96,13 +97,13 @@ func (agent *WindowsAgent) CreateDirectory(hostContext common.HostContext, name 
 }
 
 func (agent *WindowsAgent) CreateDirectories(hostContext common.HostContext, names []string) (dirPaths []string, err error) {
-	for index, name := range names {
+	for _, name := range names {
 		dirPath, err := agent.CreateDirectory(hostContext, name)
 		if err != nil {
 			return dirPaths, err
 		}
 
-		dirPaths[index] = dirPath
+		dirPaths = append(dirPaths, dirPath)
 	}
 
 	return dirPaths, err
@@ -119,19 +120,18 @@ func (agent *WindowsAgent) DeleteDirectories(hostContext common.HostContext, nam
 		if err = agent.DeleteDirectory(hostContext, name); err != nil {
 			return err
 		}
-
 	}
 
 	return err
 }
 
-func (agent *WindowsAgent) CreateShare(hostContext common.HostContext, name, directory_name string) (err error) {
+func (agent *WindowsAgent) CreateShare(hostContext common.HostContext, name, directoryName string) (err error) {
 	cmdlet := "New-SmbShare"
 
 	// Define the arguments
 	args := []string{
 		"-Name", name,
-		"-Path", directory_name,
+		"-Path", directoryName,
 		"-FullAccess", "Everyone",
 	}
 
@@ -148,19 +148,6 @@ func (agent *WindowsAgent) CreateShare(hostContext common.HostContext, name, dir
 	return err
 }
 
-type User struct {
-	Name                 string `json:"name"`
-	ID                   string `json:"id"`
-	Fullname             string `json:"fullname"`
-	Description          string `json:"description"`
-	Status               string `json:"status"`
-	IsPasswordExpired    bool   `json:"is_password_expired"`
-	IsPasswordChangeable bool   `json:"is_password_changeable"`
-	IsPasswordRequired   bool   `json:"is_password_required"`
-	IsLockout            bool   `json:"is_lockout"`
-	ComputerName         string `json:"host_name"`
-}
-
 func (agent *WindowsAgent) CreateLocalUser(hostContext common.HostContext, username, password string) (err error) {
 	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("New-LocalUser -Name '%s' -Password (ConvertTo-SecureString -String '%s' -AsPlainText -Force)", username, password))
 	_, err = cmd.CombinedOutput()
@@ -175,15 +162,13 @@ func (agent *WindowsAgent) DeleteLocalUser(hostContext common.HostContext, usern
 	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("Remove-LocalUser -Name '%s'", username))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("Failed to create local user:", err)
-
+		fmt.Println("Failed to delete local user:", err)
 	}
 
 	return err
 }
 
 func (agent *WindowsAgent) GetLocalUsers(hostContext common.HostContext) (users []User, err error) {
-	// 设置要执行的脚本和参数
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
 	if err != nil {
@@ -197,8 +182,6 @@ func (agent *WindowsAgent) GetLocalUsers(hostContext common.HostContext) (users 
 	}
 
 	for _, value := range result {
-
-		// Print the key and value of the current map entry
 		user := User{
 			Name:                 fmt.Sprintf("%v", value["Name"]),
 			Fullname:             fmt.Sprintf("%v", value["FullName"]),
@@ -218,7 +201,6 @@ func (agent *WindowsAgent) GetLocalUsers(hostContext common.HostContext) (users 
 }
 
 func (agent *WindowsAgent) GetLocalUser(hostContext common.HostContext, username string) (user User, err error) {
-	// 设置要执行的脚本和参数
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script, "-UserName", username)
 	if err != nil {
@@ -252,7 +234,6 @@ func (agent *WindowsAgent) GetLocalUser(hostContext common.HostContext, username
 }
 
 func (agent *WindowsAgent) GetSystemInfo(hostContext common.HostContext) (systemInfo common.SystemInfo, err error) {
-	// 设置要执行的脚本和参数
 	script := "./agent/windows/Get-SystemDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
 	if err != nil {
@@ -277,25 +258,17 @@ func (agent *WindowsAgent) GetSystemInfo(hostContext common.HostContext) (system
 }
 
 func execPowerShellCmdlet(script string, args ...string) (output []byte, err error) {
-	// 创建一个执行命令的Cmd对象
 	cmd := exec.Command("powershell", "-ExecutionPolicy", "Bypass", "-File", script)
 	cmd.Args = append(cmd.Args, args...)
-
-	// 设置命令的工作目录
 	cmd.Dir, err = os.Getwd()
 	if err != nil {
 		return nil, err
 	}
 
-	// 创建一个缓冲区来收集输出
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-
-	// 将缓冲区分配给命令对象
+	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	// 执行命令
 	if err = cmd.Run(); err != nil {
 		return nil, err
 	}
@@ -304,7 +277,6 @@ func execPowerShellCmdlet(script string, args ...string) (output []byte, err err
 		return nil, fmt.Errorf(stderr.String())
 	}
 
-	// 将输出按照UTF-8编码转换为字符串
 	outputBytes := stdout.Bytes()
 	decoder := simplifiedchinese.GB18030.NewDecoder()
 	outputStr, _, err := transform.String(decoder, string(outputBytes))

@@ -100,10 +100,10 @@ func (dl *DirectoryList) Delete(engine *DatabaseEngine, filter *common.QueryFilt
 			return fmt.Errorf("failed to delete directories by the filter %v in database: %w", filter, err)
 		}
 	} else {
-		if err := engine.DB.Delete(dl.Directories).Error; err != nil {
-			return err
-		}
+		query := engine.DB.Where("1 = 1")
+
+		return query.Unscoped().Delete(dl.Directories).Error
 	}
 
-	return
+	return nil
 }

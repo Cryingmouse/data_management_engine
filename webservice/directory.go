@@ -78,7 +78,10 @@ func createDirectoriesHandler(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusOK)
+	directoryResponseList := make([]DirectoryResponse, len(directoryListModel.Directories))
+	common.CopyStructList(directoryListModel.Directories, &directoryResponseList)
+
+	c.JSON(http.StatusOK, directoryResponseList)
 }
 
 func deleteDirectoryHandler(c *gin.Context) {
