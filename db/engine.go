@@ -38,7 +38,7 @@ func GetDatabaseEngine() (*DatabaseEngine, error) {
 	}
 
 	engine = &DatabaseEngine{
-		DB: db,
+		DB: db.Debug(),
 		Models: map[string]interface{}{
 			"host_info":  &Host{},
 			"share":      &Share{},

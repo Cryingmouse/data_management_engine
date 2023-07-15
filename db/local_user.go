@@ -38,7 +38,7 @@ func (u *LocalUser) Save(engine *DatabaseEngine) error {
 }
 
 func (u *LocalUser) Delete(engine *DatabaseEngine) error {
-	err := engine.DB.Unscoped().Delete(&u, u).Error
+	err := engine.DB.Unscoped().Where(u).Delete(u).Error
 	return err
 }
 

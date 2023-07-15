@@ -23,7 +23,6 @@ type Directory struct {
 }
 
 func (d *Directory) Get(engine *DatabaseEngine) error {
-	// The query information should be in the instance of Directory struct pointer 'd'
 	return engine.DB.Where(d).First(d).Error
 }
 
@@ -39,11 +38,11 @@ type DirectoryList struct {
 	Directories []Directory
 }
 
-func (dl *DirectoryList) Get(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
+func (dl *DirectoryList) Get(engine *DatabaseEngine, filter *common.QueryFilter) error {
 	model := Directory{}
 
 	if filter.Pagination != nil {
-		return fmt.Errorf("invalid filter: there is pagination in the filter")
+		return fmt.Errorf("invalid filter: pagination is not supported")
 	}
 
 	if _, err := Query(engine, model, filter, &dl.Directories); err != nil {
@@ -58,52 +57,47 @@ type PaginationDirectory struct {
 	TotalCount  int64
 }
 
-func (dl *DirectoryList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (response *PaginationDirectory, err error) {
+func (dl *DirectoryList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (*PaginationDirectory, error) {
 	var totalCount int64
 	model := Directory{}
 
 	if filter.Pagination == nil {
-		return response, fmt.Errorf("invalid filter: missing pagination in the filter")
+		return nil, fmt.Errorf("invalid filter: missing pagination")
 	}
 
-	totalCount, err = Query(engine, model, filter, &dl.Directories)
+	totalCount, err := Query(engine, model, filter, &dl.Directories)
 	if err != nil {
-		return response, fmt.Errorf("failed to query the directories by the filter %v in database: %w", filter, err)
+		return nil, fmt.Errorf("failed to query directories by the filter %v in the database: %w", filter, err)
 	}
 
-	response = &PaginationDirectory{
+	response := &PaginationDirectory{
 		Directories: dl.Directories,
 		TotalCount:  totalCount,
 	}
 
-	return response, err
+	return response, nil
 }
 
-func (dl *DirectoryList) Save(engine *DatabaseEngine) (err error) {
+func (dl *DirectoryList) Save(engine *DatabaseEngine) error {
 	if len(dl.Directories) == 0 {
-		return errors.New("directories are empty")
+		return errors.New("no directories to save")
 	}
 
-	err = engine.DB.CreateInBatches(dl.Directories, len(dl.Directories)).Error
-	if err != nil {
-		return fmt.Errorf("failed to save the directories in database: %w", err)
-	}
-	return
+	return engine.DB.CreateInBatches(dl.Directories, len(dl.Directories)).Error
 }
 
-func (dl *DirectoryList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
+func (dl *DirectoryList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) error {
 	var directories []Directory
-
 	if filter != nil {
-		err = Delete(engine, filter, directories)
-		if err != nil {
-			return fmt.Errorf("failed to delete directories by the filter %v in database: %w", filter, err)
-		}
-	} else {
-		query := engine.DB.Where("1 = 1")
-
-		return query.Unscoped().Delete(dl.Directories).Error
+		return Delete(engine, filter, &dl.Directories)
 	}
 
-	return nil
+	query := engine.DB.Unscoped()
+
+	conditions := common.StructListToMapList(dl.Directories)
+	for _, condition := range conditions {
+		query = query.Or(condition)
+	}
+
+	return query.Find(&directories).Delete(&directories).Error
 }

@@ -173,3 +173,62 @@ func copyStructFields(src, dest reflect.Value) error {
 
 	return nil
 }
+
+func StructListToMapList(structList interface{}) []map[string]interface{} {
+	sliceValue := reflect.ValueOf(structList)
+	sliceType := sliceValue.Type()
+
+	if sliceType.Kind() != reflect.Slice {
+		panic("structListToMapList: input is not a slice")
+	}
+
+	mapList := make([]map[string]interface{}, sliceValue.Len())
+
+	for i := 0; i < sliceValue.Len(); i++ {
+		structValue := sliceValue.Index(i)
+		mapValue := StructToMap(structValue.Interface())
+		mapList[i] = mapValue
+	}
+
+	return mapList
+}
+
+func parseGormTag(tag string) (column string) {
+	tagValues := strings.Split(tag, ";")
+
+	for _, value := range tagValues {
+		if strings.HasPrefix(value, "column:") {
+			column = strings.TrimPrefix(value, "column:")
+		}
+	}
+
+	return column
+}
+
+func StructToMap(s interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	v := reflect.ValueOf(s)
+
+	if v.Kind() == reflect.Struct {
+		t := v.Type()
+
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			value := v.Field(i)
+
+			zeroValue := reflect.Zero(value.Type())
+
+			if reflect.DeepEqual(value.Interface(), zeroValue.Interface()) {
+				continue
+			}
+
+			column := parseGormTag(field.Tag.Get("gorm"))
+			if column != "" {
+				result[column] = value.Interface()
+			}
+		}
+	}
+
+	return result
+}
