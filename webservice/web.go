@@ -2,7 +2,6 @@ package webservice
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/gin-contrib/cors"
@@ -21,8 +20,8 @@ func Start() {
 	router.Use(cors.Default())
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("validatePassword", passwordValidator)
-		v.RegisterValidation("validateStorageType", storageTypeValidator)
+		v.RegisterValidation("validatePassword", PasswordValidator)
+		v.RegisterValidation("validateStorageType", StorageTypeValidator)
 	}
 
 	// Router 'portal' for Portal
@@ -70,28 +69,6 @@ func Start() {
 	addr := fmt.Sprintf(":%s", config.Webservice.Port)
 	router.Run(addr)
 
-}
-
-func passwordValidator(fl validator.FieldLevel) bool {
-	password := fl.Field().String()
-
-	if len(password) >= 8 && regexp.MustCompile(`[A-Z]+`).MatchString(password) && regexp.MustCompile(`[a-z]+`).MatchString(password) && regexp.MustCompile(`[0-9]+`).MatchString(password) {
-		return true
-	}
-	return false
-}
-
-func validateIPAddress(ip string) (err error) {
-	type IPAddress struct {
-		IP string `validate:"required,ip"`
-	}
-
-	validate := validator.New()
-
-	// 验证 IP 地址
-	ipAddress := IPAddress{IP: ip}
-
-	return validate.Struct(ipAddress)
 }
 
 func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage string) {

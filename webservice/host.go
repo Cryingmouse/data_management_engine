@@ -74,7 +74,7 @@ func RegisterHostsHandler(c *gin.Context) {
 	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("validateStorageType", storageTypeValidator)
+		v.RegisterValidation("validateStorageType", StorageTypeValidator)
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -235,12 +235,4 @@ func GetSystemInfoOnAgentHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, systemInfo)
 	}
-}
-
-func storageTypeValidator(fl validator.FieldLevel) bool {
-	storageType := fl.Field().String()
-
-	storageTypeList := []string{StorageTypeAgent, StorageTypeOntap, StorageTypeMagnascale}
-
-	return common.In(storageType, storageTypeList)
 }
