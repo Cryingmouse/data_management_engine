@@ -33,7 +33,7 @@ type requestDirectory struct {
 	HostIP string `json:"host_ip" binding:"required,ip"`
 }
 
-func createDirectoryHandler(c *gin.Context) {
+func CreateDirectoryHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request requestDirectory
@@ -56,7 +56,7 @@ func createDirectoryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, directoryResponse)
 }
 
-func createDirectoriesHandler(c *gin.Context) {
+func CreateDirectoriesHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request []requestDirectory
@@ -79,7 +79,7 @@ func createDirectoriesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, directoryResponseList)
 }
 
-func deleteDirectoryHandler(c *gin.Context) {
+func DeleteDirectoryHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request requestDirectory
@@ -99,7 +99,7 @@ func deleteDirectoryHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func deleteDirectoriesHandler(c *gin.Context) {
+func DeleteDirectoriesHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request []requestDirectory
@@ -119,7 +119,7 @@ func deleteDirectoriesHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func getDirectoriesHandler(c *gin.Context) {
+func GetDirectoriesHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	dirName := c.Query("name")
@@ -193,7 +193,7 @@ func getDirectoriesHandler(c *gin.Context) {
 
 		directory, err := directoryModel.Get(ctx)
 		if err != nil {
-			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directories", err.Error())
+			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directory", err.Error())
 			return
 		}
 

@@ -115,23 +115,6 @@ type DirectoryList struct {
 	Directories []Directory
 }
 
-func (dl *DirectoryList) Get(ctx context.Context, filter *common.QueryFilter) ([]Directory, error) {
-	engine, err := db.GetDatabaseEngine()
-	if err != nil {
-		return nil, err
-	}
-
-	directoryList := db.DirectoryList{}
-
-	if err = directoryList.Get(engine, filter); err != nil {
-		return nil, err
-	}
-
-	common.CopyStructList(directoryList.Directories, &dl.Directories)
-
-	return dl.Directories, nil
-}
-
 func (dl *DirectoryList) Create(ctx context.Context) error {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
@@ -199,63 +182,6 @@ func (dl *DirectoryList) Create(ctx context.Context) error {
 	return dbDirectoryList.Save(engine)
 }
 
-type PaginationDirectory struct {
-	Directories []Directory
-	Page        int
-	Limit       int
-	TotalCount  int64
-}
-
-func (dl *DirectoryList) Pagination(ctx context.Context, filter *common.QueryFilter) (*PaginationDirectory, error) {
-	engine, err := db.GetDatabaseEngine()
-	if err != nil {
-		return nil, err
-	}
-
-	directoryList := db.DirectoryList{}
-	paginationDirs, err := directoryList.Pagination(engine, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	paginationDirList := PaginationDirectory{
-		Page:       filter.Pagination.Page,
-		Limit:      filter.Pagination.PageSize,
-		TotalCount: paginationDirs.TotalCount,
-	}
-
-	for _, _directory := range paginationDirs.Directories {
-		directory := Directory{
-			Name:   _directory.Name,
-			HostIP: _directory.HostIP,
-		}
-
-		paginationDirList.Directories = append(paginationDirList.Directories, directory)
-	}
-
-	return &paginationDirList, nil
-}
-
-func (dl *DirectoryList) Save(ctx context.Context) (err error) {
-	engine, err := db.GetDatabaseEngine()
-	if err != nil {
-		return err
-	}
-
-	directoryList := db.DirectoryList{}
-
-	for _, _directory := range dl.Directories {
-		directory := db.Directory{
-			Name:   _directory.Name,
-			HostIP: _directory.HostIP,
-		}
-
-		directoryList.Directories = append(directoryList.Directories, directory)
-	}
-
-	return directoryList.Save(engine)
-}
-
 func (dl *DirectoryList) Delete(ctx context.Context, filter *common.QueryFilter) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
@@ -313,4 +239,58 @@ func (dl *DirectoryList) Delete(ctx context.Context, filter *common.QueryFilter)
 	}
 
 	return directoryList.Delete(engine, filter)
+}
+
+func (dl *DirectoryList) Get(ctx context.Context, filter *common.QueryFilter) ([]Directory, error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return nil, err
+	}
+
+	directoryList := db.DirectoryList{}
+
+	if err = directoryList.Get(engine, filter); err != nil {
+		return nil, err
+	}
+
+	common.CopyStructList(directoryList.Directories, &dl.Directories)
+
+	return dl.Directories, nil
+}
+
+type PaginationDirectory struct {
+	Directories []Directory
+	Page        int
+	Limit       int
+	TotalCount  int64
+}
+
+func (dl *DirectoryList) Pagination(ctx context.Context, filter *common.QueryFilter) (*PaginationDirectory, error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return nil, err
+	}
+
+	directoryList := db.DirectoryList{}
+	paginationDirs, err := directoryList.Pagination(engine, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	paginationDirList := PaginationDirectory{
+		Page:       filter.Pagination.Page,
+		Limit:      filter.Pagination.PageSize,
+		TotalCount: paginationDirs.TotalCount,
+	}
+
+	for _, _directory := range paginationDirs.Directories {
+		directory := Directory{
+			Name:   _directory.Name,
+			HostIP: _directory.HostIP,
+		}
+
+		paginationDirList.Directories = append(paginationDirList.Directories, directory)
+	}
+
+	return &paginationDirList, nil
 }

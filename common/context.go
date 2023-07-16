@@ -43,6 +43,19 @@ type DirectoryDetail struct {
 	ParentFullPath string `json:"parent_full_path"`
 }
 
+type LocalUserDetail struct {
+	Name                 string `json:"name"`
+	UID                  string `json:"user_id"`
+	FullName             string `json:"fullname"`
+	Description          string `json:"description"`
+	Status               string `json:"status"`
+	IsPasswordExpired    bool   `json:"is_password_expired"`
+	IsPasswordChangeable bool   `json:"is_password_changeable"`
+	IsPasswordRequired   bool   `json:"is_password_required"`
+	IsLockout            bool   `json:"is_lockout"`
+	IsDisabled           bool   `json:"is_disabled"`
+}
+
 type FailedRESTResponse struct {
 	Error string `json:"error"`
 }

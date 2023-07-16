@@ -1,7 +1,6 @@
 package webservice
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -13,239 +12,296 @@ import (
 )
 
 type LocalUserResponse struct {
-	Name string `json:"name,omitempty"`
+	HostIP               string `json:"host_ip,omitempty"`
+	Name                 string `json:"name,omitempty"`
+	UID                  string `json:"id,omitempty"`
+	FullName             string `json:"full_name,omitempty"`
+	Description          string `json:"description,omitempty"`
+	Status               string `json:"status,omitempty"`
+	IsDisabled           bool   `json:"disabled"`
+	IsPasswordRequired   bool   `json:"is_password_required"`
+	IsPasswordExpired    bool   `json:"is_password_expired"`
+	IsPasswordChangeable bool   `json:"is_password_changeable"`
+	IsLockout            bool   `json:"is_lockout"`
 }
 
 type PaginationLocalUserResponse struct {
-	Users      []LocalUserResponse `json:"users"`
+	LocalUsers []LocalUserResponse `json:"users"`
 	Page       int                 `json:"page"`
 	Limit      int                 `json:"limit"`
 	TotalCount int64               `json:"total_count"`
 }
 
-func createLocalUserHandler(c *gin.Context) {
+type requestLocalUser struct {
+	Name     string `json:"name" binding:"required"`
+	Password string `json:"password" binding:"required,validatePassword"`
+	HostIP   string `json:"host_ip" binding:"required"`
+}
+
+func CreateLocalUserHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	request := struct {
-		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required,validatePassword"`
-		HostName string `json:"host_name" binding:"required"`
-	}{}
+	var request requestLocalUser
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	var userModel mgmtmodel.LocalUser
+	var localUserModel mgmtmodel.LocalUser
+	common.CopyStructList(request, &localUserModel)
 
-	common.CopyStructList(request, &userModel)
+	if err := localUserModel.Create(ctx); err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local user", err.Error())
+		return
+	}
 
-	if err := userModel.Create(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to create the users.",
-			"error":   err.Error(),
-		})
+	localUserResponse := LocalUserResponse{}
+	common.CopyStructList(localUserModel, &localUserResponse)
+
+	c.JSON(http.StatusOK, localUserResponse)
+}
+
+func CreateLocalUsersHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
+	var request []requestLocalUser
+	if err := c.ShouldBindJSON(&request); err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	var localUserListModel mgmtmodel.LocalUserList
+	common.CopyStructList(request, &localUserListModel.LocalUsers)
+
+	if err := localUserListModel.Create(ctx); err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local users", err.Error())
+		return
+	}
+
+	localUserResponseList := make([]LocalUserResponse, len(localUserListModel.LocalUsers))
+	common.CopyStructList(localUserListModel.LocalUsers, &localUserResponseList)
+
+	c.JSON(http.StatusOK, localUserResponseList)
+}
+
+func DeleteLocalUserHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
+	var request requestLocalUser
+	if err := c.ShouldBindJSON(&request); err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	var localUserModel mgmtmodel.LocalUser
+	common.CopyStructList(request, &localUserModel)
+
+	if err := localUserModel.Delete(ctx); err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local user", err.Error())
 		return
 	}
 
 	c.Status(http.StatusOK)
 }
 
-func createLocalUsersHandler(c *gin.Context) {
+func DeleteLocalUsersHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	request := []struct {
-		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required,validatePassword"`
-		HostName string `json:"host_name" binding:"required"`
-	}{}
+	var request []requestLocalUser
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	var userListModel mgmtmodel.LocalUserList
+	var localUserListModel mgmtmodel.LocalUserList
+	common.CopyStructList(request, &localUserListModel.LocalUsers)
 
-	common.CopyStructList(request, &userListModel.Users)
-
-	if err := userListModel.Create(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to create the users.",
-			"error":   err.Error(),
-		})
+	if err := localUserListModel.Delete(ctx, nil); err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local users", err.Error())
 		return
 	}
 
 	c.Status(http.StatusOK)
 }
 
-func deleteLocalUserHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
-
-	request := struct {
-		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required,validatePassword"`
-	}{}
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return
-	}
-
-	var userModel mgmtmodel.LocalUser
-
-	common.CopyStructList(request, &userModel)
-
-	if err := userModel.Delete(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Failed to delete the user '%s' on host '%s'.", request.Name, request.Password),
-			"error":   err.Error(),
-		})
-	}
-
-	c.Status(http.StatusOK)
-}
-
-func deleteLocalUsersHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
-
-	request := []struct {
-		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required,validatePassword"`
-	}{}
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return
-	}
-
-	var userListModel mgmtmodel.LocalUserList
-
-	common.CopyStructList(request, &userListModel.Users)
-
-	if err := userListModel.Delete(ctx, nil); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to delete the users.",
-			"error":   err.Error(),
-		})
-	}
-
-	c.Status(http.StatusOK)
-}
-
-func getlocalUsersHandler(c *gin.Context) {
+func GetlocalUsersHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	userName := c.Query("name")
-	// isLockout := c.Query("is_lockout")
-	// computerName := c.Query("host_name")
+	isLockout := c.Query("is_lockout")
+	hostIP := c.Query("host_ip")
 	fields := c.Query("fields")
 
-	page, err_page := strconv.Atoi(c.Query("page"))
-	limit, err_limit := strconv.Atoi(c.Query("limit"))
-	if (err_page != nil && err_limit == nil) || (err_page == nil && err_limit != nil) {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request."})
-		return
-	}
+	page, _ := strconv.Atoi(c.Query("page"))
+	limit, _ := strconv.Atoi(c.Query("limit"))
 
 	if userName == "" {
-		userListModel := mgmtmodel.LocalUserList{}
+		localUserListModel := mgmtmodel.LocalUserList{}
 
 		filter := common.QueryFilter{
 			Fields: common.SplitToList(fields),
-			// Conditions: struct {
-			// 	Password string
-			// }{
-			// 	Password: hostIp,
-			// },
+			Conditions: struct {
+				HostIP    string
+				Name      string
+				IsLockout string
+			}{
+				HostIP:    hostIP,
+				Name:      userName,
+				IsLockout: isLockout,
+			},
 		}
 
 		if page == 0 && limit == 0 {
-			// Query users without pagination.
-
-			users, err := userListModel.Get(ctx, &filter)
+			// Query local users without pagination.
+			localUsers, err := localUserListModel.Get(ctx, &filter)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Failed to get the users",
-					"error":   err.Error(),
-				})
+				ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local users", err.Error())
 				return
 			}
 
-			userInfoList := []LocalUserResponse{}
-			for _, user := range users {
-				userInfoList = append(userInfoList, LocalUserResponse{
-					Name: user.Name,
-				})
-			}
+			localUserList := make([]LocalUserResponse, len(localUsers))
+			common.CopyStructList(localUsers, &localUserList)
 
-			c.JSON(http.StatusOK, gin.H{"message": "Get the users successfully.", "users": userInfoList})
-			return
+			c.JSON(http.StatusOK, localUserList)
 		} else {
-			// Query users with pagination.
+			// Query directories with pagination.
 			filter.Pagination = &common.Pagination{
 				Page:     page,
 				PageSize: limit,
 			}
 
-			paginationDirs, err := userListModel.Pagination(ctx, &filter)
+			paginationLocalUsers, err := localUserListModel.Pagination(ctx, &filter)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Failed to get the users.",
-					"error":   err.Error(),
-				})
+				ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local users", err.Error())
 				return
 			}
 
-			paginationDirList := PaginationLocalUserResponse{
+			paginationlocalUserList := PaginationLocalUserResponse{
 				Page:       page,
 				Limit:      limit,
-				TotalCount: paginationDirs.TotalCount,
+				TotalCount: paginationLocalUsers.TotalCount,
 			}
 
-			for _, _user := range paginationDirs.Users {
-				user := LocalUserResponse{
-					Name: _user.Name,
-				}
+			common.CopyStructList(paginationLocalUsers.LocalUsers, &paginationlocalUserList.LocalUsers)
 
-				paginationDirList.Users = append(paginationDirList.Users, user)
-			}
-
-			c.JSON(http.StatusOK, gin.H{"message": "Get the users successfully.", "pagination": paginationDirList})
-			return
+			c.JSON(http.StatusOK, paginationlocalUserList)
 		}
 	} else {
 		userModel := mgmtmodel.LocalUser{
-			Name: userName,
-			// Password: hostIp,
+			Name:   userName,
+			HostIP: hostIP,
 		}
 
-		user, err := userModel.Get(ctx)
+		localUser, err := userModel.Get(ctx)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Failed to get the users",
-				"error":   err.Error(),
-			})
+			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local user", err.Error())
 			return
 		}
 
-		// Convert to UserInfo as REST API response.
-		userInfo := LocalUserResponse{
-			Name: user.Name,
-		}
+		localUserInfo := DirectoryResponse{}
+		common.CopyStructList(localUser, &localUserInfo)
 
-		c.JSON(http.StatusOK, gin.H{"message": "Get the user successfully.", "user": userInfo})
+		directoryInfoList := []DirectoryResponse{localUserInfo}
+
+		c.JSON(http.StatusOK, directoryInfoList)
 	}
+}
+
+func ManageLocalUserHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
+	var request requestLocalUser
+	if err := c.ShouldBindJSON(&request); err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	var localUserModel mgmtmodel.LocalUser
+	common.CopyStructList(request, &localUserModel)
+
+	if err := localUserModel.Manage(ctx); err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to manage the local user", err.Error())
+		return
+	}
+
+	localUserResponse := LocalUserResponse{}
+	common.CopyStructList(localUserModel, &localUserResponse)
+
+	c.JSON(http.StatusOK, localUserResponse)
+}
+
+func ManageLocalUsersHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
+	var request []requestLocalUser
+	if err := c.ShouldBindJSON(&request); err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	var localUserListModel mgmtmodel.LocalUserList
+	common.CopyStructList(request, &localUserListModel.LocalUsers)
+
+	if err := localUserListModel.Manage(ctx); err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local users", err.Error())
+		return
+	}
+
+	localUserResponseList := make([]LocalUserResponse, len(localUserListModel.LocalUsers))
+	common.CopyStructList(localUserListModel.LocalUsers, &localUserResponseList)
+
+	c.JSON(http.StatusOK, localUserResponseList)
+}
+
+func UnmanageLocalUserHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
+	var request requestLocalUser
+	if err := c.ShouldBindJSON(&request); err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	var localUserModel mgmtmodel.LocalUser
+	common.CopyStructList(request, &localUserModel)
+
+	if err := localUserModel.Unmanage(ctx); err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local user", err.Error())
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func UnmanageLocalUsersHandler(c *gin.Context) {
+	ctx := SetTraceIDInContext(c)
+
+	var request []requestLocalUser
+	if err := c.ShouldBindJSON(&request); err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	var localUserListModel mgmtmodel.LocalUserList
+	common.CopyStructList(request, &localUserListModel.LocalUsers)
+
+	if err := localUserListModel.Unmanage(ctx, nil); err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local users", err.Error())
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
 func createLocalUserOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	request := struct {
+	var request struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required,validatePassword"`
-	}{}
-
+	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
@@ -255,21 +311,29 @@ func createLocalUserOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	agent.CreateLocalUser(ctx, hostContext, request.Name, request.Password)
+	err := agent.CreateLocalUser(ctx, hostContext, request.Name, request.Password)
+	if err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local user", err.Error())
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Create user on agent successfully."})
+	localUserDetail, err := agent.GetLocalUserDetail(ctx, hostContext, request.Name)
+	if err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local user detail", err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, localUserDetail)
 }
 
 func deleteLocalUserOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	request := struct {
-		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required,validatePassword"`
-	}{}
-
+	var request struct {
+		Name string `json:"name"`
+	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
@@ -279,15 +343,19 @@ func deleteLocalUserOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	agent.DeleteLocalUser(ctx, hostContext, request.Name)
+	if err := agent.DeleteLocalUser(ctx, hostContext, request.Name); err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local user", err.Error())
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Delete user on agent successfully.", "user": request.Name})
+	c.Status(http.StatusOK)
 }
 
 func getLocalUserOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	username := c.Query("name")
+	name := c.Query("name")
+	names := common.SplitToList(name)
 
 	hostContext := common.HostContext{
 		Username: c.Request.Header.Get("X-agent-username"),
@@ -295,13 +363,23 @@ func getLocalUserOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
+	if len(names) == 0 {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
+	} else if len(names) == 1 {
+		localUserDetail, err := agent.GetLocalUserDetail(ctx, hostContext, name)
+		if err != nil {
+			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local user detail", err.Error())
+			return
+		}
 
-	if username != "" {
-		user, _ := agent.GetLocalUser(ctx, hostContext, username)
-		c.JSON(http.StatusOK, gin.H{"message": "Get the user on agent successfully.", "user": user})
-
+		c.JSON(http.StatusOK, localUserDetail)
 	} else {
-		users, _ := agent.GetLocalUsers(ctx, hostContext)
-		c.JSON(http.StatusOK, gin.H{"message": "Get the users on agent successfully.", "users": users})
+		localUsersDetail, err := agent.GetLocalUsersDetail(ctx, hostContext, names)
+		if err != nil {
+			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local users detail", err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, localUsersDetail)
 	}
 }

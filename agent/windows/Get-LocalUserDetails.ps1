@@ -1,19 +1,16 @@
-param(
-    [string]$UserName
+param (
+    [String] $UserNames
 )
 
-function Get-LocalUserDetails {
-    param (
-        [string]$UserName = ""
-    )
+$userNamesArray = $UserNames -split ','
 
-    $users = Get-WmiObject -Class Win32_UserAccount -Filter "LocalAccount='True'"
+$localUsersDetail = @()
 
-    $userDetails = @{}
-
+$users = Get-WmiObject -Class Win32_UserAccount -Filter "LocalAccount='True'"
+foreach ($userName in $userNamesArray) {
     foreach ($user in $users) {
         if ($UserName -eq "" -or $user.Name -eq $UserName) {
-            $userProperties = @{
+            $localUsersDetail += @{
                 'Name'               = $user.Name
                 'SID'                = $user.SID
                 'FullName'           = $user.FullName
@@ -24,23 +21,10 @@ function Get-LocalUserDetails {
                 'PasswordExpires'    = $user.PasswordExpires
                 'PasswordChangeable' = $user.PasswordChangeable
                 'Lockout'            = $user.Lockout
-                'PSComputerName'     = $user.PSComputerName
             }
-
-            $userDetails[$user.Name] = $userProperties
         }
     }
-
-    return $userDetails
 }
 
-# Call the function to retrieve and output local user details
-if ($PSBoundParameters.Count -eq 0) {
-    $localUserDetails = Get-LocalUserDetails
-}
-else {
-    $localUserDetails = Get-LocalUserDetails -UserName $UserName
-}
-
-$localUserDetails | ConvertTo-Json
+$localUsersDetail | ConvertTo-Json
 

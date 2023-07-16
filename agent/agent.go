@@ -9,8 +9,8 @@ import (
 
 type Agent interface {
 	// The area method returns the area of the shape.
-	GetDirectoryDetail(ctx context.Context, hostContext common.HostContext, path string) (details common.DirectoryDetail, err error)
-	GetDirectoriesDetail(ctx context.Context, hostContext common.HostContext, paths []string) (details []common.DirectoryDetail, err error)
+	GetDirectoryDetail(ctx context.Context, hostContext common.HostContext, path string) (detail common.DirectoryDetail, err error)
+	GetDirectoriesDetail(ctx context.Context, hostContext common.HostContext, paths []string) (detail []common.DirectoryDetail, err error)
 	CreateDirectory(ctx context.Context, hostContext common.HostContext, name string) (dirPath string, err error)
 	CreateDirectories(ctx context.Context, hostContext common.HostContext, names []string) (dirPaths []string, err error)
 	DeleteDirectory(ctx context.Context, hostContext common.HostContext, name string) (err error)
@@ -18,8 +18,8 @@ type Agent interface {
 	CreateShare(ctx context.Context, hostContext common.HostContext, name, directory_name string) (err error)
 	CreateLocalUser(ctx context.Context, hostContext common.HostContext, username, password string) (err error)
 	DeleteLocalUser(ctx context.Context, hostContext common.HostContext, username string) (err error)
-	GetLocalUsers(ctx context.Context, hostContext common.HostContext) (users []User, err error)
-	GetLocalUser(ctx context.Context, hostContext common.HostContext, username string) (user User, err error)
+	GetLocalUserDetail(ctx context.Context, hostContext common.HostContext, username string) (detail common.LocalUserDetail, err error)
+	GetLocalUsersDetail(ctx context.Context, hostContext common.HostContext, usernames []string) (detail []common.LocalUserDetail, err error)
 	GetSystemInfo(ctx context.Context, hostContext common.HostContext) (system common.SystemInfo, err error)
 }
 

@@ -11,14 +11,6 @@ import (
 type LinuxAgent struct {
 }
 
-func (agent *LinuxAgent) GetDirectoryDetail(ctx context.Context, hostContext common.HostContext, path string) (detail common.DirectoryDetail, err error) {
-	return detail, nil
-}
-
-func (agent *LinuxAgent) GetDirectoriesDetail(ctx context.Context, hostContext common.HostContext, paths []string) (detail []common.DirectoryDetail, err error) {
-	return detail, nil
-}
-
 func (agent *LinuxAgent) CreateDirectory(ctx context.Context, hostContext common.HostContext, name string) (dirPath string, err error) {
 	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
 
@@ -60,6 +52,14 @@ func (agent *LinuxAgent) DeleteDirectories(ctx context.Context, hostContext comm
 	return err
 }
 
+func (agent *LinuxAgent) GetDirectoryDetail(ctx context.Context, hostContext common.HostContext, path string) (detail common.DirectoryDetail, err error) {
+	return detail, nil
+}
+
+func (agent *LinuxAgent) GetDirectoriesDetail(ctx context.Context, hostContext common.HostContext, paths []string) (detail []common.DirectoryDetail, err error) {
+	return detail, nil
+}
+
 func (agent *LinuxAgent) CreateShare(ctx context.Context, hostContext common.HostContext, name, directory_name string) (err error) {
 	return err
 }
@@ -72,12 +72,12 @@ func (agent *LinuxAgent) DeleteLocalUser(ctx context.Context, hostContext common
 	return err
 }
 
-func (agent *LinuxAgent) GetLocalUsers(ctx context.Context, hostContext common.HostContext) (users []User, err error) {
-	return nil, nil
+func (agent *LinuxAgent) GetLocalUserDetail(ctx context.Context, hostContext common.HostContext, username string) (detail common.LocalUserDetail, err error) {
+	return detail, nil
 }
 
-func (agent *LinuxAgent) GetLocalUser(ctx context.Context, hostContext common.HostContext, username string) (user User, err error) {
-	return user, nil
+func (agent *LinuxAgent) GetLocalUsersDetail(ctx context.Context, hostContext common.HostContext, usernames []string) (detail []common.LocalUserDetail, err error) {
+	return detail, nil
 }
 
 func (agent *LinuxAgent) GetSystemInfo(ctx context.Context, hostContext common.HostContext) (system common.SystemInfo, err error) {

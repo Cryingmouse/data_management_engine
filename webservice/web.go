@@ -43,17 +43,21 @@ func Start() {
 	portal.POST("/hosts/batch-unregister", UnregisterHostsHandler)
 	portal.GET("/hosts", GetRegisteredHostsHandler)
 	// Portal API about directory
-	portal.POST("/directories/create", createDirectoryHandler)
-	portal.POST("/directories/batch-create", createDirectoriesHandler)
-	portal.POST("/directories/delete", deleteDirectoryHandler)
-	portal.POST("/directories/batch-delete", deleteDirectoriesHandler)
-	portal.GET("/directories", getDirectoriesHandler)
+	portal.POST("/directories/create", CreateDirectoryHandler)
+	portal.POST("/directories/batch-create", CreateDirectoriesHandler)
+	portal.POST("/directories/delete", DeleteDirectoryHandler)
+	portal.POST("/directories/batch-delete", DeleteDirectoriesHandler)
+	portal.GET("/directories", GetDirectoriesHandler)
 	// Portal API about local user
-	portal.POST("/users/create", createLocalUserHandler)
-	portal.POST("/users/batch-create", createLocalUsersHandler)
-	portal.POST("/users/delete", deleteLocalUserHandler)
-	portal.POST("/users/batch-delete", deleteLocalUsersHandler)
-	portal.GET("/users", getlocalUsersHandler)
+	portal.POST("/users/create", CreateLocalUserHandler)
+	portal.POST("/users/batch-create", CreateLocalUsersHandler)
+	portal.POST("/users/delete", DeleteLocalUserHandler)
+	portal.POST("/users/batch-delete", DeleteLocalUsersHandler)
+	portal.POST("/users/manage", ManageLocalUserHandler)
+	portal.POST("/users/batch-manage", ManageLocalUsersHandler)
+	portal.POST("/users/unmanage", UnmanageLocalUserHandler)
+	portal.POST("/users/batch-unmanage", UnmanageLocalUsersHandler)
+	portal.GET("/users", GetlocalUsersHandler)
 	// Portal API about swagger-ui
 	portal.Static("/docs", "./docs/swagger-ui/dist")
 
@@ -68,7 +72,7 @@ func Start() {
 	// Agent API about local user
 	agent.POST("/users/create", createLocalUserOnAgentHandler)
 	agent.POST("/users/delete", deleteLocalUserOnAgentHandler)
-	agent.GET("/users", getLocalUserOnAgentHandler)
+	agent.GET("/users/detail", getLocalUserOnAgentHandler)
 
 	addr := fmt.Sprintf(":%s", config.Webservice.Port)
 	router.Run(addr)

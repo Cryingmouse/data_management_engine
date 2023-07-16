@@ -16,17 +16,44 @@ import (
 
 type WindowsAgent struct{}
 
-type User struct {
-	Name                 string `json:"name"`
-	ID                   string `json:"id"`
-	Fullname             string `json:"fullname"`
-	Description          string `json:"description"`
-	Status               string `json:"status"`
-	IsPasswordExpired    bool   `json:"is_password_expired"`
-	IsPasswordChangeable bool   `json:"is_password_changeable"`
-	IsPasswordRequired   bool   `json:"is_password_required"`
-	IsLockout            bool   `json:"is_lockout"`
-	ComputerName         string `json:"host_name"`
+func (agent *WindowsAgent) CreateDirectory(ctx context.Context, hostContext common.HostContext, name string) (dirPath string, err error) {
+	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
+
+	err = os.Mkdir(dirPath, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	return dirPath, nil
+}
+
+func (agent *WindowsAgent) CreateDirectories(ctx context.Context, hostContext common.HostContext, names []string) (dirPaths []string, err error) {
+	for _, name := range names {
+		dirPath, err := agent.CreateDirectory(ctx, hostContext, name)
+		if err != nil {
+			return dirPaths, err
+		}
+
+		dirPaths = append(dirPaths, dirPath)
+	}
+
+	return dirPaths, err
+}
+
+func (agent *WindowsAgent) DeleteDirectory(ctx context.Context, hostContext common.HostContext, name string) (err error) {
+	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
+
+	return os.Remove(dirPath)
+}
+
+func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, hostContext common.HostContext, names []string) (err error) {
+	for _, name := range names {
+		if err = agent.DeleteDirectory(ctx, hostContext, name); err != nil {
+			return err
+		}
+	}
+
+	return err
 }
 
 func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, hostContext common.HostContext, path string) (detail common.DirectoryDetail, err error) {
@@ -86,46 +113,6 @@ func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, hostContext
 	return detail, err
 }
 
-func (agent *WindowsAgent) CreateDirectory(ctx context.Context, hostContext common.HostContext, name string) (dirPath string, err error) {
-	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
-
-	err = os.Mkdir(dirPath, os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-
-	return dirPath, nil
-}
-
-func (agent *WindowsAgent) CreateDirectories(ctx context.Context, hostContext common.HostContext, names []string) (dirPaths []string, err error) {
-	for _, name := range names {
-		dirPath, err := agent.CreateDirectory(ctx, hostContext, name)
-		if err != nil {
-			return dirPaths, err
-		}
-
-		dirPaths = append(dirPaths, dirPath)
-	}
-
-	return dirPaths, err
-}
-
-func (agent *WindowsAgent) DeleteDirectory(ctx context.Context, hostContext common.HostContext, name string) (err error) {
-	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
-
-	return os.Remove(dirPath)
-}
-
-func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, hostContext common.HostContext, names []string) (err error) {
-	for _, name := range names {
-		if err = agent.DeleteDirectory(ctx, hostContext, name); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
 func (agent *WindowsAgent) CreateShare(ctx context.Context, hostContext common.HostContext, name, directoryName string) (err error) {
 	cmdlet := "New-SmbShare"
 
@@ -149,8 +136,8 @@ func (agent *WindowsAgent) CreateShare(ctx context.Context, hostContext common.H
 	return err
 }
 
-func (agent *WindowsAgent) CreateLocalUser(ctx context.Context, hostContext common.HostContext, username, password string) (err error) {
-	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("New-LocalUser -Name '%s' -Password (ConvertTo-SecureString -String '%s' -AsPlainText -Force)", username, password))
+func (agent *WindowsAgent) CreateLocalUser(ctx context.Context, hostContext common.HostContext, name, password string) (err error) {
+	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("New-LocalUser -Name '%s' -Password (ConvertTo-SecureString -String '%s' -AsPlainText -Force)", name, password))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("Failed to create local user:", err)
@@ -159,8 +146,8 @@ func (agent *WindowsAgent) CreateLocalUser(ctx context.Context, hostContext comm
 	return err
 }
 
-func (agent *WindowsAgent) DeleteLocalUser(ctx context.Context, hostContext common.HostContext, username string) (err error) {
-	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("Remove-LocalUser -Name '%s'", username))
+func (agent *WindowsAgent) DeleteLocalUser(ctx context.Context, hostContext common.HostContext, name string) (err error) {
+	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("Remove-LocalUser -Name '%s'", name))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("Failed to delete local user:", err)
@@ -169,69 +156,65 @@ func (agent *WindowsAgent) DeleteLocalUser(ctx context.Context, hostContext comm
 	return err
 }
 
-func (agent *WindowsAgent) GetLocalUsers(ctx context.Context, hostContext common.HostContext) (users []User, err error) {
+func (agent *WindowsAgent) GetLocalUserDetail(ctx context.Context, hostContext common.HostContext, name string) (detail common.LocalUserDetail, err error) {
+	script := "./agent/windows/Get-LocalUserDetails.ps1"
+	output, err := execPowerShellCmdlet(script, "-UserName", name)
+	if err != nil {
+		return detail, err
+	}
+
+	var result map[string]interface{}
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return detail, err
+	}
+
+	detail = common.LocalUserDetail{
+		Name:                 result["Name"].(string),
+		UID:                  result["SID"].(string),
+		FullName:             result["FullName"].(string),
+		Description:          result["Description"].(string),
+		Status:               result["Status"].(string),
+		IsPasswordExpired:    result["PasswordExpires"].(bool),
+		IsPasswordChangeable: result["PasswordChangeable"].(bool),
+		IsPasswordRequired:   result["PasswordRequired"].(bool),
+		IsLockout:            result["Lockout"].(bool),
+		IsDisabled:           result["Disabled"].(bool),
+	}
+
+	return detail, err
+}
+
+func (agent *WindowsAgent) GetLocalUsersDetail(ctx context.Context, hostContext common.HostContext, names []string) (detail []common.LocalUserDetail, err error) {
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
 	if err != nil {
 		return nil, err
 	}
 
-	var result map[string]map[string]interface{}
+	var result []map[string]interface{}
 	err = json.Unmarshal(output, &result)
 	if err != nil {
-		return nil, err
+		return detail, err
 	}
 
-	for _, value := range result {
-		user := User{
-			Name:                 fmt.Sprintf("%v", value["Name"]),
-			Fullname:             fmt.Sprintf("%v", value["FullName"]),
-			Description:          fmt.Sprintf("%v", value["Description"]),
-			Status:               fmt.Sprintf("%v", value["Status"]),
-			IsPasswordExpired:    value["PasswordExpires"].(bool),
-			IsPasswordChangeable: value["PasswordChangeable"].(bool),
-			IsPasswordRequired:   value["PasswordRequired"].(bool),
-			IsLockout:            value["Lockout"].(bool),
-			ComputerName:         fmt.Sprintf("%v", value["PSComputerName"]),
-			ID:                   fmt.Sprintf("%v", value["SID"]),
+	for _, item := range result {
+		localUser := common.LocalUserDetail{
+			Name:                 item["Name"].(string),
+			UID:                  item["SID"].(string),
+			FullName:             item["FullName"].(string),
+			Description:          item["Description"].(string),
+			Status:               item["Status"].(string),
+			IsPasswordExpired:    item["PasswordExpires"].(bool),
+			IsPasswordChangeable: item["PasswordChangeable"].(bool),
+			IsPasswordRequired:   item["PasswordRequired"].(bool),
+			IsLockout:            item["Lockout"].(bool),
+			IsDisabled:           item["Disabled"].(bool),
 		}
-		users = append(users, user)
+		detail = append(detail, localUser)
 	}
 
-	return users, nil
-}
-
-func (agent *WindowsAgent) GetLocalUser(ctx context.Context, hostContext common.HostContext, username string) (user User, err error) {
-	script := "./agent/windows/Get-LocalUserDetails.ps1"
-	output, err := execPowerShellCmdlet(script, "-UserName", username)
-	if err != nil {
-		return user, err
-	}
-
-	var result map[string]map[string]interface{}
-	err = json.Unmarshal(output, &result)
-	if err != nil {
-		return user, err
-	}
-
-	for _, value := range result {
-		user = User{
-			Name:                 fmt.Sprintf("%v", value["Name"]),
-			Fullname:             fmt.Sprintf("%v", value["FullName"]),
-			Description:          fmt.Sprintf("%v", value["Description"]),
-			Status:               fmt.Sprintf("%v", value["Status"]),
-			IsPasswordExpired:    value["PasswordExpires"].(bool),
-			IsPasswordChangeable: value["PasswordChangeable"].(bool),
-			IsPasswordRequired:   value["PasswordRequired"].(bool),
-			IsLockout:            value["Lockout"].(bool),
-			ComputerName:         fmt.Sprintf("%v", value["PSComputerName"]),
-			ID:                   fmt.Sprintf("%v", value["SID"]),
-		}
-
-		return user, nil
-	}
-
-	return user, fmt.Errorf("unable to get the user %s", username)
+	return detail, err
 }
 
 func (agent *WindowsAgent) GetSystemInfo(ctx context.Context, hostContext common.HostContext) (systemInfo common.SystemInfo, err error) {

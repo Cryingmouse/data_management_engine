@@ -56,7 +56,7 @@ func (h *Host) Save(engine *DatabaseEngine) error {
 		Password:       string(encryptedPassword),
 	}
 
-	return engine.DB.Create(host).Error
+	return engine.DB.Save(host).Error
 }
 
 // Delete a Host from the database.
