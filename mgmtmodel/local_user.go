@@ -31,7 +31,7 @@ func (u *LocalUser) Create(ctx context.Context) (err error) {
 		return err
 	}
 
-	// Get the right driver and call driver to create directory.
+	// Get the right driver and call the driver to create the local user.
 	host := db.Host{IP: u.HostIP}
 	if err = host.Get(engine); err != nil {
 		return err
@@ -49,23 +49,18 @@ func (u *LocalUser) Create(ctx context.Context) (err error) {
 		return err
 	}
 
-	// Save the details of the directory into database.
-	LocalUser := db.LocalUser{
-		HostIP:               host.IP,
-		Name:                 u.Name,
-		Password:             u.Password,
-		UID:                  localUserDetail.UID,
-		Fullname:             localUserDetail.FullName,
-		Description:          localUserDetail.Description,
-		IsPasswordExpired:    localUserDetail.IsPasswordExpired,
-		IsPasswordChangeable: localUserDetail.IsPasswordChangeable,
-		IsPasswordRequired:   localUserDetail.IsPasswordRequired,
-		IsLockout:            localUserDetail.IsLockout,
+	// Build LocalUser database model and save the details of the local user into database.
+	localUser := db.LocalUser{
+		HostIP:   u.HostIP,
+		Name:     u.Name,
+		Password: u.Password,
 	}
+	common.CopyStructList(localUserDetail, &localUser)
 
-	common.CopyStructList(LocalUser, u)
+	// update the content in mgmt model before save to database.
+	common.CopyStructList(localUser, u)
 
-	return LocalUser.Save(engine)
+	return localUser.Save(engine)
 }
 
 func (u *LocalUser) Delete(ctx context.Context) (err error) {
@@ -86,7 +81,7 @@ func (u *LocalUser) Delete(ctx context.Context) (err error) {
 	}
 	ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
 
-	// Create local user on agent host.
+	// Delete the local user on agent host.
 	driver := driver.GetDriver(host.StorageType)
 	if err := driver.DeleteLocalUser(ctx, u.Name); err != nil {
 		return err
@@ -94,7 +89,7 @@ func (u *LocalUser) Delete(ctx context.Context) (err error) {
 
 	localUser := db.LocalUser{
 		Name:   u.Name,
-		HostIP: host.IP,
+		HostIP: u.HostIP,
 	}
 	return localUser.Delete(engine)
 }
@@ -142,24 +137,17 @@ func (u *LocalUser) Manage(ctx context.Context) (err error) {
 		return err
 	}
 
-	// Save the details of the directory into database.
-	LocalUser := db.LocalUser{
-		HostIP:               host.IP,
-		Name:                 u.Name,
-		Password:             u.Password,
-		UID:                  localUserDetail.UID,
-		Fullname:             localUserDetail.FullName,
-		Description:          localUserDetail.Description,
-		Status:               localUserDetail.Status,
-		IsPasswordExpired:    localUserDetail.IsPasswordExpired,
-		IsPasswordChangeable: localUserDetail.IsPasswordChangeable,
-		IsPasswordRequired:   localUserDetail.IsPasswordRequired,
-		IsLockout:            localUserDetail.IsLockout,
+	// Build LocalUser database model and save the details of the local user into database.
+	localUser := db.LocalUser{
+		HostIP:   host.IP,
+		Password: u.Password,
 	}
+	common.CopyStructList(localUserDetail, &localUser)
 
-	common.CopyStructList(LocalUser, u)
+	// update the content in mgmt model before save to database.
+	common.CopyStructList(localUser, u)
 
-	return LocalUser.Save(engine)
+	return localUser.Save(engine)
 }
 
 func (u *LocalUser) Unmanage(ctx context.Context) (err error) {
@@ -213,7 +201,7 @@ func (ul *LocalUserList) Create(ctx context.Context) error {
 			ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
 
 			driver := driver.GetDriver(host.StorageType)
-			localUserDetail, err := driver.GetLocalUserDetail(ctx, localUser.Name)
+			localUserDetail, err := driver.CreateLocalUser(ctx, localUser.Name, localUser.Password)
 			if err != nil {
 				resultErr = errors.Join(resultErr, err)
 				return err
@@ -393,52 +381,6 @@ func (ul *LocalUserList) Manage(ctx context.Context) error {
 func (ul *LocalUserList) Unmanage(ctx context.Context, filter *common.QueryFilter) (err error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
-		return err
-	}
-
-	g, _ := errgroup.WithContext(context.Background())
-
-	results := make([]common.LocalUserDetail, len(ul.LocalUsers))
-	var resultErr error
-
-	for i, u := range ul.LocalUsers {
-		index := i
-		localUser := u // 避免闭包问题
-		g.Go(func() error {
-			host := db.Host{IP: localUser.HostIP}
-			if err = host.Get(engine); err != nil {
-				resultErr = errors.Join(resultErr, err)
-				return err
-			}
-
-			hostContext := common.HostContext{
-				IP:       host.IP,
-				Username: host.Username,
-				Password: host.Password,
-			}
-			ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
-
-			driver := driver.GetDriver(host.StorageType)
-			localUserDetail, err := driver.GetLocalUserDetail(ctx, localUser.Name)
-			if err != nil {
-				resultErr = errors.Join(resultErr, err)
-				return err
-			}
-
-			results[index] = localUserDetail // 保存协程的返回值
-
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		if resultErr != nil {
-			return resultErr
-		}
-		return err
-	}
-
-	if err := common.CopyStructList(results, &ul.LocalUsers); err != nil {
 		return err
 	}
 

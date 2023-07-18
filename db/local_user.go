@@ -11,8 +11,8 @@ import (
 
 type LocalUser struct {
 	gorm.Model
-	HostIP               string `gorm:"uniqueIndex:idx_name_host_ip;column:host_ip"`
-	Name                 string `gorm:"uniqueIndex:idx_name_host_ip;column:name"`
+	HostIP               string `gorm:"uniqueIndex:idx_local_user_unique;column:host_ip"`
+	Name                 string `gorm:"uniqueIndex:idx_local_user_unique;column:name"`
 	UID                  string `gorm:"column:user_id"`
 	Password             string `gorm:"type:password;column:password"`
 	Fullname             string `gorm:"column:full_name"`
@@ -25,8 +25,8 @@ type LocalUser struct {
 	IsLockout            bool   `gorm:"column:is_lockout"`
 }
 
-func (u *LocalUser) Get(engine *DatabaseEngine) error {
-	err := engine.DB.Where(u).First(u).Error
+func (u *LocalUser) Get(engine *DatabaseEngine) (err error) {
+	err = engine.DB.Where(u).First(u).Error
 	if err != nil {
 		return err
 	}
@@ -39,27 +39,13 @@ func (u *LocalUser) Get(engine *DatabaseEngine) error {
 	return nil
 }
 
-func (u *LocalUser) Save(engine *DatabaseEngine) error {
-	encryptedPassword, err := common.Encrypt(u.Password, common.SecurityKey)
+func (u *LocalUser) Save(engine *DatabaseEngine) (err error) {
+	u.Password, err = common.Encrypt(u.Password, common.SecurityKey)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt password: %w", err)
 	}
 
-	localUser := &LocalUser{
-		HostIP:               u.HostIP,
-		UID:                  u.UID,
-		Name:                 u.Name,
-		Fullname:             u.Fullname,
-		Status:               u.Status,
-		Description:          u.Description,
-		IsPasswordExpired:    u.IsPasswordExpired,
-		IsPasswordChangeable: u.IsPasswordChangeable,
-		IsPasswordRequired:   u.IsPasswordRequired,
-		IsLockout:            u.IsLockout,
-		Password:             string(encryptedPassword),
-	}
-
-	return engine.DB.Save(localUser).Error
+	return engine.DB.Save(u).Error
 }
 
 func (u *LocalUser) Delete(engine *DatabaseEngine) error {
@@ -91,7 +77,7 @@ func (ul *LocalUserList) Get(engine *DatabaseEngine, filter *common.QueryFilter)
 		}
 	}
 
-	return
+	return nil
 }
 
 type PaginationLocalUser struct {
@@ -99,25 +85,31 @@ type PaginationLocalUser struct {
 	TotalCount int64
 }
 
-func (ul *LocalUserList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (*PaginationLocalUser, error) {
-	var totalCount int64
-	model := LocalUser{}
-
+func (ul *LocalUserList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (paginationLocalUser PaginationLocalUser, err error) {
 	if filter.Pagination == nil {
-		return nil, fmt.Errorf("invalid filter: missing pagination")
+		return paginationLocalUser, fmt.Errorf("invalid filter: missing pagination")
 	}
 
-	totalCount, err := Query(engine, model, filter, &ul.LocalUsers)
+	model := LocalUser{}
+	var totalCount int64
+	totalCount, err = Query(engine, model, filter, &ul.LocalUsers)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query local users by the filter %v in the database: %w", filter, err)
+		return paginationLocalUser, fmt.Errorf("failed to query local users by the filter %v in the database: %w", filter, err)
 	}
 
-	response := &PaginationLocalUser{
-		LocalUsers: ul.LocalUsers,
-		TotalCount: totalCount,
+	for i := range ul.LocalUsers {
+		if ul.LocalUsers[i].Password != "" {
+			ul.LocalUsers[i].Password, err = common.Decrypt(ul.LocalUsers[i].Password, common.SecurityKey)
+			if err != nil {
+				return paginationLocalUser, fmt.Errorf("failed to decrypt password: %w", err)
+			}
+		}
 	}
 
-	return response, nil
+	paginationLocalUser.LocalUsers = ul.LocalUsers
+	paginationLocalUser.TotalCount = totalCount
+
+	return paginationLocalUser, nil
 }
 
 func (ul *LocalUserList) Save(engine *DatabaseEngine) (err error) {
@@ -125,22 +117,22 @@ func (ul *LocalUserList) Save(engine *DatabaseEngine) (err error) {
 		return errors.New("UserList is empty")
 	}
 
-	for i, user := range ul.LocalUsers {
+	for i := range ul.LocalUsers {
 		// Encrypt the password
-		ul.LocalUsers[i].Password, err = common.Encrypt(user.Password, common.SecurityKey)
+		ul.LocalUsers[i].Password, err = common.Encrypt(ul.LocalUsers[i].Password, common.SecurityKey)
 		if err != nil {
-			return fmt.Errorf("failed to encrypt password for user %v: %w", user.Name, err)
+			return fmt.Errorf("failed to encrypt password for user %v: %w", ul.LocalUsers[i].Name, err)
 		}
 	}
 
 	err = engine.DB.CreateInBatches(ul.LocalUsers, len(ul.LocalUsers)).Error
 	if err != nil {
-		return fmt.Errorf("failed to create users in database: %w", err)
+		return fmt.Errorf("failed to save the users in database: %w", err)
 	}
 	return nil
 }
 
-func (ul *LocalUserList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) (err error) {
+func (ul *LocalUserList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) error {
 	var users []LocalUser
 	if filter != nil {
 		return Delete(engine, filter, &ul.LocalUsers)

@@ -171,7 +171,7 @@ func (hl *HostList) Unregister(ctx context.Context) error {
 
 	common.CopyStructList(hl.Hosts, &hostList.Hosts)
 
-	return hostList.Delete(engine)
+	return hostList.Delete(engine, nil)
 }
 
 func (hl *HostList) Get(ctx context.Context, filter *common.QueryFilter) ([]Host, error) {

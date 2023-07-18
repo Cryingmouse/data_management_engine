@@ -190,12 +190,10 @@ func (dl *DirectoryList) Delete(ctx context.Context, filter *common.QueryFilter)
 
 	g, _ := errgroup.WithContext(context.Background())
 
-	results := make([]Directory, len(dl.Directories))
 	var resultErr error
 
-	for i, d := range dl.Directories {
-		index := i     // 避免闭包问题
-		directory := d // 避免闭包问题
+	for index := range dl.Directories {
+		directory := dl.Directories[index] // 避免闭包问题
 		g.Go(func() error {
 			host := db.Host{IP: directory.HostIP}
 			if err = host.Get(engine); err != nil {
@@ -216,8 +214,6 @@ func (dl *DirectoryList) Delete(ctx context.Context, filter *common.QueryFilter)
 				return err
 			}
 
-			results[index] = directory // 保存协程的返回值
-
 			return nil
 		})
 	}
@@ -226,10 +222,6 @@ func (dl *DirectoryList) Delete(ctx context.Context, filter *common.QueryFilter)
 		if resultErr != nil {
 			return resultErr
 		}
-		return err
-	}
-
-	if err := common.CopyStructList(results, &dl.Directories); err != nil {
 		return err
 	}
 

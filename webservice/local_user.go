@@ -33,6 +33,11 @@ type PaginationLocalUserResponse struct {
 }
 
 type requestLocalUser struct {
+	Name   string `json:"name" binding:"required"`
+	HostIP string `json:"host_ip" binding:"required"`
+}
+
+type requestLocalUserWithPassword struct {
 	Name     string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required,validatePassword"`
 	HostIP   string `json:"host_ip" binding:"required"`
@@ -41,7 +46,7 @@ type requestLocalUser struct {
 func CreateLocalUserHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	var request requestLocalUser
+	var request requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
@@ -64,7 +69,7 @@ func CreateLocalUserHandler(c *gin.Context) {
 func CreateLocalUsersHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	var request []requestLocalUser
+	var request []requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
@@ -135,7 +140,7 @@ func GetlocalUsersHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.Query("page"))
 	limit, _ := strconv.Atoi(c.Query("limit"))
 
-	if userName == "" {
+	if userName == "" || hostIP == "" {
 		localUserListModel := mgmtmodel.LocalUserList{}
 
 		filter := common.QueryFilter{
@@ -188,8 +193,8 @@ func GetlocalUsersHandler(c *gin.Context) {
 		}
 	} else {
 		userModel := mgmtmodel.LocalUser{
-			Name:   userName,
 			HostIP: hostIP,
+			Name:   userName,
 		}
 
 		localUser, err := userModel.Get(ctx)
@@ -198,19 +203,19 @@ func GetlocalUsersHandler(c *gin.Context) {
 			return
 		}
 
-		localUserInfo := DirectoryResponse{}
-		common.CopyStructList(localUser, &localUserInfo)
+		localUserResponse := LocalUserResponse{}
+		common.CopyStructList(localUser, &localUserResponse)
 
-		directoryInfoList := []DirectoryResponse{localUserInfo}
+		localUsersResponse := []LocalUserResponse{localUserResponse}
 
-		c.JSON(http.StatusOK, directoryInfoList)
+		c.JSON(http.StatusOK, localUsersResponse)
 	}
 }
 
 func ManageLocalUserHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	var request requestLocalUser
+	var request requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
@@ -233,7 +238,7 @@ func ManageLocalUserHandler(c *gin.Context) {
 func ManageLocalUsersHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	var request []requestLocalUser
+	var request []requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
@@ -286,7 +291,7 @@ func UnmanageLocalUsersHandler(c *gin.Context) {
 	common.CopyStructList(request, &localUserListModel.LocalUsers)
 
 	if err := localUserListModel.Unmanage(ctx, nil); err != nil {
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local users", err.Error())
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to unmanage the local users", err.Error())
 		return
 	}
 

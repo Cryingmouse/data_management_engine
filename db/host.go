@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/cryingmouse/data_management_engine/common"
-	"github.com/thoas/go-funk"
 	"gorm.io/gorm"
 )
 
@@ -38,25 +37,13 @@ func (h *Host) Get(engine *DatabaseEngine) error {
 }
 
 // Save a Host to the database.
-func (h *Host) Save(engine *DatabaseEngine) error {
-	encryptedPassword, err := common.Encrypt(h.Password, common.SecurityKey)
+func (h *Host) Save(engine *DatabaseEngine) (err error) {
+	h.Password, err = common.Encrypt(h.Password, common.SecurityKey)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt password: %w", err)
 	}
 
-	host := &Host{
-		IP:             h.IP,
-		ComputerName:   h.ComputerName,
-		Username:       h.Username,
-		StorageType:    h.StorageType,
-		Caption:        h.Caption,
-		OSArchitecture: h.OSArchitecture,
-		OSVersion:      h.OSVersion,
-		BuildNumber:    h.BuildNumber,
-		Password:       string(encryptedPassword),
-	}
-
-	return engine.DB.Save(host).Error
+	return engine.DB.Save(h).Error
 }
 
 // Delete a Host from the database.
@@ -99,65 +86,66 @@ type PaginationHost struct {
 }
 
 // Pagination retrieves a paginated list of Hosts from the database.
-func (hl *HostList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (*PaginationHost, error) {
+func (hl *HostList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (paginationHost PaginationHost, err error) {
 	if filter.Pagination == nil {
-		return nil, errors.New("invalid filter: pagination is required")
+		return paginationHost, errors.New("invalid filter: pagination is required")
 	}
 
 	model := Host{}
 	var totalCount int64
-	var err error
-
 	totalCount, err = Query(engine, model, filter, &hl.Hosts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query hosts from the database: %w", err)
+		return paginationHost, fmt.Errorf("failed to query hosts from the database: %w", err)
 	}
 
 	for i := range hl.Hosts {
 		if hl.Hosts[i].Password != "" {
-			var err error
 			hl.Hosts[i].Password, err = common.Decrypt(hl.Hosts[i].Password, common.SecurityKey)
 			if err != nil {
-				return nil, fmt.Errorf("failed to decrypt password: %w", err)
+				return paginationHost, fmt.Errorf("failed to decrypt password: %w", err)
 			}
 		}
 	}
 
-	response := &PaginationHost{
-		Hosts:      hl.Hosts,
-		TotalCount: totalCount,
-	}
+	paginationHost.Hosts = hl.Hosts
+	paginationHost.TotalCount = totalCount
 
-	return response, nil
+	return paginationHost, nil
 }
 
 // Save saves a list of Hosts to the database.
-func (hl *HostList) Save(engine *DatabaseEngine) error {
+func (hl *HostList) Save(engine *DatabaseEngine) (err error) {
 	if len(hl.Hosts) == 0 {
-		return errors.New("HostList is empty")
+		return errors.New("UserList is empty")
 	}
 
 	for i, host := range hl.Hosts {
-		encryptedPassword, err := common.Encrypt(host.Password, common.SecurityKey)
+		hl.Hosts[i].Password, err = common.Encrypt(host.Password, common.SecurityKey)
 		if err != nil {
 			return fmt.Errorf("failed to encrypt password for host %v: %w", host.ComputerName, err)
 		}
-
-		hl.Hosts[i].Password = string(encryptedPassword)
 	}
 
-	return engine.DB.CreateInBatches(hl.Hosts, len(hl.Hosts)).Error
+	err = engine.DB.CreateInBatches(hl.Hosts, len(hl.Hosts)).Error
+	if err != nil {
+		return fmt.Errorf("failed to save the hosts in database: %w", err)
+	}
+	return nil
 }
 
 // Delete deletes a list of Hosts from the database.
-func (hl *HostList) Delete(engine *DatabaseEngine) error {
+func (hl *HostList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) error {
 	var hosts []Host
-	ips := funk.Map(hl.Hosts, func(host Host) string {
-		return host.IP
-	}).([]string)
-	if ips != nil {
-		return engine.DB.Where("ip IN (?)", ips).Unscoped().Delete(&hosts).Error
+	if filter != nil {
+		return Delete(engine, filter, &hl.Hosts)
 	}
 
-	return nil
+	query := engine.DB.Unscoped()
+
+	conditions := common.StructListToMapList(hl.Hosts)
+	for _, condition := range conditions {
+		query = query.Or(condition)
+	}
+
+	return query.Find(&hosts).Delete(&hosts).Error
 }

@@ -11,14 +11,14 @@ import (
 
 type Directory struct {
 	gorm.Model
-	Name           string `gorm:"uniqueIndex:idx_name_host_ip;column:name"`
+	HostIP         string `gorm:"uniqueIndex:idx_directory_unique;column:host_ip"`
+	Name           string `gorm:"uniqueIndex:idx_directory_unique;column:name"`
 	CreationTime   string `gorm:"column:creation_time"`
 	LastAccessTime string `gorm:"column:last_access_time"`
 	LastWriteTime  string `gorm:"column:last_write_time"`
 	Exist          bool   `gorm:"column:exist"`
 	FullPath       string `gorm:"column:full_path"`
 	ParentFullPath string `gorm:"column:parent_full_path"`
-	HostIP         string `gorm:"uniqueIndex:idx_name_host_ip;column:host_ip"`
 	// Host           Host   `gorm:"foreignKey:HostIP"`
 }
 
@@ -57,33 +57,36 @@ type PaginationDirectory struct {
 	TotalCount  int64
 }
 
-func (dl *DirectoryList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (*PaginationDirectory, error) {
-	var totalCount int64
+func (dl *DirectoryList) Pagination(engine *DatabaseEngine, filter *common.QueryFilter) (paginationDirectory PaginationDirectory, err error) {
+
 	model := Directory{}
 
 	if filter.Pagination == nil {
-		return nil, fmt.Errorf("invalid filter: missing pagination")
+		return paginationDirectory, fmt.Errorf("invalid filter: missing pagination")
 	}
 
-	totalCount, err := Query(engine, model, filter, &dl.Directories)
+	var totalCount int64
+	totalCount, err = Query(engine, model, filter, &dl.Directories)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query directories by the filter %v in the database: %w", filter, err)
+		return paginationDirectory, fmt.Errorf("failed to query directories by the filter %v in the database: %w", filter, err)
 	}
 
-	response := &PaginationDirectory{
-		Directories: dl.Directories,
-		TotalCount:  totalCount,
-	}
+	paginationDirectory.Directories = dl.Directories
+	paginationDirectory.TotalCount = totalCount
 
-	return response, nil
+	return paginationDirectory, nil
 }
 
-func (dl *DirectoryList) Save(engine *DatabaseEngine) error {
+func (dl *DirectoryList) Save(engine *DatabaseEngine) (err error) {
 	if len(dl.Directories) == 0 {
 		return errors.New("no directories to save")
 	}
 
-	return engine.DB.CreateInBatches(dl.Directories, len(dl.Directories)).Error
+	err = engine.DB.CreateInBatches(dl.Directories, len(dl.Directories)).Error
+	if err != nil {
+		return fmt.Errorf("failed to save the directories in database: %w", err)
+	}
+	return nil
 }
 
 func (dl *DirectoryList) Delete(engine *DatabaseEngine, filter *common.QueryFilter) error {

@@ -101,7 +101,7 @@ func Query(engine *DatabaseEngine, model interface{}, filter *common.QueryFilter
 
 // Delete 根据过滤条件删除数据
 func Delete(engine *DatabaseEngine, filter *common.QueryFilter, items interface{}) (err error) {
-	db := engine.DB.Debug().Where("1 = 1")
+	db := engine.DB
 
 	// 添加关键字条件进行模糊搜索
 	for key, value := range filter.Keyword {
