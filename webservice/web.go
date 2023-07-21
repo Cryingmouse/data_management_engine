@@ -63,7 +63,7 @@ func Start() {
 	// Agent API about host
 	agent.GET("/system-info", GetSystemInfoOnAgentHandler)
 	// Agent API about directory
-	agent.GET("/directories/detail", getDirectoryDetailsOnAgentHandler)
+	agent.GET("/directories/detail", getDirectoryDetailOnAgentHandler)
 	agent.POST("/directories/create", createDirectoryOnAgentHandler)
 	agent.POST("/directories/batch-create", createDirectoriesOnAgentHandler)
 	agent.POST("/directories/delete", deleteDirectoryOnAgentHandler)

@@ -218,13 +218,13 @@ func createDirectoryOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	dirPath, err := agent.CreateDirectory(ctx, request.Name)
+	_, err := agent.CreateDirectory(ctx, request.Name)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directory", err.Error())
 		return
 	}
 
-	directoryDetails, err := agent.GetDirectoryDetail(ctx, dirPath)
+	directoryDetails, err := agent.GetDirectoryDetail(ctx, request.Name)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directory details", err.Error())
 		return
@@ -270,13 +270,13 @@ func createDirectoriesOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	dirPaths, err := agent.CreateDirectories(ctx, names)
+	_, err := agent.CreateDirectories(ctx, names)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directories", err.Error())
 		return
 	}
 
-	DirectoryDetails, err := agent.GetDirectoriesDetail(ctx, dirPaths)
+	DirectoryDetails, err := agent.GetDirectoriesDetail(ctx, names)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directories details", err.Error())
 		return
@@ -288,7 +288,7 @@ func createDirectoriesOnAgentHandler(c *gin.Context) {
 func deleteDirectoriesOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	var request struct {
+	var request []struct {
 		Name string `json:"name"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -296,8 +296,13 @@ func deleteDirectoriesOnAgentHandler(c *gin.Context) {
 		return
 	}
 
+	names := make([]string, len(request))
+	for i, item := range request {
+		names[i] = item.Name
+	}
+
 	agent := agent.GetAgent()
-	if err := agent.DeleteDirectory(ctx, request.Name); err != nil {
+	if err := agent.DeleteDirectories(ctx, names); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the directories", err.Error())
 		return
 	}
@@ -305,7 +310,7 @@ func deleteDirectoriesOnAgentHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func getDirectoryDetailsOnAgentHandler(c *gin.Context) {
+func getDirectoryDetailOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	name := c.Query("name")

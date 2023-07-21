@@ -12,7 +12,7 @@ type LinuxAgent struct {
 }
 
 func (agent *LinuxAgent) CreateDirectory(ctx context.Context, name string) (dirPath string, err error) {
-	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
+	dirPath = fmt.Sprintf("%s\\%s", "C:\\test", name)
 
 	err = os.Mkdir(dirPath, os.ModePerm)
 	if err != nil {
@@ -36,7 +36,7 @@ func (agent *LinuxAgent) CreateDirectories(ctx context.Context, names []string) 
 }
 
 func (agent *LinuxAgent) DeleteDirectory(ctx context.Context, name string) (err error) {
-	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
+	dirPath := fmt.Sprintf("%s\\%s", "C:\\test", name)
 
 	return os.Remove(dirPath)
 }

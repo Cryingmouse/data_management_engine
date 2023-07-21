@@ -17,7 +17,7 @@ import (
 type WindowsAgent struct{}
 
 func (agent *WindowsAgent) CreateDirectory(ctx context.Context, name string) (dirPath string, err error) {
-	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
+	dirPath = fmt.Sprintf("%s\\%s", "C:\\test", name)
 
 	err = os.Mkdir(dirPath, os.ModePerm)
 	if err != nil {
@@ -41,7 +41,7 @@ func (agent *WindowsAgent) CreateDirectories(ctx context.Context, names []string
 }
 
 func (agent *WindowsAgent) DeleteDirectory(ctx context.Context, name string) (err error) {
-	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
+	dirPath := fmt.Sprintf("%s\\%s", "C:\\test", name)
 
 	return os.Remove(dirPath)
 }
@@ -56,10 +56,12 @@ func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, names []string
 	return err
 }
 
-func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, path string) (detail common.DirectoryDetail, err error) {
+func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, name string) (detail common.DirectoryDetail, err error) {
 	script := "./agent/windows/Get-DirectoryDetail.ps1"
 
-	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", path)
+	dirPath := fmt.Sprintf("%s\\%s", "C:\\test", name)
+
+	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", dirPath)
 	if err != nil {
 		return detail, err
 	}
@@ -83,10 +85,15 @@ func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, path string) 
 	return detail, err
 }
 
-func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, paths []string) (detail []common.DirectoryDetail, err error) {
+func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, names []string) (detail []common.DirectoryDetail, err error) {
 	script := "./agent/windows/Get-DirectoryDetail.ps1"
 
-	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", strings.Join(paths, ","))
+	dirPaths := make([]string, len(names))
+	for i, name := range names {
+		dirPaths[i] = fmt.Sprintf("%s\\%s", "C:\\test", name)
+	}
+
+	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", strings.Join(dirPaths, ","))
 	if err != nil {
 		return detail, err
 	}

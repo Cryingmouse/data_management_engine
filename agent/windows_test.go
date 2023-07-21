@@ -111,7 +111,7 @@ func TestWindowsAgent_CreateDirectory(t *testing.T) {
 				name: "test_directory",
 			},
 			wantErr:     false,
-			wantDirPath: "c:\\test\\test_directory",
+			wantDirPath: "C:\\test\\test_directory",
 		},
 	}
 	for _, tt := range tests {
@@ -149,7 +149,7 @@ func TestWindowsAgent_CreateDirectories(t *testing.T) {
 				names: []string{"test_directory_1", "test_directory_2"},
 			},
 			wantErr:      false,
-			wantDirPaths: []string{"c:\\test\\test_directory_1", "c:\\test\\test_directory_2"},
+			wantDirPaths: []string{"C:\\test\\test_directory_1", "C:\\test\\test_directory_2"},
 		},
 	}
 	for _, tt := range tests {
@@ -234,7 +234,7 @@ func TestWindowsAgent_GetDirectoryDetail(t *testing.T) {
 
 	type args struct {
 		ctx  context.Context
-		path string
+		name string
 	}
 	tests := []struct {
 		name       string
@@ -247,14 +247,14 @@ func TestWindowsAgent_GetDirectoryDetail(t *testing.T) {
 			name:  "test_get_directory_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				path: "c:\\test\\test_directory",
+				name: "test_directory",
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.agent.GetDirectoryDetail(tt.args.ctx, tt.args.path)
+			_, err := tt.agent.GetDirectoryDetail(tt.args.ctx, tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("WindowsAgent.GetDirectoryDetail() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -269,7 +269,7 @@ func TestWindowsAgent_GetDirectoriesDetail(t *testing.T) {
 
 	type args struct {
 		ctx   context.Context
-		paths []string
+		names []string
 	}
 	tests := []struct {
 		name       string
@@ -282,7 +282,7 @@ func TestWindowsAgent_GetDirectoriesDetail(t *testing.T) {
 			name:  "test_get_directories_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				paths: []string{"c:\\test\\test_directory_1", "c:\\test\\test_directory_2"},
+				names: []string{"test_directory_1", "test_directory_2"},
 			},
 			wantErr: false,
 		},
@@ -290,14 +290,14 @@ func TestWindowsAgent_GetDirectoriesDetail(t *testing.T) {
 			name:  "test_get_directories_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				paths: []string{"c:\\test\\test_directory_1"},
+				names: []string{"test_directory_1"},
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.agent.GetDirectoriesDetail(tt.args.ctx, tt.args.paths)
+			_, err := tt.agent.GetDirectoriesDetail(tt.args.ctx, tt.args.names)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("WindowsAgent.GetDirectoriesDetail() error = %v, wantErr %v", err, tt.wantErr)
 				return
