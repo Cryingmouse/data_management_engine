@@ -58,14 +58,14 @@ function Get-DirectoryAttributes {
 
 $directoryPathsArray = $DirectoryPaths -split ','
 
-$directoryDetails = @()
+$directoryDetail = @()
 
 foreach ($directoryPath in $directoryPathsArray) {
     if (Test-Path -Path $directoryPath -PathType Container) {
         $directory = Get-Item -Path $directoryPath | Select-Object Name, FullName, CreationTime, LastWriteTime, LastAccessTime, Exists, Attributes, Root, Parent
         $attributesDetails = Get-DirectoryAttributes -Attributes $directory.Attributes
 
-        $directoryDetails += @{
+        $directoryDetail += @{
             "Name"           = $directory.Name
             "FullPath"       = $directory.FullName
             "CreationTime"   = $directory.CreationTime.DateTime
@@ -79,4 +79,4 @@ foreach ($directoryPath in $directoryPathsArray) {
 }
 
 # Output directory details in JSON format
-$directoryDetails | ConvertTo-Json
+$directoryDetail | ConvertTo-Json

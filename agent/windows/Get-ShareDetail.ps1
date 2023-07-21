@@ -2,7 +2,7 @@ param (
     [String] $ShareNames
 )
 
-$localsharesDetail = @()
+$sharesDetail = @()
 
 $ShareNamesArray = $ShareNames -split ','
 
@@ -10,7 +10,7 @@ $allShares = Get-SmbShare | Select-Object Name, ShareState, Description, Path
 
 if (-not $ShareNames) {
     foreach ($share in $allShares) {
-        $localsharesDetail += @{
+        $sharesDetail += @{
             'Name'          = $share.Name
             'ShareState'    = $share.ShareState
             'Description'   = $share.Description
@@ -21,7 +21,7 @@ if (-not $ShareNames) {
 else {
     $shares = $allShares | Where-Object { $_.Name -in $ShareNamesArray }
     foreach ( $share in $shares ) {
-        $localsharesDetail += @{
+        $sharesDetail += @{
             'Name'          = $share.Name
             'ShareState'    = $share.ShareState
             'Description'   = $share.Description
@@ -31,5 +31,5 @@ else {
 }
 
 
-$localsharesDetail | ConvertTo-Json
+$sharesDetail | ConvertTo-Json
 

@@ -2,7 +2,7 @@ function Get-SystemDetails {
     $operatingSystem = Get-WmiObject -Class Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture, BuildNumber
     $computerName = $env:COMPUTERNAME
 
-    $systemDetails = @{
+    $systemDetail = @{
         "Caption"        = $operatingSystem.Caption
         "Version"        = $operatingSystem.Version
         "OSArchitecture" = $operatingSystem.OSArchitecture
@@ -10,10 +10,10 @@ function Get-SystemDetails {
         "ComputerName"   = $computerName
     }
 
-    return $systemDetails
+    return $systemDetail
 }
 
 # 调用函数以检索和输出本地系统详细信息
-$systemDetails = Get-SystemDetails
+$systemDetail = Get-SystemDetails
 
-$systemDetails | ConvertTo-Json
+$systemDetail | ConvertTo-Json

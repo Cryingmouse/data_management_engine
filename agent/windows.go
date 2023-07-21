@@ -94,20 +94,37 @@ func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, paths []str
 	var result []map[string]interface{}
 	err = json.Unmarshal(output, &result)
 	if err != nil {
-		return detail, err
-	}
-
-	for _, item := range result {
+		// In case that only one file path to query.
+		var result map[string]interface{}
+		err = json.Unmarshal(output, &result)
+		if err != nil {
+			return detail, err
+		}
 		directory := common.DirectoryDetail{
-			Name:           item["Name"].(string),
-			FullPath:       item["FullPath"].(string),
-			CreationTime:   item["CreationTime"].(string),
-			LastWriteTime:  item["LastWriteTime"].(string),
-			LastAccessTime: item["LastAccessTime"].(string),
-			Exist:          item["Exist"].(bool),
-			ParentFullPath: item["ParentFullPath"].(string),
+			Name:           result["Name"].(string),
+			FullPath:       result["FullPath"].(string),
+			CreationTime:   result["CreationTime"].(string),
+			LastWriteTime:  result["LastWriteTime"].(string),
+			LastAccessTime: result["LastAccessTime"].(string),
+			Exist:          result["Exist"].(bool),
+			ParentFullPath: result["ParentFullPath"].(string),
 		}
 		detail = append(detail, directory)
+
+	} else {
+
+		for _, item := range result {
+			directory := common.DirectoryDetail{
+				Name:           item["Name"].(string),
+				FullPath:       item["FullPath"].(string),
+				CreationTime:   item["CreationTime"].(string),
+				LastWriteTime:  item["LastWriteTime"].(string),
+				LastAccessTime: item["LastAccessTime"].(string),
+				Exist:          item["Exist"].(bool),
+				ParentFullPath: item["ParentFullPath"].(string),
+			}
+			detail = append(detail, directory)
+		}
 	}
 
 	return detail, err
