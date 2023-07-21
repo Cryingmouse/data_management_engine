@@ -57,7 +57,7 @@ func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, names []string
 }
 
 func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, path string) (detail common.DirectoryDetail, err error) {
-	script := "./agent/windows/Get-DirectoryDetails.ps1"
+	script := "./agent/windows/Get-DirectoryDetail.ps1"
 
 	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", path)
 	if err != nil {
@@ -84,7 +84,7 @@ func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, path string) 
 }
 
 func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, paths []string) (detail []common.DirectoryDetail, err error) {
-	script := "./agent/windows/Get-DirectoryDetails.ps1"
+	script := "./agent/windows/Get-DirectoryDetail.ps1"
 
 	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", strings.Join(paths, ","))
 	if err != nil {
@@ -161,7 +161,7 @@ func (agent *WindowsAgent) DeleteShare(ctx context.Context, name string) (err er
 }
 
 func (agent *WindowsAgent) GetShareDetail(ctx context.Context, name string) (detail common.ShareDetail, err error) {
-	script := "./agent/windows/Get-ShareDetails.ps1"
+	script := "./agent/windows/Get-ShareDetail.ps1"
 	output, err := execPowerShellCmdlet(script, "-ShareNames", name)
 	if err != nil {
 		return detail, err
@@ -189,7 +189,7 @@ func (agent *WindowsAgent) GetShareDetail(ctx context.Context, name string) (det
 }
 
 func (agent *WindowsAgent) GetSharesDetail(ctx context.Context, names []string) (detail []common.ShareDetail, err error) {
-	script := "./agent/windows/Get-ShareDetails.ps1"
+	script := "./agent/windows/Get-ShareDetail.ps1"
 	output, err := execPowerShellCmdlet(script, "-ShareNames", strings.Join(names, ","))
 	if err != nil {
 		return nil, err
@@ -289,7 +289,7 @@ func (agent *WindowsAgent) DeleteLocalUser(ctx context.Context, name string) (er
 }
 
 func (agent *WindowsAgent) GetLocalUserDetail(ctx context.Context, name string) (detail common.LocalUserDetail, err error) {
-	script := "./agent/windows/Get-LocalUserDetails.ps1"
+	script := "./agent/windows/Get-LocalUserDetail.ps1"
 	output, err := execPowerShellCmdlet(script, "-UserName", name)
 	if err != nil {
 		return detail, err
@@ -318,7 +318,7 @@ func (agent *WindowsAgent) GetLocalUserDetail(ctx context.Context, name string) 
 }
 
 func (agent *WindowsAgent) GetLocalUsersDetail(ctx context.Context, names []string) (detail []common.LocalUserDetail, err error) {
-	script := "./agent/windows/Get-LocalUserDetails.ps1"
+	script := "./agent/windows/Get-LocalUserDetail.ps1"
 	output, err := execPowerShellCmdlet(script)
 	if err != nil {
 		return nil, err
@@ -350,7 +350,7 @@ func (agent *WindowsAgent) GetLocalUsersDetail(ctx context.Context, names []stri
 }
 
 func (agent *WindowsAgent) GetSystemInfo(ctx context.Context) (systemInfo common.SystemInfo, err error) {
-	script := "./agent/windows/Get-SystemDetails.ps1"
+	script := "./agent/windows/Get-SystemDetail.ps1"
 	output, err := execPowerShellCmdlet(script)
 	if err != nil {
 		return systemInfo, err
