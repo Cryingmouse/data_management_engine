@@ -16,7 +16,7 @@ import (
 
 type WindowsAgent struct{}
 
-func (agent *WindowsAgent) CreateDirectory(ctx context.Context, hostContext common.HostContext, name string) (dirPath string, err error) {
+func (agent *WindowsAgent) CreateDirectory(ctx context.Context, name string) (dirPath string, err error) {
 	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
 
 	err = os.Mkdir(dirPath, os.ModePerm)
@@ -27,9 +27,9 @@ func (agent *WindowsAgent) CreateDirectory(ctx context.Context, hostContext comm
 	return dirPath, nil
 }
 
-func (agent *WindowsAgent) CreateDirectories(ctx context.Context, hostContext common.HostContext, names []string) (dirPaths []string, err error) {
+func (agent *WindowsAgent) CreateDirectories(ctx context.Context, names []string) (dirPaths []string, err error) {
 	for _, name := range names {
-		dirPath, err := agent.CreateDirectory(ctx, hostContext, name)
+		dirPath, err := agent.CreateDirectory(ctx, name)
 		if err != nil {
 			return dirPaths, err
 		}
@@ -40,15 +40,15 @@ func (agent *WindowsAgent) CreateDirectories(ctx context.Context, hostContext co
 	return dirPaths, err
 }
 
-func (agent *WindowsAgent) DeleteDirectory(ctx context.Context, hostContext common.HostContext, name string) (err error) {
+func (agent *WindowsAgent) DeleteDirectory(ctx context.Context, name string) (err error) {
 	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
 
 	return os.Remove(dirPath)
 }
 
-func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, hostContext common.HostContext, names []string) (err error) {
+func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, names []string) (err error) {
 	for _, name := range names {
-		if err = agent.DeleteDirectory(ctx, hostContext, name); err != nil {
+		if err = agent.DeleteDirectory(ctx, name); err != nil {
 			return err
 		}
 	}
@@ -56,7 +56,7 @@ func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, hostContext co
 	return err
 }
 
-func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, hostContext common.HostContext, path string) (detail common.DirectoryDetail, err error) {
+func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, path string) (detail common.DirectoryDetail, err error) {
 	script := "./agent/windows/Get-DirectoryDetails.ps1"
 
 	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", path)
@@ -83,7 +83,7 @@ func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, hostContext c
 	return detail, err
 }
 
-func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, hostContext common.HostContext, paths []string) (detail []common.DirectoryDetail, err error) {
+func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, paths []string) (detail []common.DirectoryDetail, err error) {
 	script := "./agent/windows/Get-DirectoryDetails.ps1"
 
 	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", strings.Join(paths, ","))
@@ -113,14 +113,16 @@ func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, hostContext
 	return detail, err
 }
 
-func (agent *WindowsAgent) CreateShare(ctx context.Context, hostContext common.HostContext, name, directoryName string) (err error) {
+func (agent *WindowsAgent) CreateShare(ctx context.Context, name, directoryPath, description string, usernames []string) (err error) {
 	cmdlet := "New-SmbShare"
 
 	// Define the arguments
 	args := []string{
 		"-Name", name,
-		"-Path", directoryName,
-		"-FullAccess", "Everyone",
+		"-Path", common.AddQuotes(directoryPath),
+		"-Description", common.AddQuotes(description),
+		"-FullAccess", strings.Join(usernames, ", "),
+		"-FolderEnumerationMode", "Unrestricted",
 	}
 
 	// Execute the PowerShell command
@@ -136,7 +138,137 @@ func (agent *WindowsAgent) CreateShare(ctx context.Context, hostContext common.H
 	return err
 }
 
-func (agent *WindowsAgent) CreateLocalUser(ctx context.Context, hostContext common.HostContext, name, password string) (err error) {
+func (agent *WindowsAgent) DeleteShare(ctx context.Context, name string) (err error) {
+	cmdlet := "Remove-SmbShare"
+
+	// Define the arguments
+	args := []string{
+		"-Name", name,
+		"-Force",
+	}
+
+	// Execute the PowerShell command
+	cmd := exec.Command("powershell.exe", append([]string{"-Command", cmdlet}, args...)...)
+
+	// Capture the command output
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error executing PowerShell command:", err.Error())
+	}
+
+	fmt.Println(string(output))
+	return err
+}
+
+func (agent *WindowsAgent) GetShareDetail(ctx context.Context, name string) (detail common.ShareDetail, err error) {
+	script := "./agent/windows/Get-ShareDetails.ps1"
+	output, err := execPowerShellCmdlet(script, "-ShareNames", name)
+	if err != nil {
+		return detail, err
+	}
+
+	var result map[string]interface{}
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return detail, err
+	}
+
+	detail = common.ShareDetail{
+		Name:          result["Name"].(string),
+		DirectoryPath: result["DirectoryPath"].(string),
+		Description:   result["Description"].(string),
+		State: func() string {
+			if result["ShareState"].(float64) == 1 {
+				return "online"
+			}
+			return "offline"
+		}(),
+	}
+
+	return detail, err
+}
+
+func (agent *WindowsAgent) GetSharesDetail(ctx context.Context, names []string) (detail []common.ShareDetail, err error) {
+	script := "./agent/windows/Get-ShareDetails.ps1"
+	output, err := execPowerShellCmdlet(script, "-ShareNames", strings.Join(names, ","))
+	if err != nil {
+		return nil, err
+	}
+
+	var result []map[string]interface{}
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return detail, err
+	}
+
+	for _, item := range result {
+		share := common.ShareDetail{
+			Name:          item["Name"].(string),
+			DirectoryPath: item["DirectoryPath"].(string),
+			Description:   item["Description"].(string),
+			State: func() string {
+				if item["ShareState"].(float64) == 1 {
+					return "online"
+				}
+				return "offline"
+			}(),
+		}
+		detail = append(detail, share)
+	}
+
+	return detail, err
+}
+
+func (agent *WindowsAgent) CreateShareMapping(ctx context.Context, deviceName, sharePath, userName, password string) (err error) {
+	cmdlet := "net"
+
+	// Define the arguments
+	args := []string{
+		"use",
+		deviceName,
+		sharePath,
+		password,
+		"/user:" + userName,
+	}
+
+	// Execute the PowerShell command
+	cmd := exec.Command("powershell.exe", append([]string{"-Command", cmdlet}, args...)...)
+
+	// Capture the command output
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error executing PowerShell command:", err.Error())
+	}
+
+	fmt.Println(string(output))
+	return err
+}
+
+func (agent *WindowsAgent) DeleteShareMapping(ctx context.Context, deviceName string) (err error) {
+	cmdlet := "net"
+
+	// Define the arguments
+	args := []string{
+		"use",
+		deviceName,
+		"/delete",
+		"/y",
+	}
+
+	// Execute the PowerShell command
+	cmd := exec.Command("powershell.exe", append([]string{"-Command", cmdlet}, args...)...)
+
+	// Capture the command output
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error executing PowerShell command:", err.Error())
+	}
+
+	fmt.Println(string(output))
+	return err
+}
+
+func (agent *WindowsAgent) CreateLocalUser(ctx context.Context, name, password string) (err error) {
 	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("New-LocalUser -Name '%s' -Password (ConvertTo-SecureString -String '%s' -AsPlainText -Force)", name, password))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
@@ -146,7 +278,7 @@ func (agent *WindowsAgent) CreateLocalUser(ctx context.Context, hostContext comm
 	return err
 }
 
-func (agent *WindowsAgent) DeleteLocalUser(ctx context.Context, hostContext common.HostContext, name string) (err error) {
+func (agent *WindowsAgent) DeleteLocalUser(ctx context.Context, name string) (err error) {
 	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("Remove-LocalUser -Name '%s'", name))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
@@ -156,7 +288,7 @@ func (agent *WindowsAgent) DeleteLocalUser(ctx context.Context, hostContext comm
 	return err
 }
 
-func (agent *WindowsAgent) GetLocalUserDetail(ctx context.Context, hostContext common.HostContext, name string) (detail common.LocalUserDetail, err error) {
+func (agent *WindowsAgent) GetLocalUserDetail(ctx context.Context, name string) (detail common.LocalUserDetail, err error) {
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script, "-UserName", name)
 	if err != nil {
@@ -185,7 +317,7 @@ func (agent *WindowsAgent) GetLocalUserDetail(ctx context.Context, hostContext c
 	return detail, err
 }
 
-func (agent *WindowsAgent) GetLocalUsersDetail(ctx context.Context, hostContext common.HostContext, names []string) (detail []common.LocalUserDetail, err error) {
+func (agent *WindowsAgent) GetLocalUsersDetail(ctx context.Context, names []string) (detail []common.LocalUserDetail, err error) {
 	script := "./agent/windows/Get-LocalUserDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
 	if err != nil {
@@ -217,7 +349,7 @@ func (agent *WindowsAgent) GetLocalUsersDetail(ctx context.Context, hostContext 
 	return detail, err
 }
 
-func (agent *WindowsAgent) GetSystemInfo(ctx context.Context, hostContext common.HostContext) (systemInfo common.SystemInfo, err error) {
+func (agent *WindowsAgent) GetSystemInfo(ctx context.Context) (systemInfo common.SystemInfo, err error) {
 	script := "./agent/windows/Get-SystemDetails.ps1"
 	output, err := execPowerShellCmdlet(script)
 	if err != nil {

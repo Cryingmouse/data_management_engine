@@ -310,19 +310,14 @@ func createLocalUserOnAgentHandler(c *gin.Context) {
 		return
 	}
 
-	hostContext := common.HostContext{
-		Username: c.Request.Header.Get("X-agent-username"),
-		Password: c.Request.Header.Get("X-agent-password"),
-	}
-
 	agent := agent.GetAgent()
-	err := agent.CreateLocalUser(ctx, hostContext, request.Name, request.Password)
+	err := agent.CreateLocalUser(ctx, request.Name, request.Password)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local user", err.Error())
 		return
 	}
 
-	localUserDetail, err := agent.GetLocalUserDetail(ctx, hostContext, request.Name)
+	localUserDetail, err := agent.GetLocalUserDetail(ctx, request.Name)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local user detail", err.Error())
 		return
@@ -342,13 +337,8 @@ func deleteLocalUserOnAgentHandler(c *gin.Context) {
 		return
 	}
 
-	hostContext := common.HostContext{
-		Username: c.Request.Header.Get("X-agent-username"),
-		Password: c.Request.Header.Get("X-agent-password"),
-	}
-
 	agent := agent.GetAgent()
-	if err := agent.DeleteLocalUser(ctx, hostContext, request.Name); err != nil {
+	if err := agent.DeleteLocalUser(ctx, request.Name); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local user", err.Error())
 		return
 	}
@@ -362,16 +352,11 @@ func getLocalUserOnAgentHandler(c *gin.Context) {
 	name := c.Query("name")
 	names := common.SplitToList(name)
 
-	hostContext := common.HostContext{
-		Username: c.Request.Header.Get("X-agent-username"),
-		Password: c.Request.Header.Get("X-agent-password"),
-	}
-
 	agent := agent.GetAgent()
 	if len(names) == 0 {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 	} else if len(names) == 1 {
-		localUserDetail, err := agent.GetLocalUserDetail(ctx, hostContext, name)
+		localUserDetail, err := agent.GetLocalUserDetail(ctx, name)
 		if err != nil {
 			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local user detail", err.Error())
 			return
@@ -379,7 +364,7 @@ func getLocalUserOnAgentHandler(c *gin.Context) {
 
 		c.JSON(http.StatusOK, localUserDetail)
 	} else {
-		localUsersDetail, err := agent.GetLocalUsersDetail(ctx, hostContext, names)
+		localUsersDetail, err := agent.GetLocalUsersDetail(ctx, names)
 		if err != nil {
 			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local users detail", err.Error())
 			return

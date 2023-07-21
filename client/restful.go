@@ -17,7 +17,8 @@ type RestClient struct {
 	client      *http.Client
 	hostContext common.HostContext
 	prefixURL   string
-	traceID     string
+	TraceID     string
+	ContentType string
 }
 
 // GetRestClient returns a new instance of the RestClient.
@@ -26,12 +27,13 @@ func GetRestClient(hostContext common.HostContext, traceID, prefixURL string) *R
 		client:      &http.Client{},
 		hostContext: hostContext,
 		prefixURL:   prefixURL,
-		traceID:     traceID,
+		TraceID:     traceID,
+		ContentType: "application/json",
 	}
 }
 
 // Get performs an HTTP GET request.
-func (c *RestClient) Get(url string, contentType string) (*http.Response, error) {
+func (c *RestClient) Get(url string) (*http.Response, error) {
 	fullURL := fmt.Sprintf(baseURL+c.prefixURL+"/%s", c.hostContext.IP, url)
 
 	req, err := http.NewRequest(http.MethodGet, fullURL, nil)
@@ -39,15 +41,16 @@ func (c *RestClient) Get(url string, contentType string) (*http.Response, error)
 		return nil, err
 	}
 
+	req.Header.Set("Content-Type", c.ContentType)
+	req.Header.Set("X-Trace-ID", c.TraceID)
 	req.Header.Set("X-agent-username", c.hostContext.Username)
 	req.Header.Set("X-agent-password", c.hostContext.Password)
-	req.Header.Set("Content-Type", contentType)
 
 	return c.client.Do(req)
 }
 
 // Post performs an HTTP POST request.
-func (c *RestClient) Post(url, contentType string, body io.Reader) (*http.Response, error) {
+func (c *RestClient) Post(url string, body io.Reader) (*http.Response, error) {
 	fullURL := fmt.Sprintf(baseURL+c.prefixURL+"/%s", c.hostContext.IP, url)
 
 	req, err := http.NewRequest(http.MethodPost, fullURL, body)
@@ -55,9 +58,10 @@ func (c *RestClient) Post(url, contentType string, body io.Reader) (*http.Respon
 		return nil, err
 	}
 
+	req.Header.Set("Content-Type", c.ContentType)
+	req.Header.Set("X-Trace-ID", c.TraceID)
 	req.Header.Set("X-agent-username", c.hostContext.Username)
 	req.Header.Set("X-agent-password", c.hostContext.Password)
-	req.Header.Set("Content-Type", contentType)
 
 	return c.client.Do(req)
 }

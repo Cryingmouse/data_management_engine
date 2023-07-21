@@ -235,14 +235,9 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 func GetSystemInfoOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
-	hostContext := common.HostContext{
-		Username: c.Request.Header.Get("X-agent-username"),
-		Password: c.Request.Header.Get("X-agent-password"),
-	}
-
 	agent := agent.GetAgent()
 
-	if systemInfo, err := agent.GetSystemInfo(ctx, hostContext); err != nil {
+	if systemInfo, err := agent.GetSystemInfo(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get system info on agent", err.Error())
 	} else {
 		c.JSON(http.StatusOK, systemInfo)

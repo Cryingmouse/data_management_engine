@@ -232,3 +232,7 @@ func StructToMap(s interface{}) map[string]interface{} {
 
 	return result
 }
+
+func AddQuotes(s string) string {
+	return "\"" + s + "\""
+}

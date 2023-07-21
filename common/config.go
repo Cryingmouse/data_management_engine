@@ -7,9 +7,14 @@ import (
 )
 
 type Config struct {
-	Webservice struct {
-		Port string
-	}
+	WebService struct {
+		Port string `mapstructure:"port"`
+	} `mapstructure:"webservice"`
+
+	Logger struct {
+		LogFile  string `mapstructure:"log-file"`
+		LogLevel string `mapstructure:"log-level"`
+	} `mapstructure:"logger"`
 }
 
 func GetConfig() (config *Config, err error) {

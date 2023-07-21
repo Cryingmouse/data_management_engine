@@ -11,7 +11,7 @@ import (
 type LinuxAgent struct {
 }
 
-func (agent *LinuxAgent) CreateDirectory(ctx context.Context, hostContext common.HostContext, name string) (dirPath string, err error) {
+func (agent *LinuxAgent) CreateDirectory(ctx context.Context, name string) (dirPath string, err error) {
 	dirPath = fmt.Sprintf("%s\\%s", "c:\\test", name)
 
 	err = os.Mkdir(dirPath, os.ModePerm)
@@ -22,9 +22,9 @@ func (agent *LinuxAgent) CreateDirectory(ctx context.Context, hostContext common
 	return dirPath, nil
 }
 
-func (agent *LinuxAgent) CreateDirectories(ctx context.Context, hostContext common.HostContext, names []string) (dirPaths []string, err error) {
+func (agent *LinuxAgent) CreateDirectories(ctx context.Context, names []string) (dirPaths []string, err error) {
 	for index, name := range names {
-		dirPath, err := agent.CreateDirectory(ctx, hostContext, name)
+		dirPath, err := agent.CreateDirectory(ctx, name)
 		if err != nil {
 			return dirPaths, err
 		}
@@ -35,15 +35,15 @@ func (agent *LinuxAgent) CreateDirectories(ctx context.Context, hostContext comm
 	return dirPaths, err
 }
 
-func (agent *LinuxAgent) DeleteDirectory(ctx context.Context, hostContext common.HostContext, name string) (err error) {
+func (agent *LinuxAgent) DeleteDirectory(ctx context.Context, name string) (err error) {
 	dirPath := fmt.Sprintf("%s\\%s", "c:\\test", name)
 
 	return os.Remove(dirPath)
 }
 
-func (agent *LinuxAgent) DeleteDirectories(ctx context.Context, hostContext common.HostContext, names []string) (err error) {
+func (agent *LinuxAgent) DeleteDirectories(ctx context.Context, names []string) (err error) {
 	for _, name := range names {
-		if err = agent.DeleteDirectory(ctx, hostContext, name); err != nil {
+		if err = agent.DeleteDirectory(ctx, name); err != nil {
 			return err
 		}
 
@@ -52,34 +52,54 @@ func (agent *LinuxAgent) DeleteDirectories(ctx context.Context, hostContext comm
 	return err
 }
 
-func (agent *LinuxAgent) GetDirectoryDetail(ctx context.Context, hostContext common.HostContext, path string) (detail common.DirectoryDetail, err error) {
+func (agent *LinuxAgent) GetDirectoryDetail(ctx context.Context, path string) (detail common.DirectoryDetail, err error) {
 	return detail, nil
 }
 
-func (agent *LinuxAgent) GetDirectoriesDetail(ctx context.Context, hostContext common.HostContext, paths []string) (detail []common.DirectoryDetail, err error) {
+func (agent *LinuxAgent) GetDirectoriesDetail(ctx context.Context, paths []string) (detail []common.DirectoryDetail, err error) {
 	return detail, nil
 }
 
-func (agent *LinuxAgent) CreateShare(ctx context.Context, hostContext common.HostContext, name, directory_name string) (err error) {
+func (agent *LinuxAgent) CreateShare(ctx context.Context, name, directoryName, description string, usernames []string) (err error) {
 	return err
 }
 
-func (agent *LinuxAgent) CreateLocalUser(ctx context.Context, hostContext common.HostContext, username, password string) (err error) {
+func (agent *LinuxAgent) DeleteShare(ctx context.Context, name string) (err error) {
 	return err
 }
 
-func (agent *LinuxAgent) DeleteLocalUser(ctx context.Context, hostContext common.HostContext, username string) (err error) {
+func (agent *LinuxAgent) GetShareDetail(ctx context.Context, name string) (detail common.ShareDetail, err error) {
+	return detail, err
+}
+
+func (agent *LinuxAgent) GetSharesDetail(ctx context.Context, names []string) (detail []common.ShareDetail, err error) {
+	return detail, err
+}
+
+func (agent *LinuxAgent) CreateShareMapping(ctx context.Context, deviceName, sharePath, userName, password string) (err error) {
 	return err
 }
 
-func (agent *LinuxAgent) GetLocalUserDetail(ctx context.Context, hostContext common.HostContext, username string) (detail common.LocalUserDetail, err error) {
+func (agent *LinuxAgent) DeleteShareMapping(ctx context.Context, deviceName string) (err error) {
+	return err
+}
+
+func (agent *LinuxAgent) CreateLocalUser(ctx context.Context, username, password string) (err error) {
+	return err
+}
+
+func (agent *LinuxAgent) DeleteLocalUser(ctx context.Context, username string) (err error) {
+	return err
+}
+
+func (agent *LinuxAgent) GetLocalUserDetail(ctx context.Context, username string) (detail common.LocalUserDetail, err error) {
 	return detail, nil
 }
 
-func (agent *LinuxAgent) GetLocalUsersDetail(ctx context.Context, hostContext common.HostContext, usernames []string) (detail []common.LocalUserDetail, err error) {
+func (agent *LinuxAgent) GetLocalUsersDetail(ctx context.Context, usernames []string) (detail []common.LocalUserDetail, err error) {
 	return detail, nil
 }
 
-func (agent *LinuxAgent) GetSystemInfo(ctx context.Context, hostContext common.HostContext) (system common.SystemInfo, err error) {
+func (agent *LinuxAgent) GetSystemInfo(ctx context.Context) (system common.SystemInfo, err error) {
 	return system, nil
 }

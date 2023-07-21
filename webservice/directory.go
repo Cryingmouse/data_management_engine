@@ -217,19 +217,14 @@ func createDirectoryOnAgentHandler(c *gin.Context) {
 		return
 	}
 
-	hostContext := common.HostContext{
-		Username: c.Request.Header.Get("X-agent-username"),
-		Password: c.Request.Header.Get("X-agent-password"),
-	}
-
 	agent := agent.GetAgent()
-	dirPath, err := agent.CreateDirectory(ctx, hostContext, request.Name)
+	dirPath, err := agent.CreateDirectory(ctx, request.Name)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directory", err.Error())
 		return
 	}
 
-	directoryDetails, err := agent.GetDirectoryDetail(ctx, hostContext, dirPath)
+	directoryDetails, err := agent.GetDirectoryDetail(ctx, dirPath)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directory details", err.Error())
 		return
@@ -249,13 +244,8 @@ func deleteDirectoryOnAgentHandler(c *gin.Context) {
 		return
 	}
 
-	hostContext := common.HostContext{
-		Username: c.Request.Header.Get("X-agent-username"),
-		Password: c.Request.Header.Get("X-agent-password"),
-	}
-
 	agent := agent.GetAgent()
-	if err := agent.DeleteDirectory(ctx, hostContext, request.Name); err != nil {
+	if err := agent.DeleteDirectory(ctx, request.Name); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the directory", err.Error())
 		return
 	}
@@ -279,19 +269,14 @@ func createDirectoriesOnAgentHandler(c *gin.Context) {
 		names[i] = item.Name
 	}
 
-	hostContext := common.HostContext{
-		Username: c.Request.Header.Get("X-agent-username"),
-		Password: c.Request.Header.Get("X-agent-password"),
-	}
-
 	agent := agent.GetAgent()
-	dirPaths, err := agent.CreateDirectories(ctx, hostContext, names)
+	dirPaths, err := agent.CreateDirectories(ctx, names)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directories", err.Error())
 		return
 	}
 
-	DirectoryDetails, err := agent.GetDirectoriesDetail(ctx, hostContext, dirPaths)
+	DirectoryDetails, err := agent.GetDirectoriesDetail(ctx, dirPaths)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directories details", err.Error())
 		return
@@ -311,13 +296,8 @@ func deleteDirectoriesOnAgentHandler(c *gin.Context) {
 		return
 	}
 
-	hostContext := common.HostContext{
-		Username: c.Request.Header.Get("X-agent-username"),
-		Password: c.Request.Header.Get("X-agent-password"),
-	}
-
 	agent := agent.GetAgent()
-	if err := agent.DeleteDirectory(ctx, hostContext, request.Name); err != nil {
+	if err := agent.DeleteDirectory(ctx, request.Name); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the directories", err.Error())
 		return
 	}
@@ -331,16 +311,11 @@ func getDirectoryDetailsOnAgentHandler(c *gin.Context) {
 	name := c.Query("name")
 	names := common.SplitToList(name)
 
-	hostContext := common.HostContext{
-		Username: c.Request.Header.Get("X-agent-username"),
-		Password: c.Request.Header.Get("X-agent-password"),
-	}
-
 	agent := agent.GetAgent()
 	if len(names) == 0 {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 	} else if len(names) == 1 {
-		directoryDetail, err := agent.GetDirectoryDetail(ctx, hostContext, name)
+		directoryDetail, err := agent.GetDirectoryDetail(ctx, name)
 		if err != nil {
 			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directory details", err.Error())
 			return
@@ -348,7 +323,7 @@ func getDirectoryDetailsOnAgentHandler(c *gin.Context) {
 
 		c.JSON(http.StatusOK, directoryDetail)
 	} else {
-		directoriesDetail, err := agent.GetDirectoriesDetail(ctx, hostContext, names)
+		directoriesDetail, err := agent.GetDirectoriesDetail(ctx, names)
 		if err != nil {
 			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the directories details", err.Error())
 			return

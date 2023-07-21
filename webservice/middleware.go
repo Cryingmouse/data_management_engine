@@ -2,13 +2,11 @@ package webservice
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"math/rand"
 	"strconv"
 	"time"
 
-	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,7 +28,7 @@ func LoggingMiddleware() gin.HandlerFunc {
 		c.Writer = writer
 
 		// Get the trace ID from the request context
-		traceID, _ := c.Request.Context().Value(common.TraceIDKey("TraceID")).(string)
+		traceID := c.Request.Header.Get("X-Trace-ID")
 
 		// Log the request information
 		log.WithFields(log.Fields{
@@ -73,11 +71,9 @@ func TraceMiddleware() gin.HandlerFunc {
 		// Generate a unique trace ID
 		traceID := generateTraceID()
 
-		// Create a context with the trace ID
-		ctx := context.WithValue(c.Request.Context(), common.TraceIDKey("TraceID"), traceID)
-
-		// Update the request context with the new context
-		c.Request = c.Request.WithContext(ctx)
+		if c.Request.Header.Get("X-Trace-ID") == "" {
+			c.Request.Header.Set("X-Trace-ID", traceID)
+		}
 
 		// Continue processing the request
 		c.Next()

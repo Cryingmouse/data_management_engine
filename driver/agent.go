@@ -26,7 +26,7 @@ func (d *AgentDriver) CreateDirectory(ctx context.Context, name string) (directo
 	// Convert the string to an io.Reader
 	reader := strings.NewReader(request_body)
 
-	response, err := restClient.Post("directories/create", "application/json", reader)
+	response, err := restClient.Post("directories/create", reader)
 	if err != nil {
 		directoryDetails.Name = name
 		directoryDetails.Exist = false
@@ -58,7 +58,7 @@ func (d *AgentDriver) DeleteDirectory(ctx context.Context, name string) (err err
 	// Convert the string to an io.Reader
 	reader := strings.NewReader(body)
 
-	response, err := restClient.Post("directories/delete", "application/json", reader)
+	response, err := restClient.Post("directories/delete", reader)
 	if err != nil {
 		return err
 	} else if response.StatusCode != http.StatusOK {
@@ -79,7 +79,7 @@ func (d *AgentDriver) GetDirectoryDetail(ctx context.Context, name string) (deta
 
 	url := fmt.Sprintf("directories/detail?name=%s", name)
 
-	response, err := restClient.Get(url, "application/json")
+	response, err := restClient.Get(url)
 	if err != nil {
 		detail.Name = name
 		detail.Exist = false
@@ -107,7 +107,7 @@ func (d *AgentDriver) GetDirectoriesDetail(ctx context.Context, names []string) 
 
 	url := fmt.Sprintf("directories/detail?name=%s", strings.Join(names, ","))
 
-	response, err := restClient.Get(url, "application/json")
+	response, err := restClient.Get(url)
 	if err != nil {
 		return detail, err
 	}
@@ -151,7 +151,7 @@ func (d *AgentDriver) CreateLocalUser(ctx context.Context, name, password string
 	// Convert the string to an io.Reader
 	reader := strings.NewReader(request_body)
 
-	response, err := restClient.Post("users/create", "application/json", reader)
+	response, err := restClient.Post("users/create", reader)
 	if err != nil {
 		localUserDetail.Name = name
 		return localUserDetail, err
@@ -181,7 +181,7 @@ func (d *AgentDriver) DeleteLocalUser(ctx context.Context, name string) (err err
 	// Convert the string to an io.Reader
 	reader := strings.NewReader(body)
 
-	response, err := restClient.Post("users/delete", "application/json", reader)
+	response, err := restClient.Post("users/delete", reader)
 	if err != nil {
 		return err
 	} else if response.StatusCode != http.StatusOK {
@@ -205,7 +205,7 @@ func (d *AgentDriver) GetLocalUserDetail(ctx context.Context, name string) (deta
 
 	url := fmt.Sprintf("users/detail?name=%s", escapedName)
 
-	response, err := restClient.Get(url, "application/json")
+	response, err := restClient.Get(url)
 	if err != nil {
 		detail.Name = name
 		return detail, err
@@ -238,7 +238,7 @@ func (d *AgentDriver) GetLocalUsersDetail(ctx context.Context, names []string) (
 
 	url := fmt.Sprintf("users/detail?name=%s", strings.Join(escapedNames, ","))
 
-	response, err := restClient.Get(url, "application/json")
+	response, err := restClient.Get(url)
 	if err != nil {
 		return detail, err
 	}
@@ -260,7 +260,7 @@ func (d *AgentDriver) GetSystemInfo(ctx context.Context) (systemInfo common.Syst
 
 	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
-	response, err := restClient.Get("system-info", "application/json")
+	response, err := restClient.Get("system-info")
 
 	err = restClient.GetResponseBody(response, &systemInfo)
 

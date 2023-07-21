@@ -56,6 +56,13 @@ type LocalUserDetail struct {
 	IsDisabled           bool   `json:"is_disabled"`
 }
 
+type ShareDetail struct {
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	DirectoryPath string `json:"direcotry_path"`
+	State         string `json:"state"`
+}
+
 type FailedRESTResponse struct {
 	Error string `json:"error"`
 }

@@ -19,6 +19,7 @@ func Start() {
 
 	router := gin.Default()
 	router.Use(cors.Default())
+	router.Use(TraceMiddleware(), LoggingMiddleware())
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("validatePassword", PasswordValidator)
@@ -27,11 +28,9 @@ func Start() {
 
 	// Router 'portal' for Portal
 	portal := router.Group("/api")
-	portal.Use(TraceMiddleware(), LoggingMiddleware())
 
 	// Router 'agent' for Agent
 	agent := router.Group("/agent")
-	agent.Use(LoggingMiddleware())
 
 	// 登录路由，验证用户凭证并生成JWT令牌
 	// router.POST("/login", getTokenHandler)
@@ -69,12 +68,16 @@ func Start() {
 	agent.POST("/directories/batch-create", createDirectoriesOnAgentHandler)
 	agent.POST("/directories/delete", deleteDirectoryOnAgentHandler)
 	agent.POST("/directories/batch-delete", deleteDirectoriesOnAgentHandler)
+	// Agent API about share
+	agent.POST("/shares/create", createShareOnAgentHandler)
+	agent.POST("/shares/delete", deleteShareOnAgentHandler)
+	agent.GET("/shares/detail", getShareOnAgentHandler)
 	// Agent API about local user
 	agent.POST("/users/create", createLocalUserOnAgentHandler)
 	agent.POST("/users/delete", deleteLocalUserOnAgentHandler)
 	agent.GET("/users/detail", getLocalUserOnAgentHandler)
 
-	addr := fmt.Sprintf(":%s", config.Webservice.Port)
+	addr := fmt.Sprintf(":%s", config.WebService.Port)
 	router.Run(addr)
 
 }
@@ -89,6 +92,6 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage st
 }
 
 func SetTraceIDInContext(c *gin.Context) context.Context {
-	traceID, _ := c.Request.Context().Value(common.TraceIDKey("TraceID")).(string)
+	traceID := c.Request.Header.Get("X-Trace-ID")
 	return context.WithValue(context.Background(), common.TraceIDKey("TraceID"), traceID)
 }
