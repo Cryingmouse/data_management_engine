@@ -6,18 +6,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
 func setupCreateDirectoryOnAgent(t *testing.T) {
-	// 创建Gin引擎
-	router := gin.Default()
-	agent := router.Group("/agent")
-
-	// 定义测试路由
-	agent.POST("/directories/create", createDirectoryOnAgentHandler)
-
 	requestBody := bytes.NewBuffer([]byte(`{"name": "test_directory"}`))
 
 	// 创建测试请求
@@ -29,17 +21,10 @@ func setupCreateDirectoryOnAgent(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 处理测试请求
-	router.ServeHTTP(w, req)
+	shareRouter.ServeHTTP(w, req)
 }
 
 func teardownDeleteDirectoryOnAgent(t *testing.T) {
-	// 创建Gin引擎
-	router := gin.Default()
-	agent := router.Group("/agent")
-
-	// 定义测试路由
-	agent.POST("/directories/delete", deleteDirectoryOnAgentHandler)
-
 	requestBody := bytes.NewBuffer([]byte(`{"name": "test_directory"}`))
 
 	// 创建测试请求
@@ -51,17 +36,10 @@ func teardownDeleteDirectoryOnAgent(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 处理测试请求
-	router.ServeHTTP(w, req)
+	shareRouter.ServeHTTP(w, req)
 }
 
 func setupCreateDirectoriesOnAgent(t *testing.T) {
-	// 创建Gin引擎
-	router := gin.Default()
-	agent := router.Group("/agent")
-
-	// 定义测试路由
-	agent.POST("/directories/batch-create", createDirectoriesOnAgentHandler)
-
 	requestBody := bytes.NewBuffer([]byte(`[{"name": "test_directory_1"},{"name": "test_directory_2"}]`))
 
 	// 创建测试请求
@@ -73,17 +51,10 @@ func setupCreateDirectoriesOnAgent(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 处理测试请求
-	router.ServeHTTP(w, req)
+	shareRouter.ServeHTTP(w, req)
 }
 
 func teardownDeleteDirectoriesOnAgent(t *testing.T) {
-	// 创建Gin引擎
-	router := gin.Default()
-	agent := router.Group("/agent")
-
-	// 定义测试路由
-	agent.POST("/directories/batch-delete", deleteDirectoriesOnAgentHandler)
-
 	requestBody := bytes.NewBuffer([]byte(`[{"name": "test_directory_1"},{"name": "test_directory_2"}]`))
 
 	// 创建测试请求
@@ -95,18 +66,11 @@ func teardownDeleteDirectoriesOnAgent(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 处理测试请求
-	router.ServeHTTP(w, req)
+	shareRouter.ServeHTTP(w, req)
 }
 
 func Test_createDirectoryOnAgentHandler(t *testing.T) {
 	defer teardownDeleteDirectoryOnAgent(t)
-
-	// 创建Gin引擎
-	router := gin.Default()
-	agent := router.Group("/agent")
-
-	// 定义测试路由
-	agent.POST("/directories/create", createDirectoryOnAgentHandler)
 
 	requestBody := bytes.NewBuffer([]byte(`{"name": "test_directory"}`))
 
@@ -119,7 +83,7 @@ func Test_createDirectoryOnAgentHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 处理测试请求
-	router.ServeHTTP(w, req)
+	shareRouter.ServeHTTP(w, req)
 
 	// 断言检查状态码是否为200
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -128,13 +92,6 @@ func Test_createDirectoryOnAgentHandler(t *testing.T) {
 func Test_deleteDirectoryOnAgentHandler(t *testing.T) {
 	setupCreateDirectoryOnAgent(t)
 
-	// 创建Gin引擎
-	router := gin.Default()
-	agent := router.Group("/agent")
-
-	// 定义测试路由
-	agent.POST("/directories/delete", deleteDirectoryOnAgentHandler)
-
 	requestBody := bytes.NewBuffer([]byte(`{"name": "test_directory"}`))
 
 	// 创建测试请求
@@ -146,7 +103,7 @@ func Test_deleteDirectoryOnAgentHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 处理测试请求
-	router.ServeHTTP(w, req)
+	shareRouter.ServeHTTP(w, req)
 
 	// 断言检查状态码是否为200
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -154,13 +111,6 @@ func Test_deleteDirectoryOnAgentHandler(t *testing.T) {
 
 func Test_createDirectoriesOnAgentHandler(t *testing.T) {
 	defer teardownDeleteDirectoriesOnAgent(t)
-
-	// 创建Gin引擎
-	router := gin.Default()
-	agent := router.Group("/agent")
-
-	// 定义测试路由
-	agent.POST("/directories/batch-create", createDirectoriesOnAgentHandler)
 
 	requestBody := bytes.NewBuffer([]byte(`[{"name": "test_directory_1"},{"name": "test_directory_2"}]`))
 
@@ -173,7 +123,7 @@ func Test_createDirectoriesOnAgentHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 处理测试请求
-	router.ServeHTTP(w, req)
+	shareRouter.ServeHTTP(w, req)
 
 	// 断言检查状态码是否为200
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -181,13 +131,6 @@ func Test_createDirectoriesOnAgentHandler(t *testing.T) {
 
 func Test_deleteDirectoriesOnAgentHandler(t *testing.T) {
 	setupCreateDirectoriesOnAgent(t)
-
-	// 创建Gin引擎
-	router := gin.Default()
-	agent := router.Group("/agent")
-
-	// 定义测试路由
-	agent.POST("/directories/batch-delete", deleteDirectoriesOnAgentHandler)
 
 	requestBody := bytes.NewBuffer([]byte(`[{"name": "test_directory_1"},{"name": "test_directory_2"}]`))
 
@@ -200,7 +143,7 @@ func Test_deleteDirectoriesOnAgentHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 处理测试请求
-	router.ServeHTTP(w, req)
+	shareRouter.ServeHTTP(w, req)
 
 	// 断言检查状态码是否为200
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -209,13 +152,6 @@ func Test_deleteDirectoriesOnAgentHandler(t *testing.T) {
 func Test_getDirectoryDetailOnAgentHandler(t *testing.T) {
 	setupCreateDirectoriesOnAgent(t)
 	defer teardownDeleteDirectoriesOnAgent(t)
-
-	// 创建Gin引擎
-	router := gin.Default()
-	agent := router.Group("/agent")
-
-	// 定义测试路由
-	agent.GET("/directories/detail", getDirectoryDetailOnAgentHandler)
 
 	tests := []struct {
 		name             string
@@ -247,7 +183,7 @@ func Test_getDirectoryDetailOnAgentHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			// 处理测试请求
-			router.ServeHTTP(w, tt.request)
+			shareRouter.ServeHTTP(w, tt.request)
 
 			assert.Equal(t, tt.wantedStatusCode, w.Code)
 		})

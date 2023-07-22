@@ -40,7 +40,7 @@ func TestCopyStructList(t *testing.T) {
 	}
 }
 
-func TestEncrypt(t *testing.T) {
+func Test_Encrypt_Decrypt(t *testing.T) {
 	type args struct {
 		plaintext string
 		key       string
@@ -55,7 +55,7 @@ func TestEncrypt(t *testing.T) {
 			name: "test_password",
 			args: args{
 				plaintext: "Password123",
-				key:       "MySecretForMagnascale!!!",
+				key:       "0123456789ABCDEF0123456789ABCDEF",
 			},
 			want:    "",
 			wantErr: false,
@@ -63,14 +63,21 @@ func TestEncrypt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Encrypt(tt.args.plaintext, tt.args.key)
+			encrypted, err := Encrypt(tt.args.plaintext, tt.args.key)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Encrypt() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("Encrypt() = %v, want %v", got, tt.want)
+			plaintext, err := Decrypt(encrypted, tt.args.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Decrypt() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
+
+			if plaintext != tt.args.plaintext {
+				t.Errorf("Encrypt()/Decrypt() = %v, want %v", plaintext, tt.args.plaintext)
+			}
+
 		})
 	}
 }
