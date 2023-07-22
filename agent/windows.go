@@ -153,8 +153,10 @@ func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, names []str
 	return detail, err
 }
 
-func (agent *WindowsAgent) CreateCIFSShare(ctx context.Context, name, directoryPath, description string, usernames []string) (err error) {
+func (agent *WindowsAgent) CreateCIFSShare(ctx context.Context, name, directoryName, description string, usernames []string) (err error) {
 	cmdlet := "New-SmbShare"
+
+	directoryPath := fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, directoryName)
 
 	// Define the arguments
 	args := []string{

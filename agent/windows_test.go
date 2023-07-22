@@ -18,7 +18,7 @@ const testDirectoryName = "test_directory"
 const testDirectoryName1 = "test_directory_1"
 const testDirectoryName2 = "test_directory_2"
 const testLocalUserName = "test_account"
-const testLocalUserPassword = "test_account"
+const testLocalUserPassword = "Passw0rd!"
 const testDeviceName = "Y:"
 
 var testSharePath = fmt.Sprintf("\\\\%s\\%s", testHostIP, testShareName)

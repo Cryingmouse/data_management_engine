@@ -6,7 +6,10 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 )
 
 var shareRouter *gin.Engine
@@ -24,8 +27,17 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	common.InitializeConfig("config.ini")
+
 	shareRouter = gin.Default()
 	shareAgnet = shareRouter.Group("/agent")
+
+	shareRouter.Use(TraceMiddleware(), LoggingMiddleware())
+
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("validatePassword", PasswordValidator)
+		v.RegisterValidation("validateStorageType", StorageTypeValidator)
+	}
 
 	// 定义测试路由
 	shareAgnet.POST("/directories/create", createDirectoryOnAgentHandler)
@@ -33,6 +45,14 @@ func TestMain(m *testing.M) {
 	shareAgnet.POST("/directories/batch-create", createDirectoriesOnAgentHandler)
 	shareAgnet.POST("/directories/batch-delete", deleteDirectoriesOnAgentHandler)
 	shareAgnet.GET("/directories/detail", getDirectoryDetailOnAgentHandler)
+
+	shareAgnet.POST("/shares/create", createShareOnAgentHandler)
+	shareAgnet.POST("/shares/delete", deleteShareOnAgentHandler)
+	shareAgnet.GET("/shares/detail", getShareOnAgentHandler)
+
+	shareAgnet.POST("/users/create", createLocalUserOnAgentHandler)
+	shareAgnet.POST("/users/delete", deleteLocalUserOnAgentHandler)
+	shareAgnet.GET("/users/detail", getLocalUserOnAgentHandler)
 
 	shareAgnet.GET("/system-info", GetSystemInfoOnAgentHandler)
 

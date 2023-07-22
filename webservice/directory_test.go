@@ -69,6 +69,7 @@ func teardownDeleteDirectoriesOnAgent(t *testing.T) {
 	shareRouter.ServeHTTP(w, req)
 }
 
+// Create a single directory on agent.
 func Test_createDirectoryOnAgentHandler(t *testing.T) {
 	defer teardownDeleteDirectoryOnAgent(t)
 
@@ -89,6 +90,7 @@ func Test_createDirectoryOnAgentHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
+// Delete a single directory on agent.
 func Test_deleteDirectoryOnAgentHandler(t *testing.T) {
 	setupCreateDirectoryOnAgent(t)
 
@@ -109,6 +111,7 @@ func Test_deleteDirectoryOnAgentHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
+// Create multiple directories on agent.
 func Test_createDirectoriesOnAgentHandler(t *testing.T) {
 	defer teardownDeleteDirectoriesOnAgent(t)
 
@@ -129,6 +132,7 @@ func Test_createDirectoriesOnAgentHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
+// Delete multiple directories on agent
 func Test_deleteDirectoriesOnAgentHandler(t *testing.T) {
 	setupCreateDirectoriesOnAgent(t)
 
@@ -149,6 +153,7 @@ func Test_deleteDirectoriesOnAgentHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
+// Get detail of the directory/directories on agent
 func Test_getDirectoryDetailOnAgentHandler(t *testing.T) {
 	setupCreateDirectoriesOnAgent(t)
 	defer teardownDeleteDirectoriesOnAgent(t)

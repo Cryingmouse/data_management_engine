@@ -27,7 +27,7 @@ func createShareOnAgentHandler(c *gin.Context) {
 
 	err := agent.CreateCIFSShare(ctx, request.ShareName, request.DirectoryName, request.Description, request.UserNames)
 	if err != nil {
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local user", err.Error())
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the share", err.Error())
 		return
 	}
 
@@ -47,7 +47,7 @@ func deleteShareOnAgentHandler(c *gin.Context) {
 
 	agent := agent.GetAgent()
 	if err := agent.DeleteCIFSShare(ctx, request.ShareName); err != nil {
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local user", err.Error())
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the share", err.Error())
 		return
 	}
 
@@ -66,7 +66,7 @@ func getShareOnAgentHandler(c *gin.Context) {
 	} else if len(names) == 1 {
 		ShareDetail, err := agent.GetCIFSShareDetail(ctx, name)
 		if err != nil {
-			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local user detail", err.Error())
+			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the share detail", err.Error())
 			return
 		}
 
@@ -74,7 +74,7 @@ func getShareOnAgentHandler(c *gin.Context) {
 	} else {
 		SharesDetail, err := agent.GetCIFSSharesDetail(ctx, names)
 		if err != nil {
-			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local users detail", err.Error())
+			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the shares detail", err.Error())
 			return
 		}
 
