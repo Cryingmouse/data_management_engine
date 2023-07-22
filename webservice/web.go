@@ -12,11 +12,6 @@ import (
 )
 
 func Start() {
-	config, err := common.GetConfig()
-	if err != nil {
-		panic(err)
-	}
-
 	router := gin.Default()
 	router.Use(cors.Default())
 	router.Use(TraceMiddleware(), LoggingMiddleware())
@@ -77,7 +72,7 @@ func Start() {
 	agent.POST("/users/delete", deleteLocalUserOnAgentHandler)
 	agent.GET("/users/detail", getLocalUserOnAgentHandler)
 
-	addr := fmt.Sprintf(":%s", config.WebService.Port)
+	addr := fmt.Sprintf(":%d", common.Config.WebService.Port)
 	router.Run(addr)
 
 }

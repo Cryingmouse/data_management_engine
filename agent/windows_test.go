@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -10,6 +11,17 @@ import (
 
 	"github.com/cryingmouse/data_management_engine/common"
 )
+
+const testHostIP = "192.168.0.166"
+const testShareName = "test_cifs_share"
+const testDirectoryName = "test_directory"
+const testDirectoryName1 = "test_directory_1"
+const testDirectoryName2 = "test_directory_2"
+const testLocalUserName = "test_account"
+const testLocalUserPassword = "test_account"
+const testDeviceName = "Y:"
+
+var testSharePath = fmt.Sprintf("\\\\%s\\%s", testHostIP, testShareName)
 
 func TestMain(m *testing.M) {
 	// 获取当前文件所在的目录
@@ -23,6 +35,10 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	if err := common.InitializeConfig("config.ini"); err != nil {
+		panic(err)
+	}
+
 	// 执行测试
 	exitCode := m.Run()
 
@@ -33,61 +49,61 @@ func TestMain(m *testing.M) {
 func setupCreateDirectory(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.CreateDirectory(ctx, "test_directory")
+	windowsAgent.CreateDirectory(ctx, testDirectoryName)
 }
 
 func setupCreateDirectories(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.CreateDirectories(ctx, []string{"test_directory_1", "test_directory_2"})
+	windowsAgent.CreateDirectories(ctx, []string{testDirectoryName1, testDirectoryName2})
 }
 
 func teardownDeleteDirectory(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.DeleteDirectory(ctx, "test_directory")
+	windowsAgent.DeleteDirectory(ctx, testDirectoryName)
 }
 
 func teardownDeleteDirectories(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.DeleteDirectories(ctx, []string{"test_directory_1", "test_directory_2"})
+	windowsAgent.DeleteDirectories(ctx, []string{testDirectoryName1, testDirectoryName2})
 }
 
-func setupCreateShare(t *testing.T) {
+func setupCreateCIFSShare(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.CreateShare(ctx, "test_share", "C:\\test\\test_directory", "this is a test share", []string{"JayXu"})
+	windowsAgent.CreateCIFSShare(ctx, testShareName, fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, testDirectoryName), "this is a test cifs share", []string{testLocalUserName})
 }
 
-func teardownDeleteShare(t *testing.T) {
+func teardownDeleteCIFSShare(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.DeleteShare(ctx, "test_share")
+	windowsAgent.DeleteCIFSShare(ctx, testShareName)
 }
 
-func setupCreateShareMapping(t *testing.T) {
+func setupMountCIFSShare(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.CreateShareMapping(ctx, "Y:", "\\\\192.168.0.166\\test_share", "JayXu", "Qaviq2ew!")
+	windowsAgent.MountCIFSShare(ctx, testDeviceName, testSharePath, testLocalUserName, testLocalUserPassword)
 }
 
-func teardownDeleteShareMapping(t *testing.T) {
+func teardownUnmountCIFSShare(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.DeleteShareMapping(ctx, "Y:")
+	windowsAgent.UnmountCIFSShare(ctx, testDeviceName)
 }
 
 func setupCreateLocalUser(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.CreateLocalUser(ctx, "test_account", "test_account")
+	windowsAgent.CreateLocalUser(ctx, testLocalUserName, testLocalUserPassword)
 }
 
 func teardownDeleteLocalUser(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.DeleteLocalUser(ctx, "test_account")
+	windowsAgent.DeleteLocalUser(ctx, testLocalUserName)
 }
 
 func TestWindowsAgent_CreateDirectory(t *testing.T) {
@@ -108,10 +124,10 @@ func TestWindowsAgent_CreateDirectory(t *testing.T) {
 			name:  "test_create_directory",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				name: "test_directory",
+				name: testDirectoryName,
 			},
 			wantErr:     false,
-			wantDirPath: "C:\\test\\test_directory",
+			wantDirPath: fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, testDirectoryName),
 		},
 	}
 	for _, tt := range tests {
@@ -146,10 +162,13 @@ func TestWindowsAgent_CreateDirectories(t *testing.T) {
 			name:  "test_create_directories",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				names: []string{"test_directory_1", "test_directory_2"},
+				names: []string{testDirectoryName1, testDirectoryName2},
 			},
-			wantErr:      false,
-			wantDirPaths: []string{"C:\\test\\test_directory_1", "C:\\test\\test_directory_2"},
+			wantErr: false,
+			wantDirPaths: []string{
+				fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, testDirectoryName1),
+				fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, testDirectoryName2),
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -183,7 +202,7 @@ func TestWindowsAgent_DeleteDirectory(t *testing.T) {
 			name:  "test_delete_directory",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				name: "test_directory",
+				name: testDirectoryName,
 			},
 			wantErr: false,
 		},
@@ -214,7 +233,7 @@ func TestWindowsAgent_DeleteDirectories(t *testing.T) {
 			name:  "test_create_directories",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				names: []string{"test_directory_1", "test_directory_2"},
+				names: []string{testDirectoryName1, testDirectoryName2},
 			},
 			wantErr: false,
 		},
@@ -247,7 +266,7 @@ func TestWindowsAgent_GetDirectoryDetail(t *testing.T) {
 			name:  "test_get_directory_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				name: "test_directory",
+				name: testDirectoryName,
 			},
 			wantErr: false,
 		},
@@ -282,7 +301,7 @@ func TestWindowsAgent_GetDirectoriesDetail(t *testing.T) {
 			name:  "test_get_directories_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				names: []string{"test_directory_1", "test_directory_2"},
+				names: []string{testDirectoryName1, testDirectoryName2},
 			},
 			wantErr: false,
 		},
@@ -290,7 +309,7 @@ func TestWindowsAgent_GetDirectoriesDetail(t *testing.T) {
 			name:  "test_get_directories_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				names: []string{"test_directory_1"},
+				names: []string{testDirectoryName1},
 			},
 			wantErr: false,
 		},
@@ -307,9 +326,12 @@ func TestWindowsAgent_GetDirectoriesDetail(t *testing.T) {
 	}
 }
 
-func TestWindowsAgent_CreateShare(t *testing.T) {
+func TestWindowsAgent_CreateCIFSShare(t *testing.T) {
+	setupCreateLocalUser(t)
 	setupCreateDirectory(t)
-	defer teardownDeleteShare(t)
+	defer teardownDeleteCIFSShare(t)
+	defer teardownDeleteDirectory(t)
+	defer teardownDeleteLocalUser(t)
 
 	type args struct {
 		ctx           context.Context
@@ -325,14 +347,14 @@ func TestWindowsAgent_CreateShare(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:  "test_create_share",
+			name:  "test_create_cifs_share",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				name:          "test_share",
-				directoryName: "C:\\test\\test_directory",
-				description:   "this is a test share",
+				name:          testShareName,
+				directoryName: fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, testDirectoryName),
+				description:   "this is a test cifs share",
 				usernames: []string{
-					"JayXu",
+					testLocalUserName,
 				},
 			},
 			wantErr: false,
@@ -340,18 +362,20 @@ func TestWindowsAgent_CreateShare(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.agent.CreateShare(tt.args.ctx, tt.args.name, tt.args.directoryName, tt.args.description, tt.args.usernames); (err != nil) != tt.wantErr {
-				t.Errorf("WindowsAgent.CreateShare() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.agent.CreateCIFSShare(tt.args.ctx, tt.args.name, tt.args.directoryName, tt.args.description, tt.args.usernames); (err != nil) != tt.wantErr {
+				t.Errorf("WindowsAgent.CreateCIFSShare() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestWindowsAgent_DeleteShare(t *testing.T) {
+func TestWindowsAgent_DeleteCIFSShare(t *testing.T) {
+	setupCreateLocalUser(t)
 	setupCreateDirectory(t)
-	setupCreateShare(t)
+	setupCreateCIFSShare(t)
 
 	defer teardownDeleteDirectory(t)
+	defer teardownDeleteLocalUser(t)
 
 	type args struct {
 		ctx  context.Context
@@ -364,28 +388,30 @@ func TestWindowsAgent_DeleteShare(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:  "test_delete_share",
+			name:  "test_delete_cifs_share",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				name: "test_share",
+				name: testShareName,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.agent.DeleteShare(tt.args.ctx, tt.args.name); (err != nil) != tt.wantErr {
-				t.Errorf("WindowsAgent.DeleteShare() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.agent.DeleteCIFSShare(tt.args.ctx, tt.args.name); (err != nil) != tt.wantErr {
+				t.Errorf("WindowsAgent.DeleteCIFSShare() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestWindowsAgent_GetShareDetail(t *testing.T) {
+func TestWindowsAgent_GetCIFSShareDetail(t *testing.T) {
+	setupCreateLocalUser(t)
 	setupCreateDirectory(t)
-	setupCreateShare(t)
-	defer teardownDeleteShare(t)
+	setupCreateCIFSShare(t)
+	defer teardownDeleteCIFSShare(t)
 	defer teardownDeleteDirectory(t)
+	defer teardownDeleteLocalUser(t)
 
 	type args struct {
 		ctx  context.Context
@@ -399,39 +425,41 @@ func TestWindowsAgent_GetShareDetail(t *testing.T) {
 		wantErr    bool
 	}{
 		{
-			name:  "test_get_share_detail",
+			name:  "test_get_cifs_share_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				name: "test_share",
+				name: testShareName,
 			},
 			wantErr: false,
 			wantDetail: common.ShareDetail{
-				Name:          "test_share",
-				Description:   "this is a test share",
-				DirectoryPath: "C:\\test\\test_directory",
+				Name:          testShareName,
+				Description:   "this is a test cifs share",
+				DirectoryPath: fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, testDirectoryName),
 				State:         "online",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotDetail, err := tt.agent.GetShareDetail(tt.args.ctx, tt.args.name)
+			gotDetail, err := tt.agent.GetCIFSShareDetail(tt.args.ctx, tt.args.name)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("WindowsAgent.GetShareDetail() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("WindowsAgent.GetCIFSShareDetail() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotDetail, tt.wantDetail) {
-				t.Errorf("WindowsAgent.GetShareDetail() = %v, want %v", gotDetail, tt.wantDetail)
+				t.Errorf("WindowsAgent.GetCIFSShareDetail() = %v, want %v", gotDetail, tt.wantDetail)
 			}
 		})
 	}
 }
 
-func TestWindowsAgent_GetSharesDetail(t *testing.T) {
+func TestWindowsAgent_GetCIFSSharesDetail(t *testing.T) {
+	setupCreateLocalUser(t)
 	setupCreateDirectory(t)
-	setupCreateShare(t)
-	defer teardownDeleteShare(t)
+	setupCreateCIFSShare(t)
+	defer teardownDeleteCIFSShare(t)
 	defer teardownDeleteDirectory(t)
+	defer teardownDeleteLocalUser(t)
 
 	type args struct {
 		ctx   context.Context
@@ -445,23 +473,17 @@ func TestWindowsAgent_GetSharesDetail(t *testing.T) {
 		wantErr    bool
 	}{
 		{
-			name:  "test_get_shares_detail",
+			name:  "test_get_cifs_shares_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				names: []string{"test_share", "Users"},
+				names: []string{testShareName},
 			},
 			wantErr: false,
 			wantDetail: []common.ShareDetail{
 				{
-					Name:          "test_share",
-					Description:   "this is a test share",
-					DirectoryPath: "C:\\test\\test_directory",
-					State:         "online",
-				},
-				{
-					Name:          "Users",
-					Description:   "",
-					DirectoryPath: "C:\\Users",
+					Name:          testShareName,
+					Description:   "this is a test cifs share",
+					DirectoryPath: fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, testDirectoryName),
 					State:         "online",
 				},
 			},
@@ -469,24 +491,26 @@ func TestWindowsAgent_GetSharesDetail(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotDetail, err := tt.agent.GetSharesDetail(tt.args.ctx, tt.args.names)
+			gotDetail, err := tt.agent.GetCIFSSharesDetail(tt.args.ctx, tt.args.names)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("WindowsAgent.GetSharesDetail() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("WindowsAgent.GetCIFSSharesDetail() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotDetail, tt.wantDetail) {
-				t.Errorf("WindowsAgent.GetSharesDetail() = %v, want %v", gotDetail, tt.wantDetail)
+				t.Errorf("WindowsAgent.GetCIFSSharesDetail() = %v, want %v", gotDetail, tt.wantDetail)
 			}
 		})
 	}
 }
 
-func TestWindowsAgent_CreateShareMapping(t *testing.T) {
+func TestWindowsAgent_MountCIFSShare(t *testing.T) {
+	setupCreateLocalUser(t)
 	setupCreateDirectory(t)
-	setupCreateShare(t)
-	defer teardownDeleteShareMapping(t)
-	defer teardownDeleteShare(t)
+	setupCreateCIFSShare(t)
+	defer teardownUnmountCIFSShare(t)
+	defer teardownDeleteCIFSShare(t)
 	defer teardownDeleteDirectory(t)
+	defer teardownDeleteLocalUser(t)
 
 	type args struct {
 		ctx        context.Context
@@ -502,32 +526,34 @@ func TestWindowsAgent_CreateShareMapping(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:  "test_create_share_mapping",
+			name:  "test_mount_cifs_share",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				deviceName: "Y:",
-				sharePath:  "\\\\192.168.0.166\\test_share",
-				userName:   "JayXu",
-				password:   "Qaviq2ew!",
+				deviceName: testDeviceName,
+				sharePath:  testSharePath,
+				userName:   testLocalUserName,
+				password:   testLocalUserPassword,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.agent.CreateShareMapping(tt.args.ctx, tt.args.deviceName, tt.args.sharePath, tt.args.userName, tt.args.password); (err != nil) != tt.wantErr {
-				t.Errorf("WindowsAgent.CreateShareMapping() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.agent.MountCIFSShare(tt.args.ctx, tt.args.deviceName, tt.args.sharePath, tt.args.userName, tt.args.password); (err != nil) != tt.wantErr {
+				t.Errorf("WindowsAgent.MountCIFSShare() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestWindowsAgent_DeleteShareMapping(t *testing.T) {
+func TestWindowsAgent_UnmountCIFSShare(t *testing.T) {
+	setupCreateLocalUser(t)
 	setupCreateDirectory(t)
-	setupCreateShare(t)
-	setupCreateShareMapping(t)
-	defer teardownDeleteShare(t)
+	setupCreateCIFSShare(t)
+	setupMountCIFSShare(t)
+	defer teardownDeleteCIFSShare(t)
 	defer teardownDeleteDirectory(t)
+	defer teardownDeleteLocalUser(t)
 
 	type args struct {
 		ctx        context.Context
@@ -540,18 +566,18 @@ func TestWindowsAgent_DeleteShareMapping(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:  "test_delete_share_mapping",
+			name:  "test_unmount_cifs_share",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				deviceName: "Y:",
+				deviceName: testDeviceName,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.agent.DeleteShareMapping(tt.args.ctx, tt.args.deviceName); (err != nil) != tt.wantErr {
-				t.Errorf("WindowsAgent.DeleteShareMapping() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.agent.UnmountCIFSShare(tt.args.ctx, tt.args.deviceName); (err != nil) != tt.wantErr {
+				t.Errorf("WindowsAgent.UnmountCIFSShare() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -575,8 +601,8 @@ func TestWindowsAgent_CreateLocalUser(t *testing.T) {
 			name:  "test_create_local_user",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				name:     "test_account",
-				password: "test_account",
+				name:     testLocalUserName,
+				password: testLocalUserPassword,
 			},
 			wantErr: false,
 		},
@@ -607,7 +633,7 @@ func TestWindowsAgent_DeleteLocalUser(t *testing.T) {
 			name:  "test_delete_local_user",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				name: "test_account",
+				name: testLocalUserName,
 			},
 			wantErr: false,
 		},
@@ -640,7 +666,7 @@ func TestWindowsAgent_GetLocalUserDetail(t *testing.T) {
 			name:  "test_get_local_user_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				name: "test_account",
+				name: testLocalUserName,
 			},
 			wantErr: false,
 		},
@@ -675,7 +701,7 @@ func TestWindowsAgent_GetLocalUsersDetail(t *testing.T) {
 			name:  "test_get_local_users_detail",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				names: []string{"test_account"},
+				names: []string{testLocalUserName},
 			},
 			wantErr: false,
 		},

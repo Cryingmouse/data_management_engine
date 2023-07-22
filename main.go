@@ -6,8 +6,15 @@ import (
 	"github.com/cryingmouse/data_management_engine/webservice"
 )
 
+func init() {
+	// Access the Port configuration and assign it to the submodule's global variable
+	if err := common.InitializeConfig("config.ini"); err != nil {
+		panic(err)
+	}
+}
+
 func main() {
-	common.ConfigLogger()
+	common.InitializeLogger()
 
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {

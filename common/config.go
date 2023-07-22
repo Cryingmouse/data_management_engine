@@ -6,24 +6,33 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Config struct {
-	WebService struct {
-		Port string `mapstructure:"port"`
-	} `mapstructure:"webservice"`
-
-	Logger struct {
-		LogFile  string `mapstructure:"log-file"`
-		LogLevel string `mapstructure:"log-level"`
-	} `mapstructure:"logger"`
+type WebServiceConfig struct {
+	Port int `mapstructure:"port"`
 }
 
-func GetConfig() (config *Config, err error) {
+type LoggerConfig struct {
+	LogFile  string `mapstructure:"log-file"`
+	LogLevel string `mapstructure:"log-level"`
+}
+
+type AgentConfig struct {
+	WindowsRootFolder string `mapstructure:"windows-root-folder"`
+}
+
+type Configuration struct {
+	WebService WebServiceConfig `mapstructure:"webservice"`
+	Logger     LoggerConfig     `mapstructure:"logger"`
+	Agent      AgentConfig      `mapstructure:"agent"`
+}
+
+var Config Configuration
+
+// InitializeConfig loads the configuration from the specified file and unmarshals it.
+func InitializeConfig(filePath string) error {
 	// Set the configuration file name.
-	viper.SetConfigName("config")
-
+	viper.SetConfigFile(filePath)
 	// Set the configuration file type.
-	viper.SetConfigType("ini") // or "json", "toml", etc.
-
+	viper.SetConfigType("ini")
 	// Set the configuration file search paths.
 	viper.AddConfigPath(".")
 
@@ -35,14 +44,19 @@ func GetConfig() (config *Config, err error) {
 		} else {
 			fmt.Printf("Error reading config file: %s\n", err)
 		}
-		return nil, err
+		return err
 	}
 
 	// Unmarshal the configuration values into a Config struct.
-	if err := viper.Unmarshal(&config); err != nil {
+	if err := viper.Unmarshal(&Config); err != nil {
 		fmt.Printf("Error unmarshaling config: %s\n", err)
-		return nil, err
+		return err
 	}
 
-	return config, nil
+	return nil
+}
+
+// GetConfig returns the configuration.
+func GetConfig() Configuration {
+	return Config
 }

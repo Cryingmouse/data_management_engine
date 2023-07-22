@@ -6,24 +6,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ConfigLogger() {
-	config, err := GetConfig()
-	if err != nil {
-		panic(err)
-	}
+func InitializeLogger() {
 
 	log.SetFormatter(&log.JSONFormatter{})
 
 	// 打开日志文件
-	file, err := os.OpenFile(config.Logger.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(Config.Logger.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
 		log.SetOutput(file)
 	} else {
-		log.Println("Failed to open log file:", err)
+		log.Error("Failed to open log file:", err)
 	}
 
 	// 设置日志级别
-	switch config.Logger.LogLevel {
+	switch Config.Logger.LogLevel {
 	case "error":
 		log.SetLevel(log.ErrorLevel)
 	case "info":

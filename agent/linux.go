@@ -60,27 +60,27 @@ func (agent *LinuxAgent) GetDirectoriesDetail(ctx context.Context, paths []strin
 	return detail, nil
 }
 
-func (agent *LinuxAgent) CreateShare(ctx context.Context, name, directoryName, description string, usernames []string) (err error) {
+func (agent *LinuxAgent) CreateCIFSShare(ctx context.Context, name, directoryName, description string, usernames []string) (err error) {
 	return err
 }
 
-func (agent *LinuxAgent) DeleteShare(ctx context.Context, name string) (err error) {
+func (agent *LinuxAgent) DeleteCIFSShare(ctx context.Context, name string) (err error) {
 	return err
 }
 
-func (agent *LinuxAgent) GetShareDetail(ctx context.Context, name string) (detail common.ShareDetail, err error) {
+func (agent *LinuxAgent) GetCIFSShareDetail(ctx context.Context, name string) (detail common.ShareDetail, err error) {
 	return detail, err
 }
 
-func (agent *LinuxAgent) GetSharesDetail(ctx context.Context, names []string) (detail []common.ShareDetail, err error) {
+func (agent *LinuxAgent) GetCIFSSharesDetail(ctx context.Context, names []string) (detail []common.ShareDetail, err error) {
 	return detail, err
 }
 
-func (agent *LinuxAgent) CreateShareMapping(ctx context.Context, deviceName, sharePath, userName, password string) (err error) {
+func (agent *LinuxAgent) MountCIFSShare(ctx context.Context, deviceName, sharePath, userName, password string) (err error) {
 	return err
 }
 
-func (agent *LinuxAgent) DeleteShareMapping(ctx context.Context, deviceName string) (err error) {
+func (agent *LinuxAgent) UnmountCIFSShare(ctx context.Context, deviceName string) (err error) {
 	return err
 }
 

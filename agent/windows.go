@@ -17,7 +17,7 @@ import (
 type WindowsAgent struct{}
 
 func (agent *WindowsAgent) CreateDirectory(ctx context.Context, name string) (dirPath string, err error) {
-	dirPath = fmt.Sprintf("%s\\%s", "C:\\test", name)
+	dirPath = fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, name)
 
 	err = os.Mkdir(dirPath, os.ModePerm)
 	if err != nil {
@@ -41,9 +41,26 @@ func (agent *WindowsAgent) CreateDirectories(ctx context.Context, names []string
 }
 
 func (agent *WindowsAgent) DeleteDirectory(ctx context.Context, name string) (err error) {
-	dirPath := fmt.Sprintf("%s\\%s", "C:\\test", name)
+	dirPath := fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, name)
 
 	return os.Remove(dirPath)
+}
+
+func (agent *WindowsAgent) GetDirectoryList(ctx context.Context) (err error) {
+	cmdlet := "Get-ChildItem"
+
+	// Define the arguments
+	args := []string{
+		common.Config.Agent.WindowsRootFolder,
+	}
+
+	// Execute the PowerShell command
+	cmd := exec.Command("powershell.exe", append([]string{"-Command", cmdlet}, args...)...)
+
+	// Capture the command output
+	_, err = cmd.CombinedOutput()
+
+	return err
 }
 
 func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, names []string) (err error) {
@@ -59,7 +76,7 @@ func (agent *WindowsAgent) DeleteDirectories(ctx context.Context, names []string
 func (agent *WindowsAgent) GetDirectoryDetail(ctx context.Context, name string) (detail common.DirectoryDetail, err error) {
 	script := "./agent/windows/Get-DirectoryDetail.ps1"
 
-	dirPath := fmt.Sprintf("%s\\%s", "C:\\test", name)
+	dirPath := fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, name)
 
 	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", dirPath)
 	if err != nil {
@@ -90,7 +107,7 @@ func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, names []str
 
 	dirPaths := make([]string, len(names))
 	for i, name := range names {
-		dirPaths[i] = fmt.Sprintf("%s\\%s", "C:\\test", name)
+		dirPaths[i] = fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, name)
 	}
 
 	output, err := execPowerShellCmdlet(script, "-DirectoryPaths", strings.Join(dirPaths, ","))
@@ -117,7 +134,6 @@ func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, names []str
 			ParentFullPath: result["ParentFullPath"].(string),
 		}
 		detail = append(detail, directory)
-
 	} else {
 
 		for _, item := range result {
@@ -137,7 +153,7 @@ func (agent *WindowsAgent) GetDirectoriesDetail(ctx context.Context, names []str
 	return detail, err
 }
 
-func (agent *WindowsAgent) CreateShare(ctx context.Context, name, directoryPath, description string, usernames []string) (err error) {
+func (agent *WindowsAgent) CreateCIFSShare(ctx context.Context, name, directoryPath, description string, usernames []string) (err error) {
 	cmdlet := "New-SmbShare"
 
 	// Define the arguments
@@ -153,16 +169,12 @@ func (agent *WindowsAgent) CreateShare(ctx context.Context, name, directoryPath,
 	cmd := exec.Command("powershell.exe", append([]string{"-Command", cmdlet}, args...)...)
 
 	// Capture the command output
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println("Error executing PowerShell command:", err.Error())
-	}
+	_, err = cmd.CombinedOutput()
 
-	fmt.Println(string(output))
 	return err
 }
 
-func (agent *WindowsAgent) DeleteShare(ctx context.Context, name string) (err error) {
+func (agent *WindowsAgent) DeleteCIFSShare(ctx context.Context, name string) (err error) {
 	cmdlet := "Remove-SmbShare"
 
 	// Define the arguments
@@ -184,7 +196,7 @@ func (agent *WindowsAgent) DeleteShare(ctx context.Context, name string) (err er
 	return err
 }
 
-func (agent *WindowsAgent) GetShareDetail(ctx context.Context, name string) (detail common.ShareDetail, err error) {
+func (agent *WindowsAgent) GetCIFSShareDetail(ctx context.Context, name string) (detail common.ShareDetail, err error) {
 	script := "./agent/windows/Get-ShareDetail.ps1"
 	output, err := execPowerShellCmdlet(script, "-ShareNames", name)
 	if err != nil {
@@ -212,7 +224,7 @@ func (agent *WindowsAgent) GetShareDetail(ctx context.Context, name string) (det
 	return detail, err
 }
 
-func (agent *WindowsAgent) GetSharesDetail(ctx context.Context, names []string) (detail []common.ShareDetail, err error) {
+func (agent *WindowsAgent) GetCIFSSharesDetail(ctx context.Context, names []string) (detail []common.ShareDetail, err error) {
 	script := "./agent/windows/Get-ShareDetail.ps1"
 	output, err := execPowerShellCmdlet(script, "-ShareNames", strings.Join(names, ","))
 	if err != nil {
@@ -222,7 +234,24 @@ func (agent *WindowsAgent) GetSharesDetail(ctx context.Context, names []string) 
 	var result []map[string]interface{}
 	err = json.Unmarshal(output, &result)
 	if err != nil {
-		return detail, err
+		// In case that only one file path to query.
+		var result map[string]interface{}
+		err = json.Unmarshal(output, &result)
+		if err != nil {
+			return detail, err
+		}
+		share := common.ShareDetail{
+			Name:          result["Name"].(string),
+			DirectoryPath: result["DirectoryPath"].(string),
+			Description:   result["Description"].(string),
+			State: func() string {
+				if result["ShareState"].(float64) == 1 {
+					return "online"
+				}
+				return "offline"
+			}(),
+		}
+		detail = append(detail, share)
 	}
 
 	for _, item := range result {
@@ -243,7 +272,7 @@ func (agent *WindowsAgent) GetSharesDetail(ctx context.Context, names []string) 
 	return detail, err
 }
 
-func (agent *WindowsAgent) CreateShareMapping(ctx context.Context, deviceName, sharePath, userName, password string) (err error) {
+func (agent *WindowsAgent) MountCIFSShare(ctx context.Context, deviceName, sharePath, userName, password string) (err error) {
 	cmdlet := "net"
 
 	// Define the arguments
@@ -268,7 +297,7 @@ func (agent *WindowsAgent) CreateShareMapping(ctx context.Context, deviceName, s
 	return err
 }
 
-func (agent *WindowsAgent) DeleteShareMapping(ctx context.Context, deviceName string) (err error) {
+func (agent *WindowsAgent) UnmountCIFSShare(ctx context.Context, deviceName string) (err error) {
 	cmdlet := "net"
 
 	// Define the arguments
