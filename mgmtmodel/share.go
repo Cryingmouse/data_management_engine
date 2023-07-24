@@ -16,6 +16,7 @@ type CIFSShare struct {
 	Path            string
 	DirectoryName   string
 	Description     string
+	MountPoint      string
 	AccessUserNames []string
 }
 
@@ -104,6 +105,78 @@ func (c *CIFSShare) Get(ctx context.Context) (*CIFSShare, error) {
 	c.AccessUserNames = strings.Split(share.AccessUserNames, ",")
 
 	return c, nil
+}
+
+func (c *CIFSShare) Mount(ctx context.Context, userName, password string) (err error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return err
+	}
+
+	// Get the right driver and call driver to create share.
+	host := db.Host{IP: c.HostIP}
+	if err = host.Get(engine); err != nil {
+		return err
+	}
+	driver := driver.GetDriver(host.StorageType)
+
+	hostContext := common.HostContext{
+		IP:       host.IP,
+		Username: host.Username,
+		Password: host.Password,
+	}
+	ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
+
+	c.Path = buildCIFSSharePath(c.HostIP, c.Name)
+
+	if err = driver.MountCIFSShare(ctx, c.MountPoint, c.Path, userName, password); err != nil {
+		return err
+	}
+
+	share := db.CIFSShare{
+		HostIP: c.HostIP,
+		Path:   c.Path,
+	}
+	share.Get(engine)
+
+	share.MountPoint = c.MountPoint
+
+	return share.Save(engine)
+}
+
+func (c *CIFSShare) Unmount(ctx context.Context) (err error) {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		return err
+	}
+
+	// Get the right driver and call driver to create share.
+	host := db.Host{IP: c.HostIP}
+	if err = host.Get(engine); err != nil {
+		return err
+	}
+	driver := driver.GetDriver(host.StorageType)
+
+	hostContext := common.HostContext{
+		IP:       host.IP,
+		Username: host.Username,
+		Password: host.Password,
+	}
+	ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
+
+	if err = driver.UnmountCIFSShare(ctx, c.MountPoint); err != nil {
+		return err
+	}
+
+	share := db.CIFSShare{
+		HostIP:     c.HostIP,
+		MountPoint: c.MountPoint,
+	}
+	share.Get(engine)
+
+	share.MountPoint = ""
+
+	return share.Save(engine)
 }
 
 func buildCIFSSharePath(ip string, shareName string) string {

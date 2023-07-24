@@ -14,6 +14,7 @@ type CIFSShare struct {
 	HostIP          string `gorm:"column:host_ip"`
 	Path            string `gorm:"uniqueIndex:idx_cifs_share_unique;column:path"`
 	DirectoryName   string `gorm:"column:directory_name"`
+	MountPoint      string `gorm:"column:mount_point"`
 	Description     string `gorm:"column:description"`
 	AccessUserNames string `gorm:"column:access_usernames"`
 }

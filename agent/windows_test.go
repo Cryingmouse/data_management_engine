@@ -19,7 +19,7 @@ const testDirectoryName1 = "test_directory_1"
 const testDirectoryName2 = "test_directory_2"
 const testLocalUserName = "test_account"
 const testLocalUserPassword = "Passw0rd!"
-const testDeviceName = "Y:"
+const testMountPoint = "Y:"
 
 var testSharePath = fmt.Sprintf("\\\\%s\\%s", testHostIP, testShareName)
 
@@ -85,13 +85,13 @@ func teardownDeleteCIFSShare(t *testing.T) {
 func setupMountCIFSShare(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.MountCIFSShare(ctx, testDeviceName, testSharePath, testLocalUserName, testLocalUserPassword)
+	windowsAgent.MountCIFSShare(ctx, testMountPoint, testSharePath, testLocalUserName, testLocalUserPassword)
 }
 
 func teardownUnmountCIFSShare(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.UnmountCIFSShare(ctx, testDeviceName)
+	windowsAgent.UnmountCIFSShare(ctx, testMountPoint)
 }
 
 func setupCreateLocalUser(t *testing.T) {
@@ -514,7 +514,7 @@ func TestWindowsAgent_MountCIFSShare(t *testing.T) {
 
 	type args struct {
 		ctx        context.Context
-		deviceName string
+		mountPoint string
 		sharePath  string
 		userName   string
 		password   string
@@ -529,7 +529,7 @@ func TestWindowsAgent_MountCIFSShare(t *testing.T) {
 			name:  "test_mount_cifs_share",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				deviceName: testDeviceName,
+				mountPoint: testMountPoint,
 				sharePath:  testSharePath,
 				userName:   testLocalUserName,
 				password:   testLocalUserPassword,
@@ -539,7 +539,7 @@ func TestWindowsAgent_MountCIFSShare(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.agent.MountCIFSShare(tt.args.ctx, tt.args.deviceName, tt.args.sharePath, tt.args.userName, tt.args.password); (err != nil) != tt.wantErr {
+			if err := tt.agent.MountCIFSShare(tt.args.ctx, tt.args.mountPoint, tt.args.sharePath, tt.args.userName, tt.args.password); (err != nil) != tt.wantErr {
 				t.Errorf("WindowsAgent.MountCIFSShare() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -557,7 +557,7 @@ func TestWindowsAgent_UnmountCIFSShare(t *testing.T) {
 
 	type args struct {
 		ctx        context.Context
-		deviceName string
+		mountPoint string
 	}
 	tests := []struct {
 		name    string
@@ -569,14 +569,14 @@ func TestWindowsAgent_UnmountCIFSShare(t *testing.T) {
 			name:  "test_unmount_cifs_share",
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
-				deviceName: testDeviceName,
+				mountPoint: testMountPoint,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.agent.UnmountCIFSShare(tt.args.ctx, tt.args.deviceName); (err != nil) != tt.wantErr {
+			if err := tt.agent.UnmountCIFSShare(tt.args.ctx, tt.args.mountPoint); (err != nil) != tt.wantErr {
 				t.Errorf("WindowsAgent.UnmountCIFSShare() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

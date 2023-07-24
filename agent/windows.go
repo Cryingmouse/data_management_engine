@@ -274,13 +274,13 @@ func (agent *WindowsAgent) GetCIFSSharesDetail(ctx context.Context, names []stri
 	return detail, err
 }
 
-func (agent *WindowsAgent) MountCIFSShare(ctx context.Context, deviceName, sharePath, userName, password string) (err error) {
+func (agent *WindowsAgent) MountCIFSShare(ctx context.Context, mountPoint, sharePath, userName, password string) (err error) {
 	cmdlet := "net"
 
 	// Define the arguments
 	args := []string{
 		"use",
-		deviceName,
+		mountPoint,
 		sharePath,
 		password,
 		"/user:" + userName,
@@ -299,13 +299,13 @@ func (agent *WindowsAgent) MountCIFSShare(ctx context.Context, deviceName, share
 	return err
 }
 
-func (agent *WindowsAgent) UnmountCIFSShare(ctx context.Context, deviceName string) (err error) {
+func (agent *WindowsAgent) UnmountCIFSShare(ctx context.Context, mountPoint string) (err error) {
 	cmdlet := "net"
 
 	// Define the arguments
 	args := []string{
 		"use",
-		deviceName,
+		mountPoint,
 		"/delete",
 		"/y",
 	}

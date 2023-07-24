@@ -55,7 +55,7 @@ func Start() {
 	// Portal API about share
 	portal.POST("/shares/create", CreateShareHandler)
 	portal.POST("/shares/delete", DeleteShareHandler)
-	portal.POST("/shares/mount", MountShareHandler)
+	portal.POST("/shares/mount", MountCIFSShareHandler)
 	portal.POST("/shares/unmount", UnmountShareHandler)
 	portal.GET("/shares", GetSharesHandler)
 

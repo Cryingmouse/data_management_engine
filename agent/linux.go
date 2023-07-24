@@ -76,11 +76,11 @@ func (agent *LinuxAgent) GetCIFSSharesDetail(ctx context.Context, names []string
 	return detail, err
 }
 
-func (agent *LinuxAgent) MountCIFSShare(ctx context.Context, deviceName, sharePath, userName, password string) (err error) {
+func (agent *LinuxAgent) MountCIFSShare(ctx context.Context, mountPoint, sharePath, userName, password string) (err error) {
 	return err
 }
 
-func (agent *LinuxAgent) UnmountCIFSShare(ctx context.Context, deviceName string) (err error) {
+func (agent *LinuxAgent) UnmountCIFSShare(ctx context.Context, mountPoint string) (err error) {
 	return err
 }
 

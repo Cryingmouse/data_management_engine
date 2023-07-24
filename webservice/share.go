@@ -79,12 +79,13 @@ func DeleteShareHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func MountShareHandler(c *gin.Context) {
+func MountCIFSShareHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request struct {
-		DeviceName string `json:"device_name" binding:"required"`
-		SharePath  string `json:"share_name" binding:"required"`
+		HostIP     string `json:"host_ip" binding:"required"`
+		Name       string `json:"share_name" binding:"required"`
+		MountPoint string `json:"mount_point" binding:"required"`
 		UserName   string `json:"username" binding:"required"`
 		Password   string `json:"password" binding:"required"`
 	}
@@ -93,10 +94,10 @@ func MountShareHandler(c *gin.Context) {
 		return
 	}
 
-	agent := agent.GetAgent()
+	shareModel := mgmtmodel.CIFSShare{}
+	common.DeepCopy(request, &shareModel)
 
-	err := agent.MountCIFSShare(ctx, request.DeviceName, request.SharePath, request.UserName, request.Password)
-	if err != nil {
+	if err := shareModel.Mount(ctx, request.UserName, request.Password); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to mount the share", err.Error())
 		return
 	}
@@ -108,15 +109,18 @@ func UnmountShareHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request struct {
-		DeviceName string `json:"device_name"`
+		HostIP     string `json:"host_ip" binding:"required"`
+		MountPoint string `json:"mount_point"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	agent := agent.GetAgent()
-	if err := agent.UnmountCIFSShare(ctx, request.DeviceName); err != nil {
+	shareModel := mgmtmodel.CIFSShare{}
+	common.DeepCopy(request, &shareModel)
+
+	if err := shareModel.Unmount(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to unmount the share", err.Error())
 		return
 	}
@@ -168,7 +172,7 @@ func GetSharesHandler(c *gin.Context) {
 
 			c.JSON(http.StatusOK, shareList)
 		} else {
-			// Query directories with pagination.
+			// Query shares with pagination.
 			filter.Pagination = &common.Pagination{
 				Page:     page,
 				PageSize: limit,
@@ -260,8 +264,8 @@ func MountShareOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request struct {
-		DeviceName string `json:"device_name" binding:"required"`
-		SharePath  string `json:"share_name" binding:"required"`
+		MountPoint string `json:"mount_point" binding:"required"`
+		SharePath  string `json:"share_path" binding:"required"`
 		UserName   string `json:"username" binding:"required"`
 		Password   string `json:"password" binding:"required"`
 	}
@@ -272,7 +276,9 @@ func MountShareOnAgentHandler(c *gin.Context) {
 
 	agent := agent.GetAgent()
 
-	err := agent.MountCIFSShare(ctx, request.DeviceName, request.SharePath, request.UserName, request.Password)
+	plaintext, _ := common.Decrypt(request.Password, common.SecurityKey)
+
+	err := agent.MountCIFSShare(ctx, request.MountPoint, request.SharePath, request.UserName, plaintext)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to mount the share", err.Error())
 		return
@@ -285,7 +291,7 @@ func UnmountShareOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request struct {
-		DeviceName string `json:"device_name"`
+		MountPoint string `json:"mount_point"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
@@ -293,7 +299,7 @@ func UnmountShareOnAgentHandler(c *gin.Context) {
 	}
 
 	agent := agent.GetAgent()
-	if err := agent.UnmountCIFSShare(ctx, request.DeviceName); err != nil {
+	if err := agent.UnmountCIFSShare(ctx, request.MountPoint); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to unmount the share", err.Error())
 		return
 	}

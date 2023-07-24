@@ -19,6 +19,10 @@ type Driver interface {
 
 	DeleteCIFSShare(ctx context.Context, name string) (err error)
 
+	MountCIFSShare(ctx context.Context, mountPoint, sharePath, userName, password string) (err error)
+
+	UnmountCIFSShare(ctx context.Context, mountPoint string) (err error)
+
 	CreateLocalUser(ctx context.Context, name, password string) (localUserDetail common.LocalUserDetail, err error)
 
 	DeleteLocalUser(ctx context.Context, name string) (err error)

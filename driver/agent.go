@@ -153,7 +153,7 @@ func (d *AgentDriver) CreateCIFSShare(ctx context.Context, name, directory_name,
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to create a cifs share.")
+		return fmt.Errorf("failed to create a cifs share")
 	}
 
 	return nil
@@ -186,7 +186,81 @@ func (d *AgentDriver) DeleteCIFSShare(ctx context.Context, name string) (err err
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to delete a cifs share.")
+		return fmt.Errorf("failed to delete a cifs share")
+	}
+
+	return nil
+}
+
+func (d *AgentDriver) MountCIFSShare(ctx context.Context, mountPoint, sharePath, userName, password string) (err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
+
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
+
+	encryptedPassword, _ := common.Encrypt(password, common.SecurityKey)
+
+	body := struct {
+		MountPoint string `json:"mount_point"`
+		SharePath  string `json:"share_path"`
+		UserName   string `json:"username"`
+		Password   string `json:"password"`
+	}{
+		MountPoint: mountPoint,
+		SharePath:  sharePath,
+		UserName:   userName,
+		Password:   encryptedPassword,
+	}
+	request_body, err := json.Marshal(body)
+	if err != nil {
+		return
+	}
+
+	// Convert the string to an io.Reader
+	reader := strings.NewReader(string(request_body))
+
+	response, err := restClient.Post("shares/mount", reader)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to mount a cifs share")
+	}
+
+	return nil
+}
+
+func (d *AgentDriver) UnmountCIFSShare(ctx context.Context, mountPoint string) (err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
+
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
+
+	body := struct {
+		MountPoint string `json:"mount_point"`
+	}{
+		MountPoint: mountPoint,
+	}
+	request_body, err := json.Marshal(body)
+	if err != nil {
+		return
+	}
+
+	// Convert the string to an io.Reader
+	reader := strings.NewReader(string(request_body))
+
+	response, err := restClient.Post("shares/unmount", reader)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to unmount a cifs share")
 	}
 
 	return nil
