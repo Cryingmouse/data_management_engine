@@ -73,7 +73,7 @@ func teardownDeleteDirectories(t *testing.T) {
 func setupCreateCIFSShare(t *testing.T) {
 	windowsAgent := GetAgent().(*WindowsAgent)
 	ctx := context.WithValue(context.Background(), common.TraceIDKey("TraceID"), "123456")
-	windowsAgent.CreateCIFSShare(ctx, testShareName, fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, testDirectoryName), "this is a test cifs share", []string{testLocalUserName})
+	windowsAgent.CreateCIFSShare(ctx, testShareName, testDirectoryName, "this is a test cifs share", []string{testLocalUserName})
 }
 
 func teardownDeleteCIFSShare(t *testing.T) {
@@ -351,7 +351,7 @@ func TestWindowsAgent_CreateCIFSShare(t *testing.T) {
 			agent: GetAgent().(*WindowsAgent),
 			args: args{
 				name:          testShareName,
-				directoryName: fmt.Sprintf("%s\\%s", common.Config.Agent.WindowsRootFolder, testDirectoryName),
+				directoryName: testDirectoryName,
 				description:   "this is a test cifs share",
 				usernames: []string{
 					testLocalUserName,

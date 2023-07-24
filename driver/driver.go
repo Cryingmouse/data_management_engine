@@ -2,7 +2,6 @@ package driver
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/cryingmouse/data_management_engine/common"
 )
@@ -16,9 +15,9 @@ type Driver interface {
 
 	GetDirectoriesDetail(ctx context.Context, names []string) (detail []common.DirectoryDetail, err error)
 
-	CreateShare(ctx context.Context, name string) (resp *http.Response, err error)
+	CreateCIFSShare(ctx context.Context, name, directory_name, description string, usernames []string) (err error)
 
-	DeleteShare(ctx context.Context, name string) (resp *http.Response, err error)
+	DeleteCIFSShare(ctx context.Context, name string) (err error)
 
 	CreateLocalUser(ctx context.Context, name, password string) (localUserDetail common.LocalUserDetail, err error)
 

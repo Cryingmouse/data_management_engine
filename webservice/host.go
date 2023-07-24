@@ -54,7 +54,7 @@ func RegisterHostHandler(c *gin.Context) {
 	}
 
 	hostModel := mgmtmodel.Host{}
-	common.CopyStructList(request, &hostModel)
+	common.DeepCopy(request, &hostModel)
 
 	if err := hostModel.Register(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to register the host", err.Error())
@@ -62,7 +62,7 @@ func RegisterHostHandler(c *gin.Context) {
 	}
 
 	hostResponse := HostResponse{}
-	common.CopyStructList(hostModel, &hostResponse)
+	common.DeepCopy(hostModel, &hostResponse)
 
 	c.JSON(http.StatusOK, hostResponse)
 }
@@ -87,7 +87,7 @@ func RegisterHostsHandler(c *gin.Context) {
 	}
 
 	hostListModel := mgmtmodel.HostList{}
-	common.CopyStructList(request, &hostListModel.Hosts)
+	common.DeepCopy(request, &hostListModel.Hosts)
 
 	if err := hostListModel.Register(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to register the hosts", err.Error())
@@ -95,7 +95,7 @@ func RegisterHostsHandler(c *gin.Context) {
 	}
 
 	hostResponseList := make([]HostResponse, len(hostListModel.Hosts))
-	common.CopyStructList(hostListModel.Hosts, &hostResponseList)
+	common.DeepCopy(hostListModel.Hosts, &hostResponseList)
 
 	c.JSON(http.StatusOK, hostResponseList)
 }
@@ -113,7 +113,7 @@ func UnregisterHostHandler(c *gin.Context) {
 	}
 
 	hostModel := mgmtmodel.Host{}
-	common.CopyStructList(request, &hostModel)
+	common.DeepCopy(request, &hostModel)
 
 	if err := hostModel.Unregister(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to unregister the host", err.Error())
@@ -136,7 +136,7 @@ func UnregisterHostsHandler(c *gin.Context) {
 	}
 
 	hostListModel := mgmtmodel.HostList{}
-	common.CopyStructList(request, &hostListModel.Hosts)
+	common.DeepCopy(request, &hostListModel.Hosts)
 
 	if err := hostListModel.Unregister(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to unregister the hosts", err.Error())
@@ -187,7 +187,7 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 			}
 
 			hostResponseList := make([]HostResponse, len(hosts))
-			common.CopyStructList(hosts, &hostResponseList)
+			common.DeepCopy(hosts, &hostResponseList)
 
 			c.JSON(http.StatusOK, hostResponseList)
 		} else {
@@ -207,7 +207,7 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 				Limit:      limit,
 				TotalCount: paginationHosts.TotalCount,
 			}
-			common.CopyStructList(paginationHosts.Hosts, &paginationHostResponse.Hosts)
+			common.DeepCopy(paginationHosts.Hosts, &paginationHostResponse.Hosts)
 
 			c.JSON(http.StatusOK, paginationHostResponse)
 		}
@@ -224,7 +224,7 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 		}
 
 		hostResponse := HostResponse{}
-		common.CopyStructList(host, &hostResponse)
+		common.DeepCopy(host, &hostResponse)
 
 		hostResponseList := []HostResponse{hostResponse}
 

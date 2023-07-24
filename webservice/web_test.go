@@ -40,19 +40,21 @@ func TestMain(m *testing.M) {
 	}
 
 	// 定义测试路由
-	shareAgnet.POST("/directories/create", createDirectoryOnAgentHandler)
-	shareAgnet.POST("/directories/delete", deleteDirectoryOnAgentHandler)
-	shareAgnet.POST("/directories/batch-create", createDirectoriesOnAgentHandler)
-	shareAgnet.POST("/directories/batch-delete", deleteDirectoriesOnAgentHandler)
-	shareAgnet.GET("/directories/detail", getDirectoryDetailOnAgentHandler)
+	shareAgnet.POST("/directories/create", CreateDirectoryOnAgentHandler)
+	shareAgnet.POST("/directories/delete", DeleteDirectoryOnAgentHandler)
+	shareAgnet.POST("/directories/batch-create", CreateDirectoriesOnAgentHandler)
+	shareAgnet.POST("/directories/batch-delete", DeleteDirectoriesOnAgentHandler)
+	shareAgnet.GET("/directories/detail", GetDirectoryDetailOnAgentHandler)
 
-	shareAgnet.POST("/shares/create", createShareOnAgentHandler)
-	shareAgnet.POST("/shares/delete", deleteShareOnAgentHandler)
-	shareAgnet.GET("/shares/detail", getShareOnAgentHandler)
+	shareAgnet.POST("/shares/create", CreateShareOnAgentHandler)
+	shareAgnet.POST("/shares/delete", DeleteShareOnAgentHandler)
+	shareAgnet.POST("/shares/mount", MountShareOnAgentHandler)
+	shareAgnet.POST("/shares/unmount", UnmountShareOnAgentHandler)
+	shareAgnet.GET("/shares/detail", GetShareOnAgentHandler)
 
-	shareAgnet.POST("/users/create", createLocalUserOnAgentHandler)
-	shareAgnet.POST("/users/delete", deleteLocalUserOnAgentHandler)
-	shareAgnet.GET("/users/detail", getLocalUserOnAgentHandler)
+	shareAgnet.POST("/users/create", CreateLocalUserOnAgentHandler)
+	shareAgnet.POST("/users/delete", DeleteLocalUserOnAgentHandler)
+	shareAgnet.GET("/users/detail", GetLocalUserOnAgentHandler)
 
 	shareAgnet.GET("/system-info", GetSystemInfoOnAgentHandler)
 

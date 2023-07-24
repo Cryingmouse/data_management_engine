@@ -55,10 +55,10 @@ func (u *LocalUser) Create(ctx context.Context) (err error) {
 		Name:     u.Name,
 		Password: u.Password,
 	}
-	common.CopyStructList(localUserDetail, &localUser)
+	common.DeepCopy(localUserDetail, &localUser)
 
 	// update the content in mgmt model before save to database.
-	common.CopyStructList(localUser, u)
+	common.DeepCopy(localUser, u)
 
 	return localUser.Save(engine)
 }
@@ -108,7 +108,7 @@ func (u *LocalUser) Get(ctx context.Context) (*LocalUser, error) {
 		return nil, err
 	}
 
-	common.CopyStructList(localUser, u)
+	common.DeepCopy(localUser, u)
 
 	return u, nil
 }
@@ -142,10 +142,10 @@ func (u *LocalUser) Manage(ctx context.Context) (err error) {
 		HostIP:   host.IP,
 		Password: u.Password,
 	}
-	common.CopyStructList(localUserDetail, &localUser)
+	common.DeepCopy(localUserDetail, &localUser)
 
 	// update the content in mgmt model before save to database.
-	common.CopyStructList(localUser, u)
+	common.DeepCopy(localUser, u)
 
 	return localUser.Save(engine)
 }
@@ -220,14 +220,14 @@ func (ul *LocalUserList) Create(ctx context.Context) error {
 		return err
 	}
 
-	if err := common.CopyStructList(results, &ul.LocalUsers); err != nil {
+	if err := common.DeepCopy(results, &ul.LocalUsers); err != nil {
 		return err
 	}
 
 	// Save to database.
 	dbLocalUserList := db.LocalUserList{}
 
-	if err := common.CopyStructList(ul.LocalUsers, &dbLocalUserList.LocalUsers); err != nil {
+	if err := common.DeepCopy(ul.LocalUsers, &dbLocalUserList.LocalUsers); err != nil {
 		return err
 	}
 
@@ -282,12 +282,12 @@ func (ul *LocalUserList) Delete(ctx context.Context, filter *common.QueryFilter)
 		return err
 	}
 
-	if err := common.CopyStructList(results, &ul.LocalUsers); err != nil {
+	if err := common.DeepCopy(results, &ul.LocalUsers); err != nil {
 		return err
 	}
 
 	localUserList := db.LocalUserList{}
-	if err := common.CopyStructList(ul.LocalUsers, &localUserList.LocalUsers); err != nil {
+	if err := common.DeepCopy(ul.LocalUsers, &localUserList.LocalUsers); err != nil {
 		return err
 	}
 
@@ -306,7 +306,7 @@ func (ul *LocalUserList) Get(ctx context.Context, filter *common.QueryFilter) ([
 		return nil, err
 	}
 
-	common.CopyStructList(localUserList.LocalUsers, &ul.LocalUsers)
+	common.DeepCopy(localUserList.LocalUsers, &ul.LocalUsers)
 
 	return ul.LocalUsers, nil
 }
@@ -364,14 +364,14 @@ func (ul *LocalUserList) Manage(ctx context.Context) error {
 		return err
 	}
 
-	if err := common.CopyStructList(results, &ul.LocalUsers); err != nil {
+	if err := common.DeepCopy(results, &ul.LocalUsers); err != nil {
 		return err
 	}
 
 	// Save to database.
 	dbLocalUserList := db.LocalUserList{}
 
-	if err := common.CopyStructList(ul.LocalUsers, &dbLocalUserList.LocalUsers); err != nil {
+	if err := common.DeepCopy(ul.LocalUsers, &dbLocalUserList.LocalUsers); err != nil {
 		return err
 	}
 
@@ -385,7 +385,7 @@ func (ul *LocalUserList) Unmanage(ctx context.Context, filter *common.QueryFilte
 	}
 
 	localUserList := db.LocalUserList{}
-	if err := common.CopyStructList(ul.LocalUsers, &localUserList.LocalUsers); err != nil {
+	if err := common.DeepCopy(ul.LocalUsers, &localUserList.LocalUsers); err != nil {
 		return err
 	}
 

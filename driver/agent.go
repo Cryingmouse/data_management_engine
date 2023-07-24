@@ -2,6 +2,7 @@ package driver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -28,17 +29,13 @@ func (d *AgentDriver) CreateDirectory(ctx context.Context, name string) (directo
 
 	response, err := restClient.Post("directories/create", reader)
 	if err != nil {
-		directoryDetails.Name = name
-		directoryDetails.Exist = false
 		return directoryDetails, err
 	}
 
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		directoryDetails.Name = name
-		directoryDetails.Exist = false
-		return directoryDetails, fmt.Errorf("Failed")
+		return directoryDetails, fmt.Errorf("failed to create the directory on agent")
 	}
 
 	restClient.GetResponseBody(response, &directoryDetails)
@@ -123,20 +120,76 @@ func (d *AgentDriver) GetDirectoriesDetail(ctx context.Context, names []string) 
 	return detail, err
 }
 
-func (d *AgentDriver) CreateShare(ctx context.Context, name string) (resp *http.Response, err error) {
-	// TODO: Check if the root path and directory name is valid
+func (d *AgentDriver) CreateCIFSShare(ctx context.Context, name, directory_name, description string, usernames []string) (err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	// Create a new folder called `newFolderName` in the current working directory.
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
-	return nil, nil
+	body := struct {
+		ShareName     string   `json:"share_name"`
+		DirectoryName string   `json:"directory_name"`
+		Description   string   `json:"description"`
+		Usernames     []string `json:"usernames"`
+	}{
+		ShareName:     name,
+		DirectoryName: directory_name,
+		Description:   description,
+		Usernames:     usernames,
+	}
+	request_body, err := json.Marshal(body)
+	if err != nil {
+		return
+	}
+
+	// Convert the string to an io.Reader
+	reader := strings.NewReader(string(request_body))
+
+	response, err := restClient.Post("shares/create", reader)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to create a cifs share.")
+	}
+
+	return nil
 }
 
-func (d *AgentDriver) DeleteShare(ctx context.Context, name string) (resp *http.Response, err error) {
-	// TODO: Check if the root path and directory name is valid
+func (d *AgentDriver) DeleteCIFSShare(ctx context.Context, name string) (err error) {
+	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
+	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	// Delete a new folder called `newFolderName` in the current working directory.
+	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
-	return nil, nil
+	body := struct {
+		ShareName string `json:"share_name"`
+	}{
+		ShareName: name,
+	}
+	request_body, err := json.Marshal(body)
+	if err != nil {
+		return
+	}
+
+	// Convert the string to an io.Reader
+	reader := strings.NewReader(string(request_body))
+
+	response, err := restClient.Post("shares/delete", reader)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to delete a cifs share.")
+	}
+
+	return nil
 }
 
 func (d *AgentDriver) CreateLocalUser(ctx context.Context, name, password string) (localUserDetail common.LocalUserDetail, err error) {
@@ -261,6 +314,9 @@ func (d *AgentDriver) GetSystemInfo(ctx context.Context) (systemInfo common.Syst
 	restClient := client.GetRestClient(hostContext, traceID, "agent")
 
 	response, err := restClient.Get("system-info")
+	if err != nil {
+		return systemInfo, err
+	}
 
 	err = restClient.GetResponseBody(response, &systemInfo)
 

@@ -10,7 +10,7 @@ import (
 )
 
 func setupCreateShareOnAgent(t *testing.T) {
-	requestBody := bytes.NewBuffer([]byte(`{"share_name": "test_share", "directory_name": "test_directory", "description": "this is a test share",  "user_names": ["test_account"]}`))
+	requestBody := bytes.NewBuffer([]byte(`{"share_name": "test_share", "directory_name": "test_directory", "description": "this is a test share",  "usernames": ["test_account"]}`))
 
 	// 创建测试请求
 	req, _ := http.NewRequest("POST", "/agent/shares/create", requestBody)
@@ -39,6 +39,36 @@ func teardownDeleteShareOnAgent(t *testing.T) {
 	shareRouter.ServeHTTP(w, req)
 }
 
+func setupMountShareOnAgent(t *testing.T) {
+	requestBody := bytes.NewBuffer([]byte(`{"device_name": "Y:", "share_name": "\\\\192.168.0.166\\test_share", "username": "test_account",  "password": "Passw0rd!"}`))
+
+	// 创建测试请求
+	req, _ := http.NewRequest("POST", "/agent/shares/mount", requestBody)
+
+	req.Header.Set("X-Trace-ID", "123456")
+
+	// 创建响应的Recorder
+	w := httptest.NewRecorder()
+
+	// 处理测试请求
+	shareRouter.ServeHTTP(w, req)
+}
+
+func teardownUnmountShareOnAgent(t *testing.T) {
+	requestBody := bytes.NewBuffer([]byte(`{"device_name": "Y:"}`))
+
+	// 创建测试请求
+	req, _ := http.NewRequest("POST", "/agent/shares/unmount", requestBody)
+
+	req.Header.Set("X-Trace-ID", "123456")
+
+	// 创建响应的Recorder
+	w := httptest.NewRecorder()
+
+	// 处理测试请求
+	shareRouter.ServeHTTP(w, req)
+}
+
 // Create a single share on agent.
 func Test_createShareOnAgentHandler(t *testing.T) {
 	setupCreateLocalUserOnAgent(t)
@@ -47,7 +77,7 @@ func Test_createShareOnAgentHandler(t *testing.T) {
 	defer teardownDeleteDirectoryOnAgent(t)
 	defer teardownDeleteLocalUserOnAgent(t)
 
-	requestBody := bytes.NewBuffer([]byte(`{"share_name": "test_share", "directory_name": "test_directory", "description": "this is a test share",  "user_names": ["test_account"]}`))
+	requestBody := bytes.NewBuffer([]byte(`{"share_name": "test_share", "directory_name": "test_directory", "description": "this is a test share",  "usernames": ["test_account"]}`))
 
 	// 创建测试请求
 	req, _ := http.NewRequest("POST", "/agent/shares/create", requestBody)
@@ -76,6 +106,59 @@ func Test_deleteShareOnAgentHandler(t *testing.T) {
 
 	// 创建测试请求
 	req, _ := http.NewRequest("POST", "/agent/shares/delete", requestBody)
+
+	req.Header.Set("X-Trace-ID", "123456")
+
+	// 创建响应的Recorder
+	w := httptest.NewRecorder()
+
+	// 处理测试请求
+	shareRouter.ServeHTTP(w, req)
+
+	// 断言检查状态码是否为200
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func Test_mountShareOnAgentHandler(t *testing.T) {
+	setupCreateLocalUserOnAgent(t)
+	setupCreateDirectoryOnAgent(t)
+	setupCreateShareOnAgent(t)
+	defer teardownUnmountShareOnAgent(t)
+	defer teardownDeleteShareOnAgent(t)
+	defer teardownDeleteDirectoryOnAgent(t)
+	defer teardownDeleteLocalUserOnAgent(t)
+
+	requestBody := bytes.NewBuffer([]byte(`{"device_name": "Y:", "share_name": "\\\\192.168.0.166\\test_share", "username": "test_account",  "password": "Passw0rd!"}`))
+
+	// 创建测试请求
+	req, _ := http.NewRequest("POST", "/agent/shares/mount", requestBody)
+
+	req.Header.Set("X-Trace-ID", "123456")
+
+	// 创建响应的Recorder
+	w := httptest.NewRecorder()
+
+	// 处理测试请求
+	shareRouter.ServeHTTP(w, req)
+
+	// 断言检查状态码是否为200
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+// Delete a single share on agent.
+func Test_unmountShareOnAgentHandler(t *testing.T) {
+	setupCreateLocalUserOnAgent(t)
+	setupCreateDirectoryOnAgent(t)
+	setupCreateShareOnAgent(t)
+	setupMountShareOnAgent(t)
+	defer teardownDeleteShareOnAgent(t)
+	defer teardownDeleteDirectoryOnAgent(t)
+	defer teardownDeleteLocalUserOnAgent(t)
+
+	requestBody := bytes.NewBuffer([]byte(`{"device_name": "Y:"}`))
+
+	// 创建测试请求
+	req, _ := http.NewRequest("POST", "/agent/shares/unmount", requestBody)
 
 	req.Header.Set("X-Trace-ID", "123456")
 

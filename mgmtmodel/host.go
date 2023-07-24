@@ -44,7 +44,7 @@ func (h *Host) Register(ctx context.Context) error {
 
 	var host db.Host
 
-	common.CopyStructList(h, &host)
+	common.DeepCopy(h, &host)
 
 	err = host.Save(engine)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
@@ -96,7 +96,7 @@ func (h *Host) Get(ctx context.Context) (*Host, error) {
 		return nil, err
 	}
 
-	common.CopyStructList(host, h)
+	common.DeepCopy(host, h)
 
 	return h, nil
 }
@@ -133,13 +133,13 @@ func (hl *HostList) Register(ctx context.Context) error {
 		return err
 	}
 
-	if err := common.CopyStructList(results, &hl.Hosts); err != nil {
+	if err := common.DeepCopy(results, &hl.Hosts); err != nil {
 		return err
 	}
 
 	dbHostList := db.HostList{}
 
-	if err := common.CopyStructList(hl.Hosts, &dbHostList.Hosts); err != nil {
+	if err := common.DeepCopy(hl.Hosts, &dbHostList.Hosts); err != nil {
 		return err
 	}
 
@@ -169,7 +169,7 @@ func (hl *HostList) Unregister(ctx context.Context) error {
 
 	hostList := db.HostList{}
 
-	common.CopyStructList(hl.Hosts, &hostList.Hosts)
+	common.DeepCopy(hl.Hosts, &hostList.Hosts)
 
 	return hostList.Delete(engine, nil)
 }
@@ -185,7 +185,7 @@ func (hl *HostList) Get(ctx context.Context, filter *common.QueryFilter) ([]Host
 		return nil, err
 	}
 
-	common.CopyStructList(hostList.Hosts, &hl.Hosts)
+	common.DeepCopy(hostList.Hosts, &hl.Hosts)
 
 	return hl.Hosts, nil
 }
@@ -215,7 +215,7 @@ func (hl *HostList) Pagination(ctx context.Context, filter *common.QueryFilter) 
 		TotalCount: paginationHosts.TotalCount,
 	}
 
-	common.CopyStructList(paginationHosts.Hosts, &paginationHostList.Hosts)
+	common.DeepCopy(paginationHosts.Hosts, &paginationHostList.Hosts)
 
 	return &paginationHostList, nil
 }

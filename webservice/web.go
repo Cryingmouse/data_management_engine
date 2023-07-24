@@ -52,25 +52,34 @@ func Start() {
 	portal.POST("/users/unmanage", UnmanageLocalUserHandler)
 	portal.POST("/users/batch-unmanage", UnmanageLocalUsersHandler)
 	portal.GET("/users", GetlocalUsersHandler)
+	// Portal API about share
+	portal.POST("/shares/create", CreateShareHandler)
+	portal.POST("/shares/delete", DeleteShareHandler)
+	portal.POST("/shares/mount", MountShareHandler)
+	portal.POST("/shares/unmount", UnmountShareHandler)
+	portal.GET("/shares", GetSharesHandler)
+
 	// Portal API about swagger-ui
 	portal.Static("/docs", "./docs/swagger-ui/dist")
 
 	// Agent API about host
 	agent.GET("/system-info", GetSystemInfoOnAgentHandler)
 	// Agent API about directory
-	agent.GET("/directories/detail", getDirectoryDetailOnAgentHandler)
-	agent.POST("/directories/create", createDirectoryOnAgentHandler)
-	agent.POST("/directories/batch-create", createDirectoriesOnAgentHandler)
-	agent.POST("/directories/delete", deleteDirectoryOnAgentHandler)
-	agent.POST("/directories/batch-delete", deleteDirectoriesOnAgentHandler)
+	agent.GET("/directories/detail", GetDirectoryDetailOnAgentHandler)
+	agent.POST("/directories/create", CreateDirectoryOnAgentHandler)
+	agent.POST("/directories/batch-create", CreateDirectoriesOnAgentHandler)
+	agent.POST("/directories/delete", DeleteDirectoryOnAgentHandler)
+	agent.POST("/directories/batch-delete", DeleteDirectoriesOnAgentHandler)
 	// Agent API about share
-	agent.POST("/shares/create", createShareOnAgentHandler)
-	agent.POST("/shares/delete", deleteShareOnAgentHandler)
-	agent.GET("/shares/detail", getShareOnAgentHandler)
+	agent.POST("/shares/create", CreateShareOnAgentHandler)
+	agent.POST("/shares/delete", DeleteShareOnAgentHandler)
+	agent.POST("/shares/mount", MountShareOnAgentHandler)
+	agent.POST("/shares/unmount", UnmountShareOnAgentHandler)
+	agent.GET("/shares/detail", GetShareOnAgentHandler)
 	// Agent API about local user
-	agent.POST("/users/create", createLocalUserOnAgentHandler)
-	agent.POST("/users/delete", deleteLocalUserOnAgentHandler)
-	agent.GET("/users/detail", getLocalUserOnAgentHandler)
+	agent.POST("/users/create", CreateLocalUserOnAgentHandler)
+	agent.POST("/users/delete", DeleteLocalUserOnAgentHandler)
+	agent.GET("/users/detail", GetLocalUserOnAgentHandler)
 
 	addr := fmt.Sprintf(":%d", common.Config.WebService.Port)
 	router.Run(addr)

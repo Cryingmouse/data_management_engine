@@ -53,7 +53,7 @@ func CreateLocalUserHandler(c *gin.Context) {
 	}
 
 	var localUserModel mgmtmodel.LocalUser
-	common.CopyStructList(request, &localUserModel)
+	common.DeepCopy(request, &localUserModel)
 
 	if err := localUserModel.Create(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local user", err.Error())
@@ -61,7 +61,7 @@ func CreateLocalUserHandler(c *gin.Context) {
 	}
 
 	localUserResponse := LocalUserResponse{}
-	common.CopyStructList(localUserModel, &localUserResponse)
+	common.DeepCopy(localUserModel, &localUserResponse)
 
 	c.JSON(http.StatusOK, localUserResponse)
 }
@@ -76,7 +76,7 @@ func CreateLocalUsersHandler(c *gin.Context) {
 	}
 
 	var localUserListModel mgmtmodel.LocalUserList
-	common.CopyStructList(request, &localUserListModel.LocalUsers)
+	common.DeepCopy(request, &localUserListModel.LocalUsers)
 
 	if err := localUserListModel.Create(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local users", err.Error())
@@ -84,7 +84,7 @@ func CreateLocalUsersHandler(c *gin.Context) {
 	}
 
 	localUserResponseList := make([]LocalUserResponse, len(localUserListModel.LocalUsers))
-	common.CopyStructList(localUserListModel.LocalUsers, &localUserResponseList)
+	common.DeepCopy(localUserListModel.LocalUsers, &localUserResponseList)
 
 	c.JSON(http.StatusOK, localUserResponseList)
 }
@@ -99,7 +99,7 @@ func DeleteLocalUserHandler(c *gin.Context) {
 	}
 
 	var localUserModel mgmtmodel.LocalUser
-	common.CopyStructList(request, &localUserModel)
+	common.DeepCopy(request, &localUserModel)
 
 	if err := localUserModel.Delete(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local user", err.Error())
@@ -119,7 +119,7 @@ func DeleteLocalUsersHandler(c *gin.Context) {
 	}
 
 	var localUserListModel mgmtmodel.LocalUserList
-	common.CopyStructList(request, &localUserListModel.LocalUsers)
+	common.DeepCopy(request, &localUserListModel.LocalUsers)
 
 	if err := localUserListModel.Delete(ctx, nil); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local users", err.Error())
@@ -165,7 +165,7 @@ func GetlocalUsersHandler(c *gin.Context) {
 			}
 
 			localUserList := make([]LocalUserResponse, len(localUsers))
-			common.CopyStructList(localUsers, &localUserList)
+			common.DeepCopy(localUsers, &localUserList)
 
 			c.JSON(http.StatusOK, localUserList)
 		} else {
@@ -187,7 +187,7 @@ func GetlocalUsersHandler(c *gin.Context) {
 				TotalCount: paginationLocalUsers.TotalCount,
 			}
 
-			common.CopyStructList(paginationLocalUsers.LocalUsers, &paginationlocalUserList.LocalUsers)
+			common.DeepCopy(paginationLocalUsers.LocalUsers, &paginationlocalUserList.LocalUsers)
 
 			c.JSON(http.StatusOK, paginationlocalUserList)
 		}
@@ -204,7 +204,7 @@ func GetlocalUsersHandler(c *gin.Context) {
 		}
 
 		localUserResponse := LocalUserResponse{}
-		common.CopyStructList(localUser, &localUserResponse)
+		common.DeepCopy(localUser, &localUserResponse)
 
 		localUsersResponse := []LocalUserResponse{localUserResponse}
 
@@ -222,7 +222,7 @@ func ManageLocalUserHandler(c *gin.Context) {
 	}
 
 	var localUserModel mgmtmodel.LocalUser
-	common.CopyStructList(request, &localUserModel)
+	common.DeepCopy(request, &localUserModel)
 
 	if err := localUserModel.Manage(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to manage the local user", err.Error())
@@ -230,7 +230,7 @@ func ManageLocalUserHandler(c *gin.Context) {
 	}
 
 	localUserResponse := LocalUserResponse{}
-	common.CopyStructList(localUserModel, &localUserResponse)
+	common.DeepCopy(localUserModel, &localUserResponse)
 
 	c.JSON(http.StatusOK, localUserResponse)
 }
@@ -245,7 +245,7 @@ func ManageLocalUsersHandler(c *gin.Context) {
 	}
 
 	var localUserListModel mgmtmodel.LocalUserList
-	common.CopyStructList(request, &localUserListModel.LocalUsers)
+	common.DeepCopy(request, &localUserListModel.LocalUsers)
 
 	if err := localUserListModel.Manage(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local users", err.Error())
@@ -253,7 +253,7 @@ func ManageLocalUsersHandler(c *gin.Context) {
 	}
 
 	localUserResponseList := make([]LocalUserResponse, len(localUserListModel.LocalUsers))
-	common.CopyStructList(localUserListModel.LocalUsers, &localUserResponseList)
+	common.DeepCopy(localUserListModel.LocalUsers, &localUserResponseList)
 
 	c.JSON(http.StatusOK, localUserResponseList)
 }
@@ -268,7 +268,7 @@ func UnmanageLocalUserHandler(c *gin.Context) {
 	}
 
 	var localUserModel mgmtmodel.LocalUser
-	common.CopyStructList(request, &localUserModel)
+	common.DeepCopy(request, &localUserModel)
 
 	if err := localUserModel.Unmanage(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local user", err.Error())
@@ -288,7 +288,7 @@ func UnmanageLocalUsersHandler(c *gin.Context) {
 	}
 
 	var localUserListModel mgmtmodel.LocalUserList
-	common.CopyStructList(request, &localUserListModel.LocalUsers)
+	common.DeepCopy(request, &localUserListModel.LocalUsers)
 
 	if err := localUserListModel.Unmanage(ctx, nil); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to unmanage the local users", err.Error())
@@ -298,7 +298,7 @@ func UnmanageLocalUsersHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func createLocalUserOnAgentHandler(c *gin.Context) {
+func CreateLocalUserOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request struct {
@@ -326,7 +326,7 @@ func createLocalUserOnAgentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, localUserDetail)
 }
 
-func deleteLocalUserOnAgentHandler(c *gin.Context) {
+func DeleteLocalUserOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request struct {
@@ -346,7 +346,7 @@ func deleteLocalUserOnAgentHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func getLocalUserOnAgentHandler(c *gin.Context) {
+func GetLocalUserOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	name := c.Query("name")

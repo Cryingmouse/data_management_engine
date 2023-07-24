@@ -98,8 +98,7 @@ func SplitToList(fields string) []string {
 	return strings.Split(fields, ",")
 }
 
-// CopyStructList copies the values from src to dest for a slice of structs or single structs.
-func CopyStructList(src, dest interface{}) error {
+func DeepCopy(src, dest interface{}) error {
 	srcVal := reflect.ValueOf(src)
 	destVal := reflect.ValueOf(dest)
 
@@ -111,51 +110,100 @@ func CopyStructList(src, dest interface{}) error {
 		destVal = destVal.Elem()
 	}
 
-	if srcVal.Kind() != reflect.Slice && srcVal.Kind() != reflect.Struct {
-		return errors.New("src must be a slice or struct")
+	if srcVal.Kind() != reflect.Slice && srcVal.Kind() != reflect.Struct && srcVal.Kind() != reflect.Map && srcVal.Kind() != reflect.String {
+		return errors.New("src must be a slice, struct, map, or string")
 	}
 
-	if destVal.Kind() != reflect.Slice && destVal.Kind() != reflect.Struct {
-		return errors.New("dest must be a slice or struct")
+	if destVal.Kind() != reflect.Slice && destVal.Kind() != reflect.Struct && destVal.Kind() != reflect.Map && destVal.Kind() != reflect.String {
+		return errors.New("dest must be a slice, struct, map, or string")
 	}
 
 	if srcVal.Kind() == reflect.Slice && destVal.Kind() == reflect.Slice {
 		srcLen := srcVal.Len()
 
-		destType := destVal.Type()
-		destSlice := reflect.MakeSlice(destType, srcLen, srcLen)
-		reflect.Copy(destSlice, destVal)
+		if srcVal.Type().Elem() == reflect.TypeOf("") && destVal.Type().Elem() == reflect.TypeOf("") {
+			// Handle string slices
+			destSlice := make([]string, srcLen)
+			for i := 0; i < srcLen; i++ {
+				destSlice[i] = srcVal.Index(i).String()
+			}
+			reflect.ValueOf(dest).Elem().Set(reflect.ValueOf(destSlice))
+		} else {
+			destType := destVal.Type()
+			destSlice := reflect.MakeSlice(destType, srcLen, srcLen)
+			reflect.Copy(destSlice, destVal)
 
-		for i := 0; i < srcLen; i++ {
-			srcStruct := srcVal.Index(i)
-			destStruct := destSlice.Index(i)
+			for i := 0; i < srcLen; i++ {
+				srcElem := srcVal.Index(i)
+				destElem := destSlice.Index(i)
 
-			if srcStruct.Kind() == reflect.Ptr {
-				srcStruct = srcStruct.Elem()
+				if srcElem.Kind() == reflect.Ptr {
+					srcElem = srcElem.Elem()
+				}
+
+				if destElem.Kind() == reflect.Ptr {
+					destElem = destElem.Elem()
+				}
+
+				if srcElem.Kind() != reflect.Struct && srcElem.Kind() != reflect.Map {
+					return errors.New("src elements must be struct, map, or string instances")
+				}
+
+				if destElem.Kind() != reflect.Struct && destElem.Kind() != reflect.Map {
+					return errors.New("dest elements must be struct, map, or string instances")
+				}
+
+				if err := copyValue(srcElem, destElem); err != nil {
+					return err
+				}
 			}
 
-			if destStruct.Kind() == reflect.Ptr {
-				destStruct = destStruct.Elem()
+			reflect.ValueOf(dest).Elem().Set(destSlice)
+		}
+	} else if srcVal.Kind() == reflect.Struct && destVal.Kind() == reflect.Struct {
+		return copyValue(srcVal, destVal)
+	} else if srcVal.Kind() == reflect.Map && destVal.Kind() == reflect.Map {
+		// Handle map deep copy
+		destMap := reflect.MakeMap(destVal.Type())
+		for _, key := range srcVal.MapKeys() {
+			srcValue := srcVal.MapIndex(key)
+			destValue := reflect.New(destVal.Type().Elem()).Elem()
+
+			if srcValue.Kind() == reflect.Ptr {
+				srcValue = srcValue.Elem()
 			}
 
-			if srcStruct.Kind() != reflect.Struct || destStruct.Kind() != reflect.Struct {
-				return errors.New("src and dest must contain struct instances")
+			if destValue.Kind() == reflect.Ptr {
+				destValue = destValue.Elem()
 			}
 
-			if err := copyStructFields(srcStruct, destStruct); err != nil {
+			if srcValue.Kind() != reflect.Struct && srcValue.Kind() != reflect.Map {
+				return errors.New("src map values must be struct, map, or string instances")
+			}
+
+			if destValue.Kind() != reflect.Struct && destValue.Kind() != reflect.Map {
+				return errors.New("dest map values must be struct, map, or string instances")
+			}
+
+			if err := copyValue(srcValue, destValue); err != nil {
 				return err
 			}
+
+			destMap.SetMapIndex(key, destValue)
 		}
 
-		reflect.ValueOf(dest).Elem().Set(destSlice)
-	} else if srcVal.Kind() == reflect.Struct && destVal.Kind() == reflect.Struct {
-		return copyStructFields(srcVal, destVal)
+		reflect.ValueOf(dest).Elem().Set(destMap)
+	} else if srcVal.Kind() == reflect.String && destVal.Kind() == reflect.String {
+		// Copy string directly (strings are immutable)
+		destVal.SetString(srcVal.String())
+	} else {
+		return errors.New("unsupported combination of src and dest types")
 	}
 
 	return nil
 }
 
-func copyStructFields(src, dest reflect.Value) error {
+func copyValue(src, dest reflect.Value) error {
 	destType := dest.Type()
 
 	for i := 0; i < destType.NumField(); i++ {
@@ -166,7 +214,13 @@ func copyStructFields(src, dest reflect.Value) error {
 			srcField := src.FieldByName(field.Name)
 
 			if srcField.IsValid() && srcField.Type() == destField.Type() {
-				destField.Set(srcField)
+				if srcField.Kind() == reflect.Slice {
+					if err := DeepCopy(srcField.Interface(), destField.Addr().Interface()); err != nil {
+						return err
+					}
+				} else {
+					destField.Set(srcField)
+				}
 			}
 		}
 	}

@@ -57,7 +57,7 @@ func (d *Directory) Create(ctx context.Context) (err error) {
 		ParentFullPath: directoryDetails.ParentFullPath,
 	}
 
-	common.CopyStructList(directory, d)
+	common.DeepCopy(directory, d)
 
 	return directory.Save(engine)
 }
@@ -106,7 +106,7 @@ func (d *Directory) Get(ctx context.Context) (*Directory, error) {
 		return nil, err
 	}
 
-	common.CopyStructList(directory, d)
+	common.DeepCopy(directory, d)
 
 	return d, nil
 }
@@ -168,14 +168,14 @@ func (dl *DirectoryList) Create(ctx context.Context) error {
 		return err
 	}
 
-	if err := common.CopyStructList(results, &dl.Directories); err != nil {
+	if err := common.DeepCopy(results, &dl.Directories); err != nil {
 		return err
 	}
 
 	// Save to database.
 	dbDirectoryList := db.DirectoryList{}
 
-	if err := common.CopyStructList(dl.Directories, &dbDirectoryList.Directories); err != nil {
+	if err := common.DeepCopy(dl.Directories, &dbDirectoryList.Directories); err != nil {
 		return err
 	}
 
@@ -226,7 +226,7 @@ func (dl *DirectoryList) Delete(ctx context.Context, filter *common.QueryFilter)
 	}
 
 	directoryList := db.DirectoryList{}
-	if err := common.CopyStructList(dl.Directories, &directoryList.Directories); err != nil {
+	if err := common.DeepCopy(dl.Directories, &directoryList.Directories); err != nil {
 		return err
 	}
 
@@ -245,7 +245,7 @@ func (dl *DirectoryList) Get(ctx context.Context, filter *common.QueryFilter) ([
 		return nil, err
 	}
 
-	common.CopyStructList(directoryList.Directories, &dl.Directories)
+	common.DeepCopy(directoryList.Directories, &dl.Directories)
 
 	return dl.Directories, nil
 }

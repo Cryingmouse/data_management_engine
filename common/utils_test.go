@@ -6,37 +6,56 @@ import (
 )
 
 type Person struct {
-	Name string
-	Age  int
+	Name       string
+	Age        int
+	Hobbies    []string
+	Attributes map[string]string
 }
 
-func TestCopyStructList(t *testing.T) {
-	// Test struct list copying
-	srcList := []Person{
-		{Name: "Alice", Age: 25},
-		{Name: "Bob", Age: 30},
+type Person2 struct {
+	Name       string
+	Age        int
+	Hobbies    []string
+	Attributes map[string]string
+}
+
+func TestCopySlice(t *testing.T) {
+	// Sample data: a list of Person structs, each with a string slice and map property
+	srcSlice := []Person{
+		{Name: "Alice", Age: 30, Hobbies: []string{"Reading", "Painting"}, Attributes: map[string]string{"Height": "170cm", "Weight": "60kg"}},
+		{Name: "Bob", Age: 25, Hobbies: []string{"Gardening", "Cooking"}, Attributes: map[string]string{"Height": "180cm", "Weight": "70kg"}},
+		{Name: "Charlie", Age: 35, Hobbies: []string{"Fishing", "Hiking"}, Attributes: map[string]string{"Height": "175cm", "Weight": "75kg"}},
 	}
 
-	var destList []Person
-	err := CopyStructList(srcList, &destList)
+	// Copy the slice
+	var destSlice []Person2
+	err := DeepCopy(srcSlice, &destSlice)
 	if err != nil {
-		t.Errorf("Error copying struct list: %s", err.Error())
+		t.Fatalf("Error copying slice: %s", err)
 	}
 
-	if !reflect.DeepEqual(srcList, destList) {
-		t.Errorf("Copied struct list is not equal to the source")
+	destSlice[0].Attributes["Height"] = "190cm"
+
+	// Check if the two slices are equal
+	if !reflect.DeepEqual(srcSlice, destSlice) {
+		t.Errorf("Copied slice does not match the source slice.")
 	}
 
-	// Test individual struct copying
-	srcStruct := Person{Name: "Alice", Age: 25}
-	var destStruct Person
-	err = CopyStructList(srcStruct, &destStruct)
-	if err != nil {
-		t.Errorf("Error copying individual struct: %s", err.Error())
+	// Modify the original source slice and make sure the destination is not affected
+	srcSlice[0].Name = "Modified Name"
+	srcSlice[0].Hobbies[0] = "Modified Hobby"
+	srcSlice[0].Attributes["Height"] = "165cm"
+
+	if srcSlice[0].Name == destSlice[0].Name {
+		t.Errorf("Modifying the source slice affected the destination slice: Name field.")
 	}
 
-	if !reflect.DeepEqual(srcStruct, destStruct) {
-		t.Errorf("Copied individual struct is not equal to the source")
+	if srcSlice[0].Hobbies[0] == destSlice[0].Hobbies[0] {
+		t.Errorf("Modifying the source slice affected the destination slice: Hobbies field.")
+	}
+
+	if srcSlice[0].Attributes["Height"] == destSlice[0].Attributes["Height"] {
+		t.Errorf("Modifying the source slice affected the destination slice: Attributes map.")
 	}
 }
 

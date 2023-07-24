@@ -41,7 +41,7 @@ func GetDatabaseEngine() (*DatabaseEngine, error) {
 		DB: db.Debug(),
 		Models: map[string]interface{}{
 			"host_info":  &Host{},
-			"share":      &Share{},
+			"share":      &CIFSShare{},
 			"directory":  &Directory{},
 			"local_user": &LocalUser{},
 		},

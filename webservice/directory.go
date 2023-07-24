@@ -43,7 +43,7 @@ func CreateDirectoryHandler(c *gin.Context) {
 	}
 
 	directoryModel := mgmtmodel.Directory{}
-	common.CopyStructList(request, &directoryModel)
+	common.DeepCopy(request, &directoryModel)
 
 	if err := directoryModel.Create(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directory", err.Error())
@@ -51,7 +51,7 @@ func CreateDirectoryHandler(c *gin.Context) {
 	}
 
 	directoryResponse := DirectoryResponse{}
-	common.CopyStructList(directoryModel, &directoryResponse)
+	common.DeepCopy(directoryModel, &directoryResponse)
 
 	c.JSON(http.StatusOK, directoryResponse)
 }
@@ -66,7 +66,7 @@ func CreateDirectoriesHandler(c *gin.Context) {
 	}
 
 	directoryListModel := mgmtmodel.DirectoryList{}
-	common.CopyStructList(request, &directoryListModel.Directories)
+	common.DeepCopy(request, &directoryListModel.Directories)
 
 	if err := directoryListModel.Create(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the directories", err.Error())
@@ -74,7 +74,7 @@ func CreateDirectoriesHandler(c *gin.Context) {
 	}
 
 	directoryResponseList := make([]DirectoryResponse, len(directoryListModel.Directories))
-	common.CopyStructList(directoryListModel.Directories, &directoryResponseList)
+	common.DeepCopy(directoryListModel.Directories, &directoryResponseList)
 
 	c.JSON(http.StatusOK, directoryResponseList)
 }
@@ -89,7 +89,7 @@ func DeleteDirectoryHandler(c *gin.Context) {
 	}
 
 	directoryModel := mgmtmodel.Directory{}
-	common.CopyStructList(request, &directoryModel)
+	common.DeepCopy(request, &directoryModel)
 
 	if err := directoryModel.Delete(ctx); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the directory", err.Error())
@@ -109,7 +109,7 @@ func DeleteDirectoriesHandler(c *gin.Context) {
 	}
 
 	directoryListModel := mgmtmodel.DirectoryList{}
-	common.CopyStructList(request, &directoryListModel.Directories)
+	common.DeepCopy(request, &directoryListModel.Directories)
 
 	if err := directoryListModel.Delete(ctx, nil); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the directories", err.Error())
@@ -159,7 +159,7 @@ func GetDirectoriesHandler(c *gin.Context) {
 			}
 
 			directoryList := make([]DirectoryResponse, len(directories))
-			common.CopyStructList(directories, &directoryList)
+			common.DeepCopy(directories, &directoryList)
 
 			c.JSON(http.StatusOK, directoryList)
 		} else {
@@ -181,7 +181,7 @@ func GetDirectoriesHandler(c *gin.Context) {
 				TotalCount: paginationDirs.TotalCount,
 			}
 
-			common.CopyStructList(paginationDirs.Directories, &paginationDirList.Directories)
+			common.DeepCopy(paginationDirs.Directories, &paginationDirList.Directories)
 
 			c.JSON(http.StatusOK, paginationDirList)
 		}
@@ -198,7 +198,7 @@ func GetDirectoriesHandler(c *gin.Context) {
 		}
 
 		directoryInfo := DirectoryResponse{}
-		common.CopyStructList(directory, &directoryInfo)
+		common.DeepCopy(directory, &directoryInfo)
 
 		directoryInfoList := []DirectoryResponse{directoryInfo}
 
@@ -206,7 +206,7 @@ func GetDirectoriesHandler(c *gin.Context) {
 	}
 }
 
-func createDirectoryOnAgentHandler(c *gin.Context) {
+func CreateDirectoryOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request struct {
@@ -233,7 +233,7 @@ func createDirectoryOnAgentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, directoryDetails)
 }
 
-func deleteDirectoryOnAgentHandler(c *gin.Context) {
+func DeleteDirectoryOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request struct {
@@ -253,7 +253,7 @@ func deleteDirectoryOnAgentHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func createDirectoriesOnAgentHandler(c *gin.Context) {
+func CreateDirectoriesOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request []struct {
@@ -285,7 +285,7 @@ func createDirectoriesOnAgentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, DirectoryDetails)
 }
 
-func deleteDirectoriesOnAgentHandler(c *gin.Context) {
+func DeleteDirectoriesOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	var request []struct {
@@ -310,7 +310,7 @@ func deleteDirectoriesOnAgentHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func getDirectoryDetailOnAgentHandler(c *gin.Context) {
+func GetDirectoryDetailOnAgentHandler(c *gin.Context) {
 	ctx := SetTraceIDInContext(c)
 
 	name := c.Query("name")
