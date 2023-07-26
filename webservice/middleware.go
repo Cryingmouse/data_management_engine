@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
@@ -31,12 +32,20 @@ func LoggingMiddleware() gin.HandlerFunc {
 		traceID := c.Request.Header.Get("X-Trace-ID")
 
 		// Log the request information
-		log.WithFields(log.Fields{
-			"trace_id":     traceID,
-			"method":       c.Request.Method,
-			"path":         c.Request.URL.Path,
-			"ip":           c.ClientIP(),
-			"request_body": string(body),
+		common.AuditLogger.WithFields(log.Fields{
+			"TraceID":     traceID,
+			"Method":      c.Request.Method,
+			"IP":          c.ClientIP(),
+			"URL":         c.Request.URL.Path,
+			"RequestBody": common.MaskPassword(string(body)),
+		}).Info("Request received")
+
+		common.Logger.WithFields(log.Fields{
+			"TraceID":     traceID,
+			"Method":      c.Request.Method,
+			"IP":          c.ClientIP(),
+			"URL":         c.Request.URL.Path,
+			"RequestBody": common.MaskPassword(string(body)),
 		}).Info("Request received")
 
 		// Process the request
@@ -46,10 +55,18 @@ func LoggingMiddleware() gin.HandlerFunc {
 		responseBody := writer.body.Bytes()
 
 		// Log the response information
-		log.WithFields(log.Fields{
-			"trace_id":      traceID,
-			"status":        c.Writer.Status(),
-			"response_body": string(responseBody),
+		common.AuditLogger.WithFields(log.Fields{
+			"TraceID":      traceID,
+			"URL":          c.Request.URL.Path,
+			"Status":       c.Writer.Status(),
+			"ResponseBody": common.MaskPassword(string(responseBody)),
+		}).Info("Response")
+
+		common.Logger.WithFields(log.Fields{
+			"TraceID":      traceID,
+			"URL":          c.Request.URL.Path,
+			"Status":       c.Writer.Status(),
+			"ResponseBody": common.MaskPassword(string(responseBody)),
 		}).Info("Response")
 	}
 }

@@ -84,8 +84,8 @@ func MountCIFSShareHandler(c *gin.Context) {
 
 	var request struct {
 		HostIP     string `json:"host_ip" binding:"required"`
-		Name       string `json:"share_name" binding:"required"`
 		MountPoint string `json:"mount_point" binding:"required"`
+		SharePath  string `json:"share_path" binding:"required"`
 		UserName   string `json:"username" binding:"required"`
 		Password   string `json:"password" binding:"required"`
 	}

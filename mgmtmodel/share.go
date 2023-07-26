@@ -13,7 +13,7 @@ import (
 type CIFSShare struct {
 	Name            string
 	HostIP          string
-	Path            string
+	SharePath       string
 	DirectoryName   string
 	Description     string
 	MountPoint      string
@@ -43,7 +43,7 @@ func (c *CIFSShare) Create(ctx context.Context) (err error) {
 		return err
 	}
 
-	c.Path = buildCIFSSharePath(host.IP, c.Name)
+	c.SharePath = buildCIFSSharePath(host.IP, c.Name)
 
 	share := db.CIFSShare{}
 
@@ -78,11 +78,11 @@ func (c *CIFSShare) Delete(ctx context.Context) (err error) {
 		return err
 	}
 
-	c.Path = buildCIFSSharePath(host.IP, c.Name)
+	c.SharePath = buildCIFSSharePath(host.IP, c.Name)
 	share := db.CIFSShare{
 		HostIP: c.HostIP,
 		Name:   c.Name,
-		Path:   c.Path,
+		Path:   c.SharePath,
 	}
 	return share.Delete(engine)
 }
@@ -126,16 +126,13 @@ func (c *CIFSShare) Mount(ctx context.Context, userName, password string) (err e
 		Password: host.Password,
 	}
 	ctx = context.WithValue(ctx, common.HostContextkey("hostContext"), hostContext)
-
-	c.Path = buildCIFSSharePath(c.HostIP, c.Name)
-
-	if err = driver.MountCIFSShare(ctx, c.MountPoint, c.Path, userName, password); err != nil {
+	if err = driver.MountCIFSShare(ctx, c.MountPoint, c.SharePath, userName, password); err != nil {
 		return err
 	}
 
 	share := db.CIFSShare{
 		HostIP: c.HostIP,
-		Path:   c.Path,
+		Path:   c.SharePath,
 	}
 	share.Get(engine)
 
@@ -237,7 +234,7 @@ func (cl *CIFSShareList) Pagination(ctx context.Context, filter *common.QueryFil
 		share := CIFSShare{
 			Name:            _share.Name,
 			HostIP:          _share.HostIP,
-			Path:            _share.Path,
+			SharePath:       _share.Path,
 			DirectoryName:   _share.DirectoryName,
 			Description:     _share.Description,
 			AccessUserNames: strings.Split(_share.AccessUserNames, ","),

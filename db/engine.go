@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cryingmouse/data_management_engine/common"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -32,7 +33,7 @@ func GetDatabaseEngine() (*DatabaseEngine, error) {
 	// Construct the SQLite database file path
 	dbPath := filepath.Join(dir, "db/sqlite3.db")
 
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{Logger: common.DBLogger})
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while opening SQLite database: %w", err)
 	}

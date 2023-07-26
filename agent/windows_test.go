@@ -12,7 +12,7 @@ import (
 	"github.com/cryingmouse/data_management_engine/common"
 )
 
-const testHostIP = "192.168.0.166"
+const testHostIP = "10.128.15.56"
 const testShareName = "test_cifs_share"
 const testDirectoryName = "test_directory"
 const testDirectoryName1 = "test_directory_1"

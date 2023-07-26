@@ -7,21 +7,27 @@ import (
 )
 
 func init() {
-	// Access the Port configuration and assign it to the submodule's global variable
+	// Initialize the configuration first and then Loggers.
 	if err := common.InitializeConfig("config.ini"); err != nil {
 		panic(err)
 	}
+
+	common.InitializeLoggers()
+	common.Logger.Debug("Initialize logger successfully.")
 }
 
 func main() {
-	common.InitializeLogger()
-
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
+		common.Logger.Error("Failed to initialize database. Error: %w", err)
 		panic(err)
 	}
+	common.Logger.Debug("Initialize database successfully.")
 
-	engine.Migrate()
+	if err := engine.Migrate(); err != nil {
+		common.Logger.Error("Failed to migration database. Error: %w", err)
+	}
 
 	webservice.Start()
+	common.Logger.Debug("Start web service successfully.")
 }

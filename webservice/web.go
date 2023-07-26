@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	log "github.com/sirupsen/logrus"
 )
 
 func Start() {
@@ -27,9 +28,9 @@ func Start() {
 	// Router 'agent' for Agent
 	agent := router.Group("/agent")
 
-	// 登录路由，验证用户凭证并生成JWT令牌
-	// router.POST("/login", getTokenHandler)
-
+	// ====================================
+	// Portal related APIs
+	// ====================================
 	// Portal API about host
 	portal.POST("/hosts/register", RegisterHostHandler)
 	portal.POST("/hosts/batch-register", RegisterHostsHandler)
@@ -62,6 +63,9 @@ func Start() {
 	// Portal API about swagger-ui
 	portal.Static("/docs", "./docs/swagger-ui/dist")
 
+	// ====================================
+	// Agent related APIs
+	// ====================================
 	// Agent API about host
 	agent.GET("/system-info", GetSystemInfoOnAgentHandler)
 	// Agent API about directory
@@ -81,9 +85,7 @@ func Start() {
 	agent.POST("/users/delete", DeleteLocalUserOnAgentHandler)
 	agent.GET("/users/detail", GetLocalUserOnAgentHandler)
 
-	addr := fmt.Sprintf(":%d", common.Config.WebService.Port)
-	router.Run(addr)
-
+	router.Run(fmt.Sprintf(":%d", common.Config.WebService.Port))
 }
 
 func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage string) {
@@ -97,5 +99,10 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage st
 
 func SetTraceIDInContext(c *gin.Context) context.Context {
 	traceID := c.Request.Header.Get("X-Trace-ID")
+
+	common.Logger.WithFields(log.Fields{
+		"X-Trace-ID": traceID,
+	}).Debug("Get trace id from request header.")
+
 	return context.WithValue(context.Background(), common.TraceIDKey("TraceID"), traceID)
 }

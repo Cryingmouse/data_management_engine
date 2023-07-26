@@ -11,8 +11,9 @@ type WebServiceConfig struct {
 }
 
 type LoggerConfig struct {
-	LogFile  string `mapstructure:"log-file"`
-	LogLevel string `mapstructure:"log-level"`
+	AuditLogFile string `mapstructure:"audit-log-file"`
+	LogFile      string `mapstructure:"log-file"`
+	LogLevel     string `mapstructure:"log-level"`
 }
 
 type AgentConfig struct {

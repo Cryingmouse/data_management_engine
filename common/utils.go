@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -289,4 +290,51 @@ func StructToMap(s interface{}) map[string]interface{} {
 
 func AddQuotes(s string) string {
 	return "\"" + s + "\""
+}
+
+func MaskPassword(data interface{}) interface{} {
+	value := reflect.ValueOf(data)
+
+	// Handle single struct instance
+	if value.Kind() == reflect.Struct {
+		return maskPassword(value)
+	}
+
+	if value.Kind() == reflect.String {
+		// 定义一个正则表达式，匹配 "password": "..."
+		re := regexp.MustCompile(`("password":\s*")([^\\"]+)(")`)
+
+		// 使用 ReplaceAllString 方法，将匹配到的 "password" 值替换为 "********"
+		maskedInput := re.ReplaceAllString(data.(string), `$1********$3`)
+
+		return maskedInput
+	}
+
+	// Handle list of struct instances
+	if value.Kind() == reflect.Slice {
+		copySlice := reflect.MakeSlice(reflect.SliceOf(value.Type().Elem()), value.Len(), value.Len())
+
+		for i := 0; i < value.Len(); i++ {
+			instanceCopy := maskPassword(value.Index(i))
+			copySlice.Index(i).Set(reflect.ValueOf(instanceCopy))
+		}
+
+		return copySlice.Interface()
+	}
+
+	// Return data as-is if it's not a struct or slice
+	return data
+}
+
+func maskPassword(instanceValue reflect.Value) interface{} {
+	copyValue := reflect.New(instanceValue.Type()).Elem()
+	copyValue.Set(instanceValue)
+
+	// Modify the Password field in the copy
+	passwordField := copyValue.FieldByName("Password")
+	if passwordField.IsValid() && passwordField.Kind() == reflect.String {
+		passwordField.SetString("******")
+	}
+
+	return copyValue.Interface()
 }
