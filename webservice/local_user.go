@@ -9,6 +9,7 @@ import (
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 type LocalUserResponse struct {
@@ -44,10 +45,14 @@ type requestLocalUserWithPassword struct {
 }
 
 func CreateLocalUserHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -67,10 +72,14 @@ func CreateLocalUserHandler(c *gin.Context) {
 }
 
 func CreateLocalUsersHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -90,10 +99,14 @@ func CreateLocalUsersHandler(c *gin.Context) {
 }
 
 func DeleteLocalUserHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request requestLocalUser
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -110,10 +123,14 @@ func DeleteLocalUserHandler(c *gin.Context) {
 }
 
 func DeleteLocalUsersHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []requestLocalUser
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -130,7 +147,7 @@ func DeleteLocalUsersHandler(c *gin.Context) {
 }
 
 func GetlocalUsersHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	userName := c.Query("name")
 	isLockout := c.Query("is_lockout")
@@ -160,6 +177,11 @@ func GetlocalUsersHandler(c *gin.Context) {
 			// Query local users without pagination.
 			localUsers, err := localUserListModel.Get(ctx, &filter)
 			if err != nil {
+				common.Logger.WithFields(log.Fields{
+					"TraceID": traceID,
+					"Filter":  filter,
+					"Error":   err.Error(),
+				}).Error("Failed to get the local users.")
 				ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local users", err.Error())
 				return
 			}
@@ -213,10 +235,14 @@ func GetlocalUsersHandler(c *gin.Context) {
 }
 
 func ManageLocalUserHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -236,10 +262,14 @@ func ManageLocalUserHandler(c *gin.Context) {
 }
 
 func ManageLocalUsersHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -259,10 +289,14 @@ func ManageLocalUsersHandler(c *gin.Context) {
 }
 
 func UnmanageLocalUserHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request requestLocalUser
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -279,10 +313,14 @@ func UnmanageLocalUserHandler(c *gin.Context) {
 }
 
 func UnmanageLocalUsersHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []requestLocalUser
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -299,13 +337,17 @@ func UnmanageLocalUsersHandler(c *gin.Context) {
 }
 
 func CreateLocalUserOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		Name     string `json:"name" binding:"required"`
 		Password string `json:"password" binding:"required,validatePassword"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -327,12 +369,16 @@ func CreateLocalUserOnAgentHandler(c *gin.Context) {
 }
 
 func DeleteLocalUserOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		Name string `json:"name"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -347,13 +393,17 @@ func DeleteLocalUserOnAgentHandler(c *gin.Context) {
 }
 
 func GetLocalUserOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	name := c.Query("name")
 	names := common.SplitToList(name)
 
 	agent := agent.GetAgent()
 	if len(names) == 0 {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"URL":     c.Request.URL,
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 	} else if len(names) == 1 {
 		localUserDetail, err := agent.GetLocalUserDetail(ctx, name)

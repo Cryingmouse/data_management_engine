@@ -97,12 +97,16 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage st
 	c.JSON(statusCode, response)
 }
 
-func SetTraceIDInContext(c *gin.Context) context.Context {
+func SetTraceIDToContext(c *gin.Context) (context.Context, string) {
 	traceID := c.Request.Header.Get("X-Trace-ID")
 
 	common.Logger.WithFields(log.Fields{
 		"X-Trace-ID": traceID,
 	}).Debug("Get trace id from request header.")
 
-	return context.WithValue(context.Background(), common.TraceIDKey("TraceID"), traceID)
+	return context.WithValue(context.Background(), common.TraceIDKey("TraceID"), traceID), traceID
+}
+
+func GetTraceIDFromContext(ctx context.Context) string {
+	return ctx.Value(common.TraceIDKey("TraceID")).(string)
 }

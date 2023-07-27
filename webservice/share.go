@@ -9,6 +9,7 @@ import (
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 type CIFSShareResponse struct {
@@ -28,7 +29,7 @@ type PaginationShareResponse struct {
 }
 
 func CreateShareHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		HostIP          string   `json:"host_ip" binding:"required"`
@@ -38,6 +39,10 @@ func CreateShareHandler(c *gin.Context) {
 		AccessUserNames []string `json:"access_users" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -57,13 +62,17 @@ func CreateShareHandler(c *gin.Context) {
 }
 
 func DeleteShareHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		HostIP string `json:"host_ip" binding:"required"`
 		Name   string `json:"share_name"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -80,7 +89,7 @@ func DeleteShareHandler(c *gin.Context) {
 }
 
 func MountCIFSShareHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		HostIP     string `json:"host_ip" binding:"required"`
@@ -90,6 +99,10 @@ func MountCIFSShareHandler(c *gin.Context) {
 		Password   string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -106,13 +119,17 @@ func MountCIFSShareHandler(c *gin.Context) {
 }
 
 func UnmountShareHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		HostIP     string `json:"host_ip" binding:"required"`
 		MountPoint string `json:"mount_point"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -129,7 +146,7 @@ func UnmountShareHandler(c *gin.Context) {
 }
 
 func GetSharesHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	shareName := c.Query("name")
 	hostIP := c.Query("host_ip")
@@ -139,6 +156,10 @@ func GetSharesHandler(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.Query("limit"))
 
 	if hostIP != "" && validateIPAddress(hostIP) != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"URL":     c.Request.URL,
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 		return
 	}
@@ -216,7 +237,7 @@ func GetSharesHandler(c *gin.Context) {
 }
 
 func CreateShareOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		ShareName     string   `json:"share_name" binding:"required"`
@@ -225,6 +246,10 @@ func CreateShareOnAgentHandler(c *gin.Context) {
 		UserNames     []string `json:"usernames" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -241,12 +266,16 @@ func CreateShareOnAgentHandler(c *gin.Context) {
 }
 
 func DeleteShareOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		ShareName string `json:"share_name"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -261,7 +290,7 @@ func DeleteShareOnAgentHandler(c *gin.Context) {
 }
 
 func MountShareOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		MountPoint string `json:"mount_point" binding:"required"`
@@ -270,6 +299,10 @@ func MountShareOnAgentHandler(c *gin.Context) {
 		Password   string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -288,12 +321,16 @@ func MountShareOnAgentHandler(c *gin.Context) {
 }
 
 func UnmountShareOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		MountPoint string `json:"mount_point"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -308,13 +345,17 @@ func UnmountShareOnAgentHandler(c *gin.Context) {
 }
 
 func GetShareOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	name := c.Query("name")
 	names := common.SplitToList(name)
 
 	agent := agent.GetAgent()
 	if len(names) == 0 {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"URL":     c.Request.URL,
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 	} else if len(names) == 1 {
 		ShareDetail, err := agent.GetCIFSShareDetail(ctx, name)

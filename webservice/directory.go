@@ -8,6 +8,7 @@ import (
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 type DirectoryResponse struct {
@@ -34,10 +35,14 @@ type requestDirectory struct {
 }
 
 func CreateDirectoryHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request requestDirectory
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -57,10 +62,14 @@ func CreateDirectoryHandler(c *gin.Context) {
 }
 
 func CreateDirectoriesHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []requestDirectory
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -80,10 +89,14 @@ func CreateDirectoriesHandler(c *gin.Context) {
 }
 
 func DeleteDirectoryHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request requestDirectory
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -100,10 +113,14 @@ func DeleteDirectoryHandler(c *gin.Context) {
 }
 
 func DeleteDirectoriesHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []requestDirectory
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -120,7 +137,7 @@ func DeleteDirectoriesHandler(c *gin.Context) {
 }
 
 func GetDirectoriesHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	dirName := c.Query("name")
 	hostIP := c.Query("host_ip")
@@ -130,6 +147,10 @@ func GetDirectoriesHandler(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.Query("limit"))
 
 	if hostIP != "" && validateIPAddress(hostIP) != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"URL":     c.Request.URL,
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 		return
 	}
@@ -207,12 +228,16 @@ func GetDirectoriesHandler(c *gin.Context) {
 }
 
 func CreateDirectoryOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		Name string `json:"name"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -234,12 +259,16 @@ func CreateDirectoryOnAgentHandler(c *gin.Context) {
 }
 
 func DeleteDirectoryOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		Name string `json:"name"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -254,12 +283,16 @@ func DeleteDirectoryOnAgentHandler(c *gin.Context) {
 }
 
 func CreateDirectoriesOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []struct {
 		Name string `json:"name"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -286,12 +319,16 @@ func CreateDirectoriesOnAgentHandler(c *gin.Context) {
 }
 
 func DeleteDirectoriesOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []struct {
 		Name string `json:"name"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
@@ -311,13 +348,17 @@ func DeleteDirectoriesOnAgentHandler(c *gin.Context) {
 }
 
 func GetDirectoryDetailOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	name := c.Query("name")
 	names := common.SplitToList(name)
 
 	agent := agent.GetAgent()
 	if len(names) == 0 {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"URL":     c.Request.URL,
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 	} else if len(names) == 1 {
 		directoryDetail, err := agent.GetDirectoryDetail(ctx, name)

@@ -19,7 +19,7 @@ func (d *AgentDriver) CreateDirectory(ctx context.Context, name string) (directo
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	// Create the request body as a string
 	request_body := fmt.Sprintf(`{"name": "%s"}`, name)
@@ -47,7 +47,7 @@ func (d *AgentDriver) DeleteDirectory(ctx context.Context, name string) (err err
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	// Create the request body as a string
 	body := fmt.Sprintf(`{"name": "%s"}`, name)
@@ -72,7 +72,7 @@ func (d *AgentDriver) GetDirectoryDetail(ctx context.Context, name string) (deta
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	url := fmt.Sprintf("directories/detail?name=%s", name)
 
@@ -100,7 +100,7 @@ func (d *AgentDriver) GetDirectoriesDetail(ctx context.Context, names []string) 
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	url := fmt.Sprintf("directories/detail?name=%s", strings.Join(names, ","))
 
@@ -124,7 +124,7 @@ func (d *AgentDriver) CreateCIFSShare(ctx context.Context, name, directory_name,
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	body := struct {
 		ShareName     string   `json:"share_name"`
@@ -163,7 +163,7 @@ func (d *AgentDriver) DeleteCIFSShare(ctx context.Context, name string) (err err
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	body := struct {
 		ShareName string `json:"share_name"`
@@ -196,7 +196,7 @@ func (d *AgentDriver) MountCIFSShare(ctx context.Context, mountPoint, sharePath,
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	encryptedPassword, _ := common.Encrypt(password, common.SecurityKey)
 
@@ -237,7 +237,7 @@ func (d *AgentDriver) UnmountCIFSShare(ctx context.Context, mountPoint string) (
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	body := struct {
 		MountPoint string `json:"mount_point"`
@@ -270,7 +270,7 @@ func (d *AgentDriver) CreateLocalUser(ctx context.Context, name, password string
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	// Create the request body as a string
 	request_body := fmt.Sprintf(`{"name": "%s", "password": "%s"}`, name, password)
@@ -300,7 +300,7 @@ func (d *AgentDriver) DeleteLocalUser(ctx context.Context, name string) (err err
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	// Create the request body as a string
 	body := fmt.Sprintf(`{"name": "%s"}`, name)
@@ -325,7 +325,7 @@ func (d *AgentDriver) GetLocalUserDetail(ctx context.Context, name string) (deta
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	escapedName := url.QueryEscape(name)
 	escapedName = strings.ReplaceAll(escapedName, "+", "%20")
@@ -354,7 +354,7 @@ func (d *AgentDriver) GetLocalUsersDetail(ctx context.Context, names []string) (
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	escapedNames := make([]string, 0, len(names))
 	for _, name := range names {
@@ -385,7 +385,7 @@ func (d *AgentDriver) GetSystemInfo(ctx context.Context) (systemInfo common.Syst
 	hostContext := ctx.Value(common.HostContextkey("hostContext")).(common.HostContext)
 	traceID := ctx.Value(common.TraceIDKey("TraceID")).(string)
 
-	restClient := client.GetRestClient(hostContext, traceID, "agent")
+	restClient := client.GetRestClient("http", hostContext, 8080, "agent", "", traceID, false)
 
 	response, err := restClient.Get("system-info")
 	if err != nil {

@@ -39,7 +39,7 @@ type PaginationHostResponse struct {
 }
 
 func RegisterHostHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		IP          string `json:"ip" binding:"required,ip"`
@@ -49,7 +49,10 @@ func RegisterHostHandler(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		common.Logger.WithFields(log.Fields{"error": err.Error()}).Error("Invalid request.")
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
@@ -57,10 +60,14 @@ func RegisterHostHandler(c *gin.Context) {
 
 	hostModel := mgmtmodel.Host{}
 	common.DeepCopy(request, &hostModel)
-	common.Logger.WithFields(log.Fields{"HostModel": common.MaskPassword(hostModel)}).Debug("Copy host model.")
+	common.Logger.WithFields(log.Fields{
+		"TraceID":   traceID,
+		"HostModel": common.MaskPassword(hostModel),
+	}).Debug("Copy host model.")
 
 	if err := hostModel.Register(ctx); err != nil {
 		common.Logger.WithFields(log.Fields{
+			"TraceID":   traceID,
 			"HostModel": common.MaskPassword(hostModel),
 			"error":     err.Error(),
 		}).Error("Failed to register the host.")
@@ -69,7 +76,10 @@ func RegisterHostHandler(c *gin.Context) {
 		return
 	}
 
-	common.Logger.WithFields(log.Fields{"HostModel": common.MaskPassword(hostModel)}).Debug("Rregister the host successfully.")
+	common.Logger.WithFields(log.Fields{
+		"TraceID":   traceID,
+		"HostModel": common.MaskPassword(hostModel),
+	}).Debug("Rregister the host successfully.")
 
 	hostResponse := HostResponse{}
 	common.DeepCopy(hostModel, &hostResponse)
@@ -78,7 +88,7 @@ func RegisterHostHandler(c *gin.Context) {
 }
 
 func RegisterHostsHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []struct {
 		IP          string `json:"ip" binding:"required,ip"`
@@ -92,7 +102,10 @@ func RegisterHostsHandler(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		common.Logger.WithFields(log.Fields{"error": err.Error()}).Error("Invalid request.")
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
@@ -100,10 +113,14 @@ func RegisterHostsHandler(c *gin.Context) {
 
 	hostListModel := mgmtmodel.HostList{}
 	common.DeepCopy(request, &hostListModel.Hosts)
-	common.Logger.WithFields(log.Fields{"HostListModel": common.MaskPassword(hostListModel)}).Debug("Copy host list model.")
+	common.Logger.WithFields(log.Fields{
+		"TraceID":       traceID,
+		"HostListModel": common.MaskPassword(hostListModel),
+	}).Debug("Copy host list model.")
 
 	if err := hostListModel.Register(ctx); err != nil {
 		common.Logger.WithFields(log.Fields{
+			"TraceID":       traceID,
 			"HostListModel": hostListModel,
 			"error":         err.Error(),
 		}).Error("Failed to register the hosts.")
@@ -112,7 +129,10 @@ func RegisterHostsHandler(c *gin.Context) {
 		return
 	}
 
-	common.Logger.WithFields(log.Fields{"HostListModel": common.MaskPassword(hostListModel)}).Debug("Register the hosts successfully.")
+	common.Logger.WithFields(log.Fields{
+		"TraceID":       traceID,
+		"HostListModel": common.MaskPassword(hostListModel),
+	}).Debug("Register the hosts successfully.")
 
 	hostResponseList := make([]HostResponse, len(hostListModel.Hosts))
 	common.DeepCopy(hostListModel.Hosts, &hostResponseList)
@@ -121,14 +141,17 @@ func RegisterHostsHandler(c *gin.Context) {
 }
 
 func UnregisterHostHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request struct {
 		IP string `json:"ip" binding:"required,ip"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		common.Logger.WithFields(log.Fields{"error": err.Error()}).Error("Invalid request.")
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
@@ -136,10 +159,14 @@ func UnregisterHostHandler(c *gin.Context) {
 
 	hostModel := mgmtmodel.Host{}
 	common.DeepCopy(request, &hostModel)
-	common.Logger.WithFields(log.Fields{"HostModel": hostModel}).Debug("Copy host model.")
+	common.Logger.WithFields(log.Fields{
+		"TraceID":   traceID,
+		"HostModel": hostModel,
+	}).Debug("Copy host model.")
 
 	if err := hostModel.Unregister(ctx); err != nil {
 		common.Logger.WithFields(log.Fields{
+			"TraceID":   traceID,
 			"HostModel": hostModel,
 			"error":     err.Error(),
 		}).Error("Failed to unregister the host.")
@@ -148,31 +175,40 @@ func UnregisterHostHandler(c *gin.Context) {
 		return
 	}
 
-	common.Logger.WithFields(log.Fields{"HostModel": hostModel}).Debug("Unregister the host successfully.")
+	common.Logger.WithFields(log.Fields{
+		"TraceID":   traceID,
+		"HostModel": hostModel,
+	}).Debug("Unregister the host successfully.")
 
 	c.Status(http.StatusOK)
 }
 
 func UnregisterHostsHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	var request []struct {
 		IP string `json:"ip" binding:"required,ip"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		common.Logger.WithFields(log.Fields{"error": err.Error()}).Error("Invalid request.")
-
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Invalid request.")
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
 	hostListModel := mgmtmodel.HostList{}
 	common.DeepCopy(request, &hostListModel.Hosts)
-	common.Logger.WithFields(log.Fields{"HostListModel": hostListModel}).Debug("Copy host list model.")
+	common.Logger.WithFields(log.Fields{
+		"TraceID":       traceID,
+		"HostListModel": hostListModel,
+	}).Debug("Copy host list model.")
 
 	if err := hostListModel.Unregister(ctx); err != nil {
 		common.Logger.WithFields(log.Fields{
+			"TraceID":       traceID,
 			"HostListModel": hostListModel,
 			"error":         err.Error(),
 		}).Error("Failed to unregister the hosts.")
@@ -181,13 +217,16 @@ func UnregisterHostsHandler(c *gin.Context) {
 		return
 	}
 
-	common.Logger.WithFields(log.Fields{"HostListModel": hostListModel}).Debug("Unregister the hosts successfully.")
+	common.Logger.WithFields(log.Fields{
+		"TraceID":       traceID,
+		"HostListModel": hostListModel,
+	}).Debug("Unregister the hosts successfully.")
 
 	c.Status(http.StatusOK)
 }
 
 func GetRegisteredHostsHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	hostName := c.Query("name")
 	hostIP := c.Query("ip")
@@ -199,7 +238,10 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 	limit, errLimit := strconv.Atoi(c.Query("limit"))
 
 	if (errPage != nil && errLimit == nil) || (errPage == nil && errLimit != nil) || (hostIP != "" && validateIPAddress(hostIP) != nil) {
-		common.Logger.WithFields(log.Fields{"url": c.Request.URL}).Error("Invalid request.")
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"URL":     c.Request.URL,
+		}).Error("Invalid request.")
 
 		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
 		return
@@ -225,19 +267,26 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 			hosts, err := hostListModel.Get(ctx, &filter)
 			if err != nil {
 				common.Logger.WithFields(log.Fields{
-					"filter": filter,
-					"error":  err.Error(),
+					"TraceID": traceID,
+					"filter":  filter,
+					"error":   err.Error(),
 				}).Error("Failed to get the hosts by the filter.")
 
 				ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to get the hosts with the fitler=%v", filter), err.Error())
 				return
 			}
 
-			common.Logger.WithFields(log.Fields{"Hosts": common.MaskPassword(hosts)}).Debug("Qurey the hosts successfully.")
+			common.Logger.WithFields(log.Fields{
+				"TraceID": traceID,
+				"Hosts":   common.MaskPassword(hosts),
+			}).Debug("Qurey the hosts successfully.")
 
 			hostListResponse := make([]HostResponse, len(hosts))
 			common.DeepCopy(hosts, &hostListResponse)
-			common.Logger.WithFields(log.Fields{"HostListResponse": common.MaskPassword(hostListResponse)}).Debug("Copy the hosts response successfully.")
+			common.Logger.WithFields(log.Fields{
+				"TraceID":          traceID,
+				"HostListResponse": common.MaskPassword(hostListResponse),
+			}).Debug("Copy the hosts response successfully.")
 
 			c.JSON(http.StatusOK, hostListResponse)
 		} else {
@@ -249,15 +298,19 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 			paginationHosts, err := hostListModel.Pagination(ctx, &filter)
 			if err != nil {
 				common.Logger.WithFields(log.Fields{
-					"filter": filter,
-					"error":  err.Error(),
+					"TraceID": traceID,
+					"filter":  filter,
+					"error":   err.Error(),
 				}).Error("Failed to pagination the hosts by the filter.")
 
 				ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to pagination the hosts with the fitler=%v", filter), err.Error())
 				return
 			}
 
-			common.Logger.WithFields(log.Fields{"PaginationHosts": common.MaskPassword(paginationHosts)}).Debug("Qurey the pagination hosts successfully.")
+			common.Logger.WithFields(log.Fields{
+				"TraceID":         traceID,
+				"PaginationHosts": common.MaskPassword(paginationHosts),
+			}).Debug("Qurey the pagination hosts successfully.")
 
 			paginationHostResponse := PaginationHostResponse{
 				Page:       page,
@@ -266,7 +319,10 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 			}
 			common.DeepCopy(paginationHosts.Hosts, &paginationHostResponse.Hosts)
 
-			common.Logger.WithFields(log.Fields{"PaginationHostResponse": common.MaskPassword(paginationHostResponse)}).Debug("Copy the pagination hosts response successfully.")
+			common.Logger.WithFields(log.Fields{
+				"TraceID":                traceID,
+				"PaginationHostResponse": common.MaskPassword(paginationHostResponse),
+			}).Debug("Copy the pagination hosts response successfully.")
 
 			c.JSON(http.StatusOK, paginationHostResponse)
 		}
@@ -279,6 +335,7 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 		host, err := hostModel.Get(ctx)
 		if err != nil {
 			common.Logger.WithFields(log.Fields{
+				"TraceID":   traceID,
 				"HostModel": hostModel,
 				"error":     err.Error(),
 			}).Error("Failed to get the host.")
@@ -287,11 +344,17 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 			return
 		}
 
-		common.Logger.WithFields(log.Fields{"Host": common.MaskPassword(host)}).Debug("Qurey the host successfully.")
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"Host":    common.MaskPassword(host),
+		}).Debug("Qurey the host successfully.")
 
 		hostResponse := HostResponse{}
 		common.DeepCopy(host, &hostResponse)
-		common.Logger.WithFields(log.Fields{"HostResponse": common.MaskPassword(hostResponse)}).Debug("Copy the host response successfully.")
+		common.Logger.WithFields(log.Fields{
+			"TraceID":      traceID,
+			"HostResponse": common.MaskPassword(hostResponse),
+		}).Debug("Copy the host response successfully.")
 
 		hostResponseList := []HostResponse{hostResponse}
 
@@ -300,16 +363,22 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 }
 
 func GetSystemInfoOnAgentHandler(c *gin.Context) {
-	ctx := SetTraceIDInContext(c)
+	ctx, traceID := SetTraceIDToContext(c)
 
 	agent := agent.GetAgent()
 
 	if systemInfo, err := agent.GetSystemInfo(ctx); err != nil {
-		common.Logger.WithFields(log.Fields{"error": err.Error()}).Error("Failed to get system info on agent.")
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"error":   err.Error(),
+		}).Error("Failed to get system info on agent.")
 
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to get system info on agent.", err.Error())
 	} else {
-		common.Logger.WithFields(log.Fields{"SystemInfo": systemInfo}).Debug("Get system info on agent successfully.")
+		common.Logger.WithFields(log.Fields{
+			"TraceID":    traceID,
+			"SystemInfo": systemInfo,
+		}).Debug("Get system info on agent successfully.")
 
 		c.JSON(http.StatusOK, systemInfo)
 	}
