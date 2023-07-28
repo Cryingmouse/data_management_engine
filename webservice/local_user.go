@@ -7,7 +7,6 @@ import (
 	"github.com/cryingmouse/data_management_engine/agent"
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
-
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )

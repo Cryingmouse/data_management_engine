@@ -3,9 +3,8 @@ package db
 import (
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/cryingmouse/data_management_engine/common"
+	"gorm.io/gorm"
 )
 
 type CIFSShare struct {

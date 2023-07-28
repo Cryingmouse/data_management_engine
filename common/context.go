@@ -22,7 +22,8 @@ type QueryFilter struct {
 	// Pagination
 	Pagination *Pagination
 	// The condition to filter the records by query.
-	Conditions interface{}
+	Conditions   interface{}
+	PreloadModel string
 }
 
 type SystemInfo struct {

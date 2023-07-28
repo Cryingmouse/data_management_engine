@@ -214,7 +214,7 @@ func copyValue(src, dest reflect.Value) error {
 		if destField.IsValid() && destField.CanSet() {
 			srcField := src.FieldByName(field.Name)
 
-			if srcField.IsValid() && srcField.Type() == destField.Type() {
+			if srcField.IsValid() {
 				if srcField.Kind() == reflect.Slice {
 					if err := DeepCopy(srcField.Interface(), destField.Addr().Interface()); err != nil {
 						return err

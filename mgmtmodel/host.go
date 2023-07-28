@@ -22,6 +22,8 @@ type Host struct {
 	OSArchitecture string
 	OSVersion      string
 	BuildNumber    string
+
+	Directories []Directory
 }
 
 func (h *Host) Register(ctx context.Context) error {

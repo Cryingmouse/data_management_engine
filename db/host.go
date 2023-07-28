@@ -19,11 +19,14 @@ type Host struct {
 	OSArchitecture string `gorm:"column:os_arch"`
 	OSVersion      string `gorm:"column:os_version"`
 	BuildNumber    string `gorm:"column:build_number"`
+
+	// Association for the Host's Directories using foreign key
+	Directories []Directory `gorm:"foreignKey:HostIP;references:IP"`
 }
 
 // Get retrieves a Host from the database.
 func (h *Host) Get(engine *DatabaseEngine) error {
-	err := engine.DB.Where(h).First(h).Error
+	err := engine.DB.Where(h).Preload("Directories").First(h).Error
 	if err != nil {
 		return err
 	}

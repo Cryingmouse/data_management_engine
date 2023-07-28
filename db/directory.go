@@ -4,14 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/cryingmouse/data_management_engine/common"
+	"gorm.io/gorm"
 )
 
 type Directory struct {
 	gorm.Model
-	HostIP         string `gorm:"uniqueIndex:idx_directory_unique;column:host_ip"`
 	Name           string `gorm:"uniqueIndex:idx_directory_unique;column:name"`
 	CreationTime   string `gorm:"column:creation_time"`
 	LastAccessTime string `gorm:"column:last_access_time"`
@@ -19,7 +17,8 @@ type Directory struct {
 	Exist          bool   `gorm:"column:exist"`
 	FullPath       string `gorm:"column:full_path"`
 	ParentFullPath string `gorm:"column:parent_full_path"`
-	// Host           Host   `gorm:"foreignKey:HostIP"`
+
+	HostIP string `gorm:"column:host_ip"` // Foreign key column for the Host's IP
 }
 
 func (d *Directory) Get(engine *DatabaseEngine) error {
@@ -29,7 +28,6 @@ func (d *Directory) Get(engine *DatabaseEngine) error {
 func (d *Directory) Save(engine *DatabaseEngine) error {
 	return engine.DB.Save(d).Error
 }
-
 func (d *Directory) Delete(engine *DatabaseEngine) error {
 	return engine.DB.Unscoped().Where(d).Delete(d).Error
 }

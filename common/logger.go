@@ -51,6 +51,8 @@ func setLoggerLevel() {
 		Logger.SetLevel(log.InfoLevel)
 	case "debug":
 		Logger.SetLevel(log.DebugLevel)
+	case "trace":
+		Logger.SetLevel(log.TraceLevel)
 	default:
 		Logger.SetLevel(log.InfoLevel)
 	}
@@ -88,5 +90,5 @@ func (l *LogrusLogger) Trace(ctx context.Context, begin time.Time, fc func() (st
 		"rows":     rows,
 		"duration": time.Since(begin),
 		"error":    err,
-	}).Debugf("SQL: %s", sql)
+	}).Tracef("SQL: %s", sql)
 }
