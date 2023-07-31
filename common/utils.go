@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"io"
 	"reflect"
@@ -337,4 +338,12 @@ func maskPassword(instanceValue reflect.Value) interface{} {
 	}
 
 	return copyValue.Interface()
+}
+
+func ConvertMapToString(m map[string]string) string {
+	jsonBytes, err := json.Marshal(m)
+	if err != nil {
+		return ""
+	}
+	return string(jsonBytes)
 }

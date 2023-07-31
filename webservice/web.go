@@ -2,25 +2,43 @@ package webservice
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/text/language"
+)
+
+var (
+	I18NBundle      *i18n.Bundle
+	LanguageMatcher language.Matcher
+	UniTranslator   *ut.UniversalTranslator
+	Validate        *validator.Validate
 )
 
 func Start() {
-	router := gin.Default()
-	router.Use(cors.Default())
-	router.Use(TraceMiddleware(), LoggingMiddleware())
 
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("validatePassword", PasswordValidator)
-		v.RegisterValidation("validateStorageType", StorageTypeValidator)
-	}
+	I18NBundle = i18n.NewBundle(language.English)
+	I18NBundle.RegisterUnmarshalFunc("json", json.Unmarshal)
+	I18NBundle.LoadMessageFile("locales/en_US.json")
+	I18NBundle.LoadMessageFile("locales/zh_CN.json")
+	// 创建一个 language.Matcher
+	LanguageMatcher = language.NewMatcher(I18NBundle.LanguageTags())
+
+	router := gin.Default()
+
+	Validate = binding.Validator.Engine().(*validator.Validate)
+	Validate.RegisterValidation("validatePassword", PasswordValidator)
+
+	router.Use(cors.Default())
+	router.Use(TraceMiddleware(), LoggingMiddleware(), I18NTranslatorMiddleware(Validate))
 
 	// Router 'portal' for Portal
 	portal := router.Group("/api")
@@ -109,4 +127,34 @@ func SetTraceIDToContext(c *gin.Context) (context.Context, string) {
 
 func GetTraceIDFromContext(ctx context.Context) string {
 	return ctx.Value(common.TraceIDKey("TraceID")).(string)
+}
+
+func TranslateValidationError(c *gin.Context, err error) string {
+	acceptLanguage := "en_US"
+
+	switch c.GetHeader("Accept-Language") {
+	case "en_US":
+		acceptLanguage = "en_US"
+	case "zh_CN":
+		acceptLanguage = "zh_Hans_CN"
+	}
+
+	if trans, ok := UniTranslator.GetTranslator(acceptLanguage); ok {
+		errs, _ := err.(validator.ValidationErrors)
+
+		return common.ConvertMapToString(errs.Translate(trans))
+	}
+
+	return ""
+}
+
+func GetLocalizer(c *gin.Context) *i18n.Localizer {
+	acceptLanguage := c.GetHeader("Accept-Language")
+	tag, _, confidence := LanguageMatcher.Match(language.Make(acceptLanguage))
+	if confidence.String() == "No" {
+		// Failed to match the language, use a default language.
+		tag = language.English
+	}
+
+	return i18n.NewLocalizer(I18NBundle, tag.String())
 }
