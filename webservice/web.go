@@ -4,13 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/locales/en_US"
+	"github.com/go-playground/locales/zh_Hans_CN"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
+	en_translations "github.com/go-playground/validator/v10/translations/en"
+	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/text/language"
@@ -24,21 +29,15 @@ var (
 )
 
 func Start() {
-
-	I18NBundle = i18n.NewBundle(language.English)
-	I18NBundle.RegisterUnmarshalFunc("json", json.Unmarshal)
-	I18NBundle.LoadMessageFile("locales/en_US.json")
-	I18NBundle.LoadMessageFile("locales/zh_CN.json")
-	// 创建一个 language.Matcher
-	LanguageMatcher = language.NewMatcher(I18NBundle.LanguageTags())
-
-	router := gin.Default()
-
 	Validate = binding.Validator.Engine().(*validator.Validate)
 	Validate.RegisterValidation("validatePassword", PasswordValidator)
 
+	initializeI18N(Validate)
+
+	router := gin.Default()
+
 	router.Use(cors.Default())
-	router.Use(TraceMiddleware(), LoggingMiddleware(), I18NTranslatorMiddleware(Validate))
+	router.Use(TraceMiddleware(), LoggingMiddleware(), TimeoutMiddleware(8*time.Second), I18nMiddleware())
 
 	// Router 'portal' for Portal
 	portal := router.Group("/api")
@@ -106,15 +105,6 @@ func Start() {
 	router.Run(fmt.Sprintf(":%d", common.Config.WebService.Port))
 }
 
-func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage string) {
-	response := gin.H{"message": message}
-	if errMessage != "" {
-		response["error"] = errMessage
-	}
-
-	c.JSON(statusCode, response)
-}
-
 func SetTraceIDToContext(c *gin.Context) (context.Context, string) {
 	traceID := c.Request.Header.Get("X-Trace-ID")
 
@@ -129,7 +119,61 @@ func GetTraceIDFromContext(ctx context.Context) string {
 	return ctx.Value(common.TraceIDKey("TraceID")).(string)
 }
 
+func initializeI18N(validate *validator.Validate) {
+	I18NBundle = i18n.NewBundle(language.English)
+	I18NBundle.RegisterUnmarshalFunc("json", json.Unmarshal)
+	I18NBundle.LoadMessageFile("locales/en_US.json")
+	I18NBundle.LoadMessageFile("locales/zh_CN.json")
+	// 创建一个 language.Matcher
+	LanguageMatcher = language.NewMatcher(I18NBundle.LanguageTags())
+
+	en := en_US.New()
+	zh := zh_Hans_CN.New()
+	UniTranslator = ut.New(en, en, zh)
+
+	USTranslator, _ := UniTranslator.GetTranslator("en_US")
+	ZHTranslator, _ := UniTranslator.GetTranslator("zh_Hans_CN")
+
+	en_translations.RegisterDefaultTranslations(validate, USTranslator)
+	zh_translations.RegisterDefaultTranslations(validate, ZHTranslator)
+
+	validate.RegisterTranslation("validatePassword", USTranslator, func(ut ut.Translator) error {
+		return ut.Add("validatePassword", "Invalid Password", false) // see universal-translator for details
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T("validatePassword", fe.Field())
+
+		return t
+	})
+
+	validate.RegisterTranslation("validatePassword", ZHTranslator, func(ut ut.Translator) error {
+		return ut.Add("validatePassword", "无效的密码", false) // see universal-translator for details
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T("validatePassword", fe.Field())
+
+		return t
+	})
+}
+
 func TranslateValidationError(c *gin.Context, err error) string {
+	acceptLanguage := "en_US"
+
+	switch c.GetHeader("Accept-Language") {
+	case "en_US":
+		acceptLanguage = "en_US"
+	case "zh_CN":
+		acceptLanguage = "zh_Hans_CN"
+	}
+
+	if trans, ok := UniTranslator.GetTranslator(acceptLanguage); ok {
+		errs, _ := err.(validator.ValidationErrors)
+
+		return common.ConvertMapToString(errs.Translate(trans))
+	}
+
+	return ""
+}
+
+func TranslateError(c *gin.Context, err error) string {
 	acceptLanguage := "en_US"
 
 	switch c.GetHeader("Accept-Language") {
@@ -157,4 +201,22 @@ func GetLocalizer(c *gin.Context) *i18n.Localizer {
 	}
 
 	return i18n.NewLocalizer(I18NBundle, tag.String())
+}
+
+func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage string) {
+	response := gin.H{"message": message}
+	if errMessage != "" {
+		response["error"] = errMessage
+	}
+
+	c.JSON(statusCode, response)
+}
+
+func ErrorResponse_1(c *gin.Context, statusCode int, errorCode *common.Error, err error) {
+	response := gin.H{"error": err}
+	if errorCode != nil {
+		response["error_code"] = errorCode
+	}
+
+	c.JSON(statusCode, response)
 }

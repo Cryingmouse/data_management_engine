@@ -1,3 +1,4 @@
 {
-	"invalidRequest": "Invalid Request."
+	"E0100010000": "Failed to register the host, but the reason is unkonwn.",
+	"E0100010001": "Register Host: Invalid Request."
 }

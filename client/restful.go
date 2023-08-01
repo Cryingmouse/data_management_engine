@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/cryingmouse/data_management_engine/common"
 	log "github.com/sirupsen/logrus"
@@ -25,7 +26,9 @@ type RestClient struct {
 // GetRestClient returns a new instance of the RestClient.
 func GetRestClient(scheme string, hostContext common.HostContext, port int, prefixURL, tokenKey, traceID string, authEnabled bool) *RestClient {
 	return &RestClient{
-		client:      &http.Client{},
+		client: &http.Client{
+			Timeout: 5 * time.Second,
+		},
 		baseURL:     fmt.Sprintf("%s://%s:%d/%s", scheme, hostContext.IP, port, prefixURL),
 		hostContext: hostContext,
 		ContentType: "application/json",
@@ -52,11 +55,11 @@ func (c *RestClient) refreshAuthToken(response *http.Response) error {
 			c.AuthToken = token
 		} else {
 			common.Logger.WithFields(log.Fields{"token": c.tokenKey}).Error("Failed to get the token from response.")
-			return fmt.Errorf("Failed to get the token from response. Token key: %s", c.tokenKey)
+			return fmt.Errorf("failed to get the token from response. Token key: %s", c.tokenKey)
 		}
 	} else {
 		common.Logger.Error("No token key in RestClient.")
-		return fmt.Errorf("No token key in RestClient.")
+		return fmt.Errorf("no token key in RestClient")
 	}
 
 	return nil

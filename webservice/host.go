@@ -56,11 +56,11 @@ func RegisterHostHandler(c *gin.Context) {
 			"error":   err.Error(),
 		}).Error("Invalid request.")
 
-		message := localizer.MustLocalize(&i18n.LocalizeConfig{
-			MessageID: "invalidRequest",
-		})
-		errMessage := TranslateValidationError(c, err)
-		ErrorResponse(c, http.StatusBadRequest, message, errMessage)
+		// message := localizer.MustLocalize(&i18n.LocalizeConfig{
+		// 	MessageID: common.ErrHostRegisterInvalidRequest.Error(),
+		// })
+		// errMessage := TranslateValidationError(c, err)
+		ErrorResponse_1(c, http.StatusBadRequest, &common.ErrHostRegisterInvalidRequest, err)
 		return
 	}
 
@@ -78,7 +78,13 @@ func RegisterHostHandler(c *gin.Context) {
 			"error":     err.Error(),
 		}).Error("Failed to register the host.")
 
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to register the host", err.Error())
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: common.ErrHostRegisterUnknown.Error(),
+		})
+
+		errMessage := TranslateValidationError(c, err)
+
+		ErrorResponse(c, http.StatusInternalServerError, message, errMessage)
 		return
 	}
 

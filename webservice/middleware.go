@@ -2,19 +2,16 @@ package webservice
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"io"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/locales/en_US"
-	"github.com/go-playground/locales/zh_Hans_CN"
-	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
-	en_translations "github.com/go-playground/validator/v10/translations/en"
-	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -121,35 +118,27 @@ func generateTraceID() string {
 	return traceID
 }
 
-// I18NTranslatorMiddleware 是i18N验证错误翻译中间件
-func I18NTranslatorMiddleware(validate *validator.Validate) gin.HandlerFunc {
+func TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		en := en_US.New()
-		zh := zh_Hans_CN.New()
-		UniTranslator = ut.New(en, en, zh)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		defer cancel()
 
-		USTranslator, _ := UniTranslator.GetTranslator("en_US")
-		ZHTranslator, _ := UniTranslator.GetTranslator("zh_Hans_CN")
-
-		en_translations.RegisterDefaultTranslations(validate, USTranslator)
-		zh_translations.RegisterDefaultTranslations(validate, ZHTranslator)
-
-		validate.RegisterTranslation("validatePassword", USTranslator, func(ut ut.Translator) error {
-			return ut.Add("validatePassword", "Invalid Password.", false) // see universal-translator for details
-		}, func(ut ut.Translator, fe validator.FieldError) string {
-			t, _ := ut.T("validatePassword", fe.Field())
-
-			return t
-		})
-
-		validate.RegisterTranslation("validatePassword", ZHTranslator, func(ut ut.Translator) error {
-			return ut.Add("validatePassword", "无效的密码.", false) // see universal-translator for details
-		}, func(ut ut.Translator, fe validator.FieldError) string {
-			t, _ := ut.T("validatePassword", fe.Field())
-
-			return t
-		})
-
+		c.Request = c.Request.WithContext(ctx)
 		c.Next()
+
+		if ctx.Err() == context.DeadlineExceeded {
+			c.AbortWithStatus(http.StatusRequestTimeout)
+		}
+	}
+}
+
+func I18nMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+
+		// After the request has been processed, modify the response body
+		if _, ok := c.Get("i18n_body"); ok {
+			fmt.Println("Hello")
+		}
 	}
 }

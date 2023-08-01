@@ -12,7 +12,7 @@ func init() {
 		panic(err)
 	}
 
-	common.InitializeLoggers()
+	common.SetupLoggers()
 	common.Logger.Debug("Initialize logger successfully.")
 }
 

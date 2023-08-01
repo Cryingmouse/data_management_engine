@@ -2,10 +2,10 @@ package common
 
 import (
 	"context"
-	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"gorm.io/gorm/logger"
 )
 
@@ -15,27 +15,30 @@ var (
 	DBLogger    *LogrusLogger
 )
 
-func InitializeLoggers() {
+func SetupLoggers() {
 	// Create a logger for audit logging
 	AuditLogger = log.New()
 	AuditLogger.SetFormatter(&log.JSONFormatter{})
-	AuditLogFile, err := os.OpenFile(Config.Logger.AuditLogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		AuditLogger.SetOutput(AuditLogFile)
-	} else {
-		AuditLogger.Error("Failed to open audit log file:", err)
-	}
+	// 设置logrus的输出为lumberjack日志轮转器
+	AuditLogger.SetOutput(&lumberjack.Logger{
+		Filename:   Config.Logger.AuditLogFile,
+		MaxSize:    10, // megabytes
+		MaxBackups: 3,
+		MaxAge:     28,   //days
+		Compress:   true, // disabled by default
+	})
 
 	// Create a logger for general logging (JSON format)
 	Logger = log.New()
 	Logger.SetFormatter(&log.JSONFormatter{})
 	// 打开日志文件
-	logFile, err := os.OpenFile(Config.Logger.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		Logger.SetOutput(logFile)
-	} else {
-		Logger.Error("Failed to open log file:", err)
-	}
+	Logger.SetOutput(&lumberjack.Logger{
+		Filename:   Config.Logger.LogFile,
+		MaxSize:    10, // megabytes
+		MaxBackups: 3,
+		MaxAge:     28,   //days
+		Compress:   true, // disabled by default
+	})
 
 	// Set the log levels for both loggers independently
 	setLoggerLevel()
