@@ -37,7 +37,7 @@ func Start() {
 	router := gin.Default()
 
 	router.Use(cors.Default())
-	router.Use(TraceMiddleware(), LoggingMiddleware(), TimeoutMiddleware(8*time.Second), I18nMiddleware())
+	router.Use(TraceMiddleware(), LoggingMiddleware(), TimeoutMiddleware(100000*time.Second), I18nMiddleware())
 
 	// Router 'portal' for Portal
 	portal := router.Group("/api")
@@ -212,11 +212,10 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage st
 	c.JSON(statusCode, response)
 }
 
-func ErrorResponse_1(c *gin.Context, statusCode int, errorCode *common.Error, err error) {
-	response := gin.H{"error": err}
-	if errorCode != nil {
-		response["error_code"] = errorCode
-	}
+func SetErrorToContext(c *gin.Context, errorCode string, err interface{}) {
+	c.Set("Error", err)
 
-	c.JSON(statusCode, response)
+	if errorCode != "" {
+		c.Set("ErrorCode", errorCode)
+	}
 }

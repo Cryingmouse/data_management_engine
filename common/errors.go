@@ -16,31 +16,37 @@ type ExtendedCode int
 
 // The error information for the external only.
 type Error struct {
+	IsExternal bool
+	// To present The external error
 	Module       Module       `validate:"lt=100"`
 	Code         Code         `validate:"lt=10000"`
 	ExtendedCode ExtendedCode `validate:"lt=10000"`
+	ErrorCode    string       /* Binary representation of the error code */
 	Params       []string     /* The parameter for the error string */
 
-	// Binary representation of the error code
-	ErrorCode string
+	// To present internal error
+	Err error
 }
 
-// Return the ErrorCode string.
 func (e *Error) Error() string {
-	if e.ErrorCode != "" {
+	if e.IsExternal {
+		if e.ErrorCode != "" {
+			return e.ErrorCode
+		}
+		err := validate.Struct(e)
+		if err != nil {
+			return ""
+		}
+
+		moduleStr := fmt.Sprintf("%02d", e.Module)
+		codeStr := fmt.Sprintf("%04d", e.Code)
+		extendedCodeStr := fmt.Sprintf("%04d", e.ExtendedCode)
+
+		e.ErrorCode = "E" + moduleStr + codeStr + extendedCodeStr
 		return e.ErrorCode
+	} else {
+		return e.Err.Error()
 	}
-	err := validate.Struct(e)
-	if err != nil {
-		return ""
-	}
-
-	moduleStr := fmt.Sprintf("%02d", e.Module)
-	codeStr := fmt.Sprintf("%04d", e.Code)
-	extendedCodeStr := fmt.Sprintf("%04d", e.ExtendedCode)
-
-	e.ErrorCode = "E" + moduleStr + codeStr + extendedCodeStr
-	return e.ErrorCode
 }
 
 // Error Module definition
@@ -56,6 +62,7 @@ var (
 	ErrUnregister = Code(2)
 	ErrCreate     = Code(3)
 	ErrDelete     = Code(4)
+	ErrGet        = Code(5)
 )
 
 // Error ExtendedCode definition
@@ -65,19 +72,19 @@ var (
 	ErrAlreadyRegistered = ExtendedCode(2)
 )
 
-func setError(module Module, code Code, extendedCode ExtendedCode, params []string) Error {
-	return Error{
+func setExternalError(module Module, code Code, extendedCode ExtendedCode) *Error {
+	return &Error{
+		IsExternal:   true,
 		Module:       module,
 		Code:         code,
 		ExtendedCode: extendedCode,
-		Params:       params,
 	}
 }
 
 var (
-	ErrHostRegisterUnknown        = setError(ErrHost, ErrRegister, ErrUnkonwn, []string{""})           /* E0100010000 */
-	ErrHostRegisterInvalidRequest = setError(ErrHost, ErrRegister, ErrInvalideRequest, []string{""})   /* E0100010001 */
-	ErrHostAlreadyRegistered      = setError(ErrHost, ErrRegister, ErrAlreadyRegistered, []string{""}) /* E0100010002 */
-	ErrDirectoryCreateUnknown     = setError(ErrDirectory, ErrCreate, ErrUnkonwn, []string{""})        /* E0200030000 */
-	ErrShareCreateUnknown         = setError(ErrShare, ErrCreate, ErrUnkonwn, []string{""})            /* E0300030000 */
+	ErrHostRegisterUnknown        = setExternalError(ErrHost, ErrRegister, ErrUnkonwn)           /* E0100010000 */
+	ErrHostRegisterInvalidRequest = setExternalError(ErrHost, ErrRegister, ErrInvalideRequest)   /* E0100010001 */
+	ErrHostAlreadyRegistered      = setExternalError(ErrHost, ErrRegister, ErrAlreadyRegistered) /* E0100010002 */
+	ErrDirectoryCreateUnknown     = setExternalError(ErrDirectory, ErrCreate, ErrUnkonwn)        /* E0200030000 */
+	ErrShareCreateUnknown         = setExternalError(ErrShare, ErrCreate, ErrUnkonwn)            /* E0300030000 */
 )

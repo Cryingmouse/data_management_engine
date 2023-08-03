@@ -26,10 +26,10 @@ type Host struct {
 	Directories []Directory
 }
 
-func (h *Host) Register(ctx context.Context) *common.Error {
+func (h *Host) Register(ctx context.Context) error {
 	systemInfo, err := h.getSystemInfo(ctx)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Update mgmtmodel with system information
@@ -41,7 +41,7 @@ func (h *Host) Register(ctx context.Context) *common.Error {
 
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	var host db.Host
@@ -53,7 +53,9 @@ func (h *Host) Register(ctx context.Context) *common.Error {
 		switch sqliteErr.ExtendedCode {
 		// Map SQLite ErrNo to specific error scenarios
 		case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-			return &common.ErrHostAlreadyRegistered
+			error := common.ErrHostAlreadyRegistered
+			error.Params = []string{host.IP}
+			return error
 		}
 	}
 

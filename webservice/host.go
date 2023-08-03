@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -41,7 +40,6 @@ type PaginationHostResponse struct {
 
 func RegisterHostHandler(c *gin.Context) {
 	ctx, traceID := SetTraceIDToContext(c)
-	localizer := GetLocalizer(c)
 
 	var request struct {
 		IP          string `json:"ip" binding:"required,ip"`
@@ -56,11 +54,7 @@ func RegisterHostHandler(c *gin.Context) {
 			"error":   err.Error(),
 		}).Error("Invalid request.")
 
-		// message := localizer.MustLocalize(&i18n.LocalizeConfig{
-		// 	MessageID: common.ErrHostRegisterInvalidRequest.Error(),
-		// })
-		// errMessage := TranslateValidationError(c, err)
-		ErrorResponse_1(c, http.StatusBadRequest, &common.ErrHostRegisterInvalidRequest, err)
+		SetErrorToContext(c, "E0100010001", err)
 		return
 	}
 
@@ -78,13 +72,7 @@ func RegisterHostHandler(c *gin.Context) {
 			"error":     err.Error(),
 		}).Error("Failed to register the host.")
 
-		message := localizer.MustLocalize(&i18n.LocalizeConfig{
-			MessageID: common.ErrHostRegisterUnknown.Error(),
-		})
-
-		errMessage := TranslateValidationError(c, err)
-
-		ErrorResponse(c, http.StatusInternalServerError, message, errMessage)
+		SetErrorToContext(c, "", err)
 		return
 	}
 
