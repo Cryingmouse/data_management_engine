@@ -193,7 +193,21 @@ func TranslateError(c *gin.Context, err error) string {
 }
 
 func GetLocalizer(c *gin.Context) *i18n.Localizer {
+	validLanguages := []string{"en_US", "zh_CN"}
 	acceptLanguage := c.GetHeader("Accept-Language")
+
+	found := false
+	for _, lang := range validLanguages {
+		if lang == acceptLanguage {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		acceptLanguage = "en_US"
+	}
+
 	tag, _, confidence := LanguageMatcher.Match(language.Make(acceptLanguage))
 	if confidence.String() == "No" {
 		// Failed to match the language, use a default language.
@@ -213,7 +227,9 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, errMessage st
 }
 
 func SetErrorToContext(c *gin.Context, errorCode string, err interface{}) {
-	c.Set("Error", err)
+	if err != nil {
+		c.Set("Error", err)
+	}
 
 	if errorCode != "" {
 		c.Set("ErrorCode", errorCode)

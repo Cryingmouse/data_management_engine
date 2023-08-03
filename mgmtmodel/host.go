@@ -3,7 +3,7 @@ package mgmtmodel
 import (
 	"context"
 	"errors"
-	"fmt"
+	"strings"
 
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/db"
@@ -13,17 +13,17 @@ import (
 )
 
 type Host struct {
-	ComputerName   string
-	IP             string
-	Username       string
-	Password       string
-	StorageType    string
-	Caption        string
-	OSArchitecture string
-	OSVersion      string
-	BuildNumber    string
+	ComputerName   string `json:"computer_name,omitempty"`
+	IP             string `json:"ip,omitempty"`
+	Username       string `json:"username,omitempty"`
+	Password       string `json:"password,omitempty"`
+	StorageType    string `json:"storage_type,omitempty"`
+	Caption        string `json:"caption,omitempty"`
+	OSArchitecture string `json:"os_arch,omitempty"`
+	OSVersion      string `json:"os_verion,omitempty"`
+	BuildNumber    string `json:"build_number,omitempty"`
 
-	Directories []Directory
+	Directories []Directory `json:"directories,omitempty"`
 }
 
 func (h *Host) Register(ctx context.Context) error {
@@ -109,6 +109,14 @@ type HostList struct {
 	Hosts []Host
 }
 
+func (hl *HostList) getIPList() []string {
+	ipList := make([]string, len(hl.Hosts))
+	for i, host := range hl.Hosts {
+		ipList[i] = host.IP
+	}
+	return ipList
+}
+
 func (hl *HostList) Register(ctx context.Context) error {
 	g, _ := errgroup.WithContext(context.Background())
 
@@ -155,7 +163,10 @@ func (hl *HostList) Register(ctx context.Context) error {
 			switch sqliteErr.ExtendedCode {
 			// Map SQLite ErrNo to specific error scenarios
 			case sqlite3.ErrConstraintUnique: // SQLite constraint violation
-				return fmt.Errorf("some hosts have already been registered")
+				error := common.ErrHostAlreadyRegistered
+				ipList := hl.getIPList()
+				error.Params = []string{strings.Join(ipList, ",")}
+				return error
 			}
 		}
 

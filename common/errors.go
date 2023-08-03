@@ -21,8 +21,8 @@ type Error struct {
 	Module       Module       `validate:"lt=100"`
 	Code         Code         `validate:"lt=10000"`
 	ExtendedCode ExtendedCode `validate:"lt=10000"`
-	ErrorCode    string       /* Binary representation of the error code */
 	Params       []string     /* The parameter for the error string */
+	errorCode    string       /* Binary representation of the error code */
 
 	// To present internal error
 	Err error
@@ -30,8 +30,8 @@ type Error struct {
 
 func (e *Error) Error() string {
 	if e.IsExternal {
-		if e.ErrorCode != "" {
-			return e.ErrorCode
+		if e.errorCode != "" {
+			return e.errorCode
 		}
 		err := validate.Struct(e)
 		if err != nil {
@@ -42,8 +42,8 @@ func (e *Error) Error() string {
 		codeStr := fmt.Sprintf("%04d", e.Code)
 		extendedCodeStr := fmt.Sprintf("%04d", e.ExtendedCode)
 
-		e.ErrorCode = "E" + moduleStr + codeStr + extendedCodeStr
-		return e.ErrorCode
+		e.errorCode = "E" + moduleStr + codeStr + extendedCodeStr
+		return e.errorCode
 	} else {
 		return e.Err.Error()
 	}
@@ -82,9 +82,13 @@ func setExternalError(module Module, code Code, extendedCode ExtendedCode) *Erro
 }
 
 var (
-	ErrHostRegisterUnknown        = setExternalError(ErrHost, ErrRegister, ErrUnkonwn)           /* E0100010000 */
-	ErrHostRegisterInvalidRequest = setExternalError(ErrHost, ErrRegister, ErrInvalideRequest)   /* E0100010001 */
-	ErrHostAlreadyRegistered      = setExternalError(ErrHost, ErrRegister, ErrAlreadyRegistered) /* E0100010002 */
-	ErrDirectoryCreateUnknown     = setExternalError(ErrDirectory, ErrCreate, ErrUnkonwn)        /* E0200030000 */
-	ErrShareCreateUnknown         = setExternalError(ErrShare, ErrCreate, ErrUnkonwn)            /* E0300030000 */
+	ErrRegisterHostUnknown             = setExternalError(ErrHost, ErrRegister, ErrUnkonwn)           /* E0100010000 */
+	ErrRegisterHostInvalidRequest      = setExternalError(ErrHost, ErrRegister, ErrInvalideRequest)   /* E0100010001 */
+	ErrHostAlreadyRegistered           = setExternalError(ErrHost, ErrRegister, ErrAlreadyRegistered) /* E0100010002 */
+	ErrUnregisterHostUnknown           = setExternalError(ErrHost, ErrUnregister, ErrUnkonwn)         /* E0100020000 */
+	ErrUnregisterHostInvalidRequest    = setExternalError(ErrHost, ErrUnregister, ErrInvalideRequest) /* E0100020001 */
+	ErrGetRegisteredHost               = setExternalError(ErrHost, ErrGet, ErrUnkonwn)                /* E0100050000 */
+	ErrGetRegisteredHostInvalidRequest = setExternalError(ErrHost, ErrGet, ErrInvalideRequest)        /* E0100050001 */
+	ErrCreateDirectoryUnknown          = setExternalError(ErrDirectory, ErrCreate, ErrUnkonwn)        /* E0200030000 */
+	ErrCreateShareUnknown              = setExternalError(ErrShare, ErrCreate, ErrUnkonwn)            /* E0300030000 */
 )

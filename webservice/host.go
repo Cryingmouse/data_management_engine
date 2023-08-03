@@ -1,7 +1,7 @@
 package webservice
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -54,7 +54,7 @@ func RegisterHostHandler(c *gin.Context) {
 			"error":   err.Error(),
 		}).Error("Invalid request.")
 
-		SetErrorToContext(c, "E0100010001", err)
+		SetErrorToContext(c, common.ErrRegisterHostInvalidRequest.Error(), err)
 		return
 	}
 
@@ -72,7 +72,11 @@ func RegisterHostHandler(c *gin.Context) {
 			"error":     err.Error(),
 		}).Error("Failed to register the host.")
 
-		SetErrorToContext(c, "", err)
+		if definedErr, exist := err.(*common.Error); exist {
+			SetErrorToContext(c, "", definedErr)
+		} else {
+			SetErrorToContext(c, common.ErrRegisterHostUnknown.Error(), err)
+		}
 		return
 	}
 
@@ -107,7 +111,7 @@ func RegisterHostsHandler(c *gin.Context) {
 			"error":   err.Error(),
 		}).Error("Invalid request.")
 
-		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+		SetErrorToContext(c, common.ErrRegisterHostInvalidRequest.Error(), err)
 		return
 	}
 
@@ -125,7 +129,11 @@ func RegisterHostsHandler(c *gin.Context) {
 			"error":         err.Error(),
 		}).Error("Failed to register the hosts.")
 
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to register the hosts", err.Error())
+		if definedErr, exist := err.(*common.Error); exist {
+			SetErrorToContext(c, "", definedErr)
+		} else {
+			SetErrorToContext(c, common.ErrRegisterHostUnknown.Error(), err)
+		}
 		return
 	}
 
@@ -153,7 +161,7 @@ func UnregisterHostHandler(c *gin.Context) {
 			"error":   err.Error(),
 		}).Error("Invalid request.")
 
-		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+		SetErrorToContext(c, common.ErrUnregisterHostInvalidRequest.Error(), err)
 		return
 	}
 
@@ -171,7 +179,11 @@ func UnregisterHostHandler(c *gin.Context) {
 			"error":     err.Error(),
 		}).Error("Failed to unregister the host.")
 
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to unregister the host", err.Error())
+		if definedErr, exist := err.(*common.Error); exist {
+			SetErrorToContext(c, "", definedErr)
+		} else {
+			SetErrorToContext(c, common.ErrUnregisterHostUnknown.Error(), err)
+		}
 		return
 	}
 
@@ -195,7 +207,8 @@ func UnregisterHostsHandler(c *gin.Context) {
 			"TraceID": traceID,
 			"error":   err.Error(),
 		}).Error("Invalid request.")
-		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+
+		SetErrorToContext(c, common.ErrUnregisterHostInvalidRequest.Error(), err)
 		return
 	}
 
@@ -213,7 +226,11 @@ func UnregisterHostsHandler(c *gin.Context) {
 			"error":         err.Error(),
 		}).Error("Failed to unregister the hosts.")
 
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to unregister the hosts", err.Error())
+		if definedErr, exist := err.(*common.Error); exist {
+			SetErrorToContext(c, "", definedErr)
+		} else {
+			SetErrorToContext(c, common.ErrUnregisterHostUnknown.Error(), err)
+		}
 		return
 	}
 
@@ -243,7 +260,7 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 			"URL":     c.Request.URL,
 		}).Error("Invalid request.")
 
-		ErrorResponse(c, http.StatusBadRequest, "Invalid request", "")
+		SetErrorToContext(c, common.ErrGetRegisteredHostInvalidRequest.Error(), nil)
 		return
 	}
 
@@ -272,7 +289,14 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 					"error":   err.Error(),
 				}).Error("Failed to get the hosts by the filter.")
 
-				ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to get the hosts with the fitler=%v", filter), err.Error())
+				definedErr := common.ErrGetRegisteredHost
+				filterStr, _ := json.Marshal(filter)
+				definedErr.Params = []string{
+					string(filterStr),
+					err.Error(),
+				}
+				SetErrorToContext(c, "", definedErr)
+
 				return
 			}
 
@@ -303,7 +327,14 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 					"error":   err.Error(),
 				}).Error("Failed to pagination the hosts by the filter.")
 
-				ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to pagination the hosts with the fitler=%v", filter), err.Error())
+				definedErr := common.ErrGetRegisteredHost
+				filterStr, _ := json.Marshal(filter)
+				definedErr.Params = []string{
+					string(filterStr),
+					err.Error(),
+				}
+				SetErrorToContext(c, "", definedErr)
+
 				return
 			}
 
@@ -340,7 +371,13 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 				"error":     err.Error(),
 			}).Error("Failed to get the host.")
 
-			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the registered host", err.Error())
+			definedErr := common.ErrGetRegisteredHost
+			hostModelStr, _ := json.Marshal(hostModel)
+			definedErr.Params = []string{
+				string(hostModelStr),
+				err.Error(),
+			}
+			SetErrorToContext(c, "", definedErr)
 			return
 		}
 
