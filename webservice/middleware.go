@@ -163,7 +163,6 @@ func I18nMiddleware() gin.HandlerFunc {
 				errorCode := definedErr.Error()
 				message := localizer.MustLocalize(&i18n.LocalizeConfig{
 					MessageID:    errorCode,
-					PluralCount:  len(definedErr.Params),
 					TemplateData: definedErr.Params,
 				})
 				response := gin.H{"error": message}
