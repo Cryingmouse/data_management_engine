@@ -54,6 +54,7 @@ var (
 	ErrHost      = Module(1)
 	ErrDirectory = Module(2)
 	ErrShare     = Module(3)
+	ErrLocalUser = Module(4)
 )
 
 // Error Code definition
@@ -82,13 +83,19 @@ func setExternalError(module Module, code Code, extendedCode ExtendedCode) *Erro
 }
 
 var (
-	ErrRegisterHostUnknown             = setExternalError(ErrHost, ErrRegister, ErrUnkonwn)           /* E0100010000 */
-	ErrRegisterHostInvalidRequest      = setExternalError(ErrHost, ErrRegister, ErrInvalideRequest)   /* E0100010001 */
-	ErrHostAlreadyRegistered           = setExternalError(ErrHost, ErrRegister, ErrAlreadyRegistered) /* E0100010002 */
-	ErrUnregisterHostUnknown           = setExternalError(ErrHost, ErrUnregister, ErrUnkonwn)         /* E0100020000 */
-	ErrUnregisterHostInvalidRequest    = setExternalError(ErrHost, ErrUnregister, ErrInvalideRequest) /* E0100020001 */
-	ErrGetRegisteredHost               = setExternalError(ErrHost, ErrGet, ErrUnkonwn)                /* E0100050000 */
-	ErrGetRegisteredHostInvalidRequest = setExternalError(ErrHost, ErrGet, ErrInvalideRequest)        /* E0100050001 */
-	ErrCreateDirectoryUnknown          = setExternalError(ErrDirectory, ErrCreate, ErrUnkonwn)        /* E0200030000 */
-	ErrCreateShareUnknown              = setExternalError(ErrShare, ErrCreate, ErrUnkonwn)            /* E0300030000 */
+	ErrRegisterHostUnknown             = setExternalError(ErrHost, ErrRegister, ErrUnkonwn)            /* E0100010000 */
+	ErrRegisterHostInvalidRequest      = setExternalError(ErrHost, ErrRegister, ErrInvalideRequest)    /* E0100010001 */
+	ErrHostAlreadyRegistered           = setExternalError(ErrHost, ErrRegister, ErrAlreadyRegistered)  /* E0100010002 */
+	ErrUnregisterHostUnknown           = setExternalError(ErrHost, ErrUnregister, ErrUnkonwn)          /* E0100020000 */
+	ErrUnregisterHostInvalidRequest    = setExternalError(ErrHost, ErrUnregister, ErrInvalideRequest)  /* E0100020001 */
+	ErrGetRegisteredHost               = setExternalError(ErrHost, ErrGet, ErrUnkonwn)                 /* E0100050000 */
+	ErrGetRegisteredHostInvalidRequest = setExternalError(ErrHost, ErrGet, ErrInvalideRequest)         /* E0100050001 */
+	ErrCreateDirectoryUnknown          = setExternalError(ErrDirectory, ErrCreate, ErrUnkonwn)         /* E0200030000 */
+	ErrCreateShareUnknown              = setExternalError(ErrShare, ErrCreate, ErrUnkonwn)             /* E0300030000 */
+	ErrCreateLocalUserUnknown          = setExternalError(ErrLocalUser, ErrCreate, ErrUnkonwn)         /* E0400030000 */
+	ErrCreateLocalUserInvalidRequest   = setExternalError(ErrLocalUser, ErrCreate, ErrInvalideRequest) /* E0400030001 */
+	ErrDeleteLocalUserUnknown          = setExternalError(ErrLocalUser, ErrDelete, ErrUnkonwn)         /* E0400040000 */
+	ErrDeleteLocalUserInvalidRequest   = setExternalError(ErrLocalUser, ErrDelete, ErrInvalideRequest) /* E0400040001 */
+	ErrGetLocalUser                    = setExternalError(ErrLocalUser, ErrGet, ErrUnkonwn)            /* E0400050000 */
+	ErrGetLocalUserInvalidRequest      = setExternalError(ErrLocalUser, ErrGet, ErrInvalideRequest)    /* E0400050001 */
 )

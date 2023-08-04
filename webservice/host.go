@@ -9,8 +9,6 @@ import (
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/mgmtmodel"
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -77,6 +75,7 @@ func RegisterHostHandler(c *gin.Context) {
 		} else {
 			SetErrorToContext(c, common.ErrRegisterHostUnknown.Error(), err)
 		}
+
 		return
 	}
 
@@ -99,10 +98,6 @@ func RegisterHostsHandler(c *gin.Context) {
 		Username    string `json:"username" binding:"required"`
 		Password    string `json:"password" binding:"required,validatePassword"`
 		StorageType string `json:"storage_type" binding:"required,oneof=agent ontap magnascale"`
-	}
-
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("validateStorageType", StorageTypeValidator)
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -307,12 +302,13 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 
 			hostListResponse := make([]HostResponse, len(hosts))
 			common.DeepCopy(hosts, &hostListResponse)
+			c.JSON(http.StatusOK, hostListResponse)
+
 			common.Logger.WithFields(log.Fields{
 				"TraceID":          traceID,
 				"HostListResponse": common.MaskPassword(hostListResponse),
 			}).Debug("Copy the hosts response successfully.")
 
-			c.JSON(http.StatusOK, hostListResponse)
 		} else {
 			filter.Pagination = &common.Pagination{
 				Page:     page,

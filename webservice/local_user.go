@@ -1,6 +1,7 @@
 package webservice
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -46,75 +47,129 @@ type requestLocalUserWithPassword struct {
 func CreateLocalUserHandler(c *gin.Context) {
 	ctx, traceID := SetTraceIDToContext(c)
 
+	// Validate the request body
 	var request requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
 		common.Logger.WithFields(log.Fields{
 			"TraceID": traceID,
 			"error":   err.Error(),
 		}).Error("Invalid request.")
-		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+
+		SetErrorToContext(c, common.ErrCreateLocalUserInvalidRequest.Error(), err)
 		return
 	}
 
+	// Initialize LocalUser model
 	var localUserModel mgmtmodel.LocalUser
 	common.DeepCopy(request, &localUserModel)
+	common.Logger.WithFields(log.Fields{
+		"TraceID":   traceID,
+		"LocalUser": common.MaskPassword(localUserModel),
+	}).Debug("Copy request to LocalUser model.")
 
+	// Create the local user
 	if err := localUserModel.Create(ctx); err != nil {
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local user", err.Error())
+		common.Logger.WithFields(log.Fields{
+			"TraceID":   traceID,
+			"LocalUser": common.MaskPassword(localUserModel),
+			"error":     err.Error(),
+		}).Error("Failed to create the local user.")
+
+		if definedErr, exist := err.(*common.Error); exist {
+			SetErrorToContext(c, "", definedErr)
+		} else {
+			SetErrorToContext(c, common.ErrCreateLocalUserUnknown.Error(), err)
+		}
 		return
 	}
 
+	// Build the response body
 	localUserResponse := LocalUserResponse{}
 	common.DeepCopy(localUserModel, &localUserResponse)
-
 	c.JSON(http.StatusOK, localUserResponse)
 }
 
 func CreateLocalUsersHandler(c *gin.Context) {
 	ctx, traceID := SetTraceIDToContext(c)
 
+	// Validate the request body
 	var request []requestLocalUserWithPassword
 	if err := c.ShouldBindJSON(&request); err != nil {
 		common.Logger.WithFields(log.Fields{
 			"TraceID": traceID,
 			"error":   err.Error(),
 		}).Error("Invalid request.")
-		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+
+		SetErrorToContext(c, common.ErrCreateLocalUserInvalidRequest.Error(), err)
 		return
 	}
 
+	// Initialize LocalUserList model
 	var localUserListModel mgmtmodel.LocalUserList
 	common.DeepCopy(request, &localUserListModel.LocalUsers)
+	common.Logger.WithFields(log.Fields{
+		"TraceID":       traceID,
+		"LocalUserList": common.MaskPassword(localUserListModel),
+	}).Debug("Copy request to LocalUserList model.")
 
+	// Create the local users
 	if err := localUserListModel.Create(ctx); err != nil {
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to create the local users", err.Error())
+		common.Logger.WithFields(log.Fields{
+			"TraceID":       traceID,
+			"LocalUserList": localUserListModel,
+			"error":         err.Error(),
+		}).Error("Failed to create the local users.")
+
+		if definedErr, exist := err.(*common.Error); exist {
+			SetErrorToContext(c, "", definedErr)
+		} else {
+			SetErrorToContext(c, common.ErrCreateLocalUserUnknown.Error(), err)
+		}
 		return
 	}
 
+	// Build the response body
 	localUserResponseList := make([]LocalUserResponse, len(localUserListModel.LocalUsers))
 	common.DeepCopy(localUserListModel.LocalUsers, &localUserResponseList)
-
 	c.JSON(http.StatusOK, localUserResponseList)
 }
 
 func DeleteLocalUserHandler(c *gin.Context) {
 	ctx, traceID := SetTraceIDToContext(c)
 
+	// Validate the request body
 	var request requestLocalUser
 	if err := c.ShouldBindJSON(&request); err != nil {
 		common.Logger.WithFields(log.Fields{
 			"TraceID": traceID,
 			"error":   err.Error(),
 		}).Error("Invalid request.")
-		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+
+		SetErrorToContext(c, common.ErrDeleteLocalUserInvalidRequest.Error(), err)
 		return
 	}
 
+	// Initialize LocalUser model
 	var localUserModel mgmtmodel.LocalUser
 	common.DeepCopy(request, &localUserModel)
+	common.Logger.WithFields(log.Fields{
+		"TraceID":   traceID,
+		"LocalUser": localUserModel,
+	}).Debug("Copy request to LocalUser model.")
 
+	// Delete the local user
 	if err := localUserModel.Delete(ctx); err != nil {
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local user", err.Error())
+		common.Logger.WithFields(log.Fields{
+			"TraceID":   traceID,
+			"LocalUser": localUserModel,
+			"error":     err.Error(),
+		}).Error("Failed to delete the local user.")
+
+		if definedErr, exist := err.(*common.Error); exist {
+			SetErrorToContext(c, "", definedErr)
+		} else {
+			SetErrorToContext(c, common.ErrDeleteLocalUserUnknown.Error(), err)
+		}
 		return
 	}
 
@@ -124,21 +179,39 @@ func DeleteLocalUserHandler(c *gin.Context) {
 func DeleteLocalUsersHandler(c *gin.Context) {
 	ctx, traceID := SetTraceIDToContext(c)
 
+	// Validate the request body
 	var request []requestLocalUser
 	if err := c.ShouldBindJSON(&request); err != nil {
 		common.Logger.WithFields(log.Fields{
 			"TraceID": traceID,
 			"error":   err.Error(),
 		}).Error("Invalid request.")
-		ErrorResponse(c, http.StatusBadRequest, "Invalid request", err.Error())
+
+		SetErrorToContext(c, common.ErrDeleteLocalUserInvalidRequest.Error(), err)
 		return
 	}
 
+	// Initialize LocalUserList model
 	var localUserListModel mgmtmodel.LocalUserList
 	common.DeepCopy(request, &localUserListModel.LocalUsers)
+	common.Logger.WithFields(log.Fields{
+		"TraceID":       traceID,
+		"LocalUserList": localUserListModel,
+	}).Debug("Copy request to LocalUserList model.")
 
+	// Delete the local users
 	if err := localUserListModel.Delete(ctx, nil); err != nil {
-		ErrorResponse(c, http.StatusInternalServerError, "Failed to delete the local users", err.Error())
+		common.Logger.WithFields(log.Fields{
+			"TraceID":       traceID,
+			"LocalUserList": localUserListModel,
+			"error":         err.Error(),
+		}).Error("Failed to delete the local users.")
+
+		if definedErr, exist := err.(*common.Error); exist {
+			SetErrorToContext(c, "", definedErr)
+		} else {
+			SetErrorToContext(c, common.ErrDeleteLocalUserUnknown.Error(), err)
+		}
 		return
 	}
 
@@ -153,8 +226,18 @@ func GetlocalUsersHandler(c *gin.Context) {
 	hostIP := c.Query("host_ip")
 	fields := c.Query("fields")
 
-	page, _ := strconv.Atoi(c.Query("page"))
-	limit, _ := strconv.Atoi(c.Query("limit"))
+	page, errPage := strconv.Atoi(c.Query("page"))
+	limit, errLimit := strconv.Atoi(c.Query("limit"))
+
+	if (errPage != nil && errLimit == nil) || (errPage == nil && errLimit != nil) {
+		common.Logger.WithFields(log.Fields{
+			"TraceID": traceID,
+			"URL":     c.Request.URL,
+		}).Error("Invalid request.")
+
+		SetErrorToContext(c, common.ErrGetLocalUserInvalidRequest.Error(), nil)
+		return
+	}
 
 	if userName == "" || hostIP == "" {
 		localUserListModel := mgmtmodel.LocalUserList{}
@@ -181,14 +264,21 @@ func GetlocalUsersHandler(c *gin.Context) {
 					"Filter":  filter,
 					"Error":   err.Error(),
 				}).Error("Failed to get the local users.")
-				ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local users", err.Error())
+
+				definedErr := common.ErrGetLocalUser
+				filterStr, _ := json.Marshal(filter)
+				definedErr.Params = []string{
+					string(filterStr),
+					err.Error(),
+				}
+				SetErrorToContext(c, "", definedErr)
+
 				return
 			}
 
-			localUserList := make([]LocalUserResponse, len(localUsers))
-			common.DeepCopy(localUsers, &localUserList)
-
-			c.JSON(http.StatusOK, localUserList)
+			localUserListResponse := make([]LocalUserResponse, len(localUsers))
+			common.DeepCopy(localUsers, &localUserListResponse)
+			c.JSON(http.StatusOK, localUserListResponse)
 		} else {
 			// Query directories with pagination.
 			filter.Pagination = &common.Pagination{
@@ -198,7 +288,20 @@ func GetlocalUsersHandler(c *gin.Context) {
 
 			paginationLocalUsers, err := localUserListModel.Pagination(ctx, &filter)
 			if err != nil {
-				ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local users", err.Error())
+				common.Logger.WithFields(log.Fields{
+					"TraceID": traceID,
+					"filter":  filter,
+					"error":   err.Error(),
+				}).Error("Failed to pagination the local users by the filter.")
+
+				definedErr := common.ErrGetLocalUser
+				filterStr, _ := json.Marshal(filter)
+				definedErr.Params = []string{
+					string(filterStr),
+					err.Error(),
+				}
+				SetErrorToContext(c, "", definedErr)
+
 				return
 			}
 
@@ -209,7 +312,6 @@ func GetlocalUsersHandler(c *gin.Context) {
 			}
 
 			common.DeepCopy(paginationLocalUsers.LocalUsers, &paginationlocalUserList.LocalUsers)
-
 			c.JSON(http.StatusOK, paginationlocalUserList)
 		}
 	} else {
@@ -220,7 +322,19 @@ func GetlocalUsersHandler(c *gin.Context) {
 
 		localUser, err := userModel.Get(ctx)
 		if err != nil {
-			ErrorResponse(c, http.StatusInternalServerError, "Failed to get the local user", err.Error())
+			common.Logger.WithFields(log.Fields{
+				"TraceID":   traceID,
+				"LocalUser": userModel,
+				"error":     err.Error(),
+			}).Error("Failed to get the local user.")
+
+			definedErr := common.ErrGetRegisteredHost
+			hostModelStr, _ := json.Marshal(userModel)
+			definedErr.Params = []string{
+				string(hostModelStr),
+				err.Error(),
+			}
+			SetErrorToContext(c, "", definedErr)
 			return
 		}
 
