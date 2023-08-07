@@ -19,6 +19,7 @@ type Host struct {
 	OSArchitecture string `gorm:"column:os_arch"`
 	OSVersion      string `gorm:"column:os_version"`
 	BuildNumber    string `gorm:"column:build_number"`
+	Connected      bool   `json:"connected,omitempty"`
 
 	// Association for the Host's Directories using foreign key
 	Directories []Directory `gorm:"foreignKey:HostIP;references:IP"`

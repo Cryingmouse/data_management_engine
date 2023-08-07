@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"math/rand"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/cryingmouse/data_management_engine/common"
@@ -90,7 +88,7 @@ func (w responseWriterWithCapture) Write(b []byte) (int, error) {
 func TraceMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Generate a unique trace ID
-		traceID := generateTraceID()
+		traceID := common.GenerateTraceID()
 
 		if c.Request.Header.Get("X-Trace-ID") == "" {
 			c.Request.Header.Set("X-Trace-ID", traceID)
@@ -99,24 +97,6 @@ func TraceMiddleware() gin.HandlerFunc {
 		// Continue processing the request
 		c.Next()
 	}
-}
-
-// Generate a unique trace ID
-func generateTraceID() string {
-	// Generate a random number as the trace ID
-	seed := time.Now().UnixNano()
-	// Use the random generator r to generate random numbers
-	randomNumber := rand.New(rand.NewSource(seed)).Intn(999999)
-
-	traceID := strconv.Itoa(randomNumber)
-
-	// Get the current timestamp
-	timestamp := time.Now().UnixNano()
-
-	// Combine the random number and timestamp to create a unique trace ID
-	traceID = traceID + "_" + strconv.FormatInt(timestamp, 10)
-
-	return traceID
 }
 
 func TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc {

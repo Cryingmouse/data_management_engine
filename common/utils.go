@@ -8,10 +8,13 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	mrand "math/rand"
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // In checks if a target string is present in a sorted string array.
@@ -346,4 +349,22 @@ func ConvertMapToString(m map[string]string) string {
 		return ""
 	}
 	return string(jsonBytes)
+}
+
+// Generate a unique trace ID
+func GenerateTraceID() string {
+	// Generate a random number as the trace ID
+	seed := time.Now().UnixNano()
+	// Use the random generator r to generate random numbers
+	randomNumber := mrand.New(mrand.NewSource(seed)).Intn(999999)
+
+	traceID := strconv.Itoa(randomNumber)
+
+	// Get the current timestamp
+	timestamp := time.Now().UnixNano()
+
+	// Combine the random number and timestamp to create a unique trace ID
+	traceID = traceID + "_" + strconv.FormatInt(timestamp, 10)
+
+	return traceID
 }

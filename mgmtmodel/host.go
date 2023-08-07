@@ -13,6 +13,7 @@ import (
 )
 
 type Host struct {
+	ID             uint   `json:"id,omitempty"`
 	ComputerName   string `json:"computer_name,omitempty"`
 	IP             string `json:"ip,omitempty"`
 	Username       string `json:"username,omitempty"`
@@ -22,12 +23,13 @@ type Host struct {
 	OSArchitecture string `json:"os_arch,omitempty"`
 	OSVersion      string `json:"os_verion,omitempty"`
 	BuildNumber    string `json:"build_number,omitempty"`
+	Connected      bool   `json:"connected,omitempty"`
 
 	Directories []Directory `json:"directories,omitempty"`
 }
 
 func (h *Host) Register(ctx context.Context) error {
-	systemInfo, err := h.getSystemInfo(ctx)
+	systemInfo, err := h.GetSystemInfo(ctx)
 	if err != nil {
 		return err
 	}
@@ -38,6 +40,7 @@ func (h *Host) Register(ctx context.Context) error {
 	h.OSArchitecture = systemInfo.OSArchitecture
 	h.OSVersion = systemInfo.OSVersion
 	h.BuildNumber = systemInfo.BuildNumber
+	h.Connected = true
 
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
@@ -127,7 +130,7 @@ func (hl *HostList) Register(ctx context.Context) error {
 		index := i // 避免闭包问题
 		host := h  // 避免闭包问题
 		g.Go(func() error {
-			systemInfo, err := host.getSystemInfo(ctx)
+			systemInfo, err := host.GetSystemInfo(ctx)
 			if err != nil {
 				resultErr = errors.Join(resultErr, err)
 				return err
@@ -189,6 +192,40 @@ func (hl *HostList) Unregister(ctx context.Context) error {
 	return hostList.Delete(engine, nil)
 }
 
+func (hl *HostList) Update(ctx context.Context) error {
+	engine, err := db.GetDatabaseEngine()
+	if err != nil {
+		panic(err)
+	}
+
+	hostList := db.HostList{}
+	if err := hostList.Get(engine, &common.QueryFilter{}); err != nil {
+		return err
+	}
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	for _, h := range hostList.Hosts {
+		dbHost := h // 避免闭包问题
+		g.Go(func() error {
+			var host Host
+			common.DeepCopy(dbHost, &host)
+
+			if _, err := host.GetSystemInfo(ctx); err != nil {
+				dbHost.Connected = false
+				dbHost.Save(engine)
+				return err
+			}
+			dbHost.Connected = true
+			dbHost.Save(engine)
+
+			return nil
+		})
+	}
+
+	return g.Wait()
+}
+
 func (hl *HostList) Get(ctx context.Context, filter *common.QueryFilter) ([]Host, error) {
 	engine, err := db.GetDatabaseEngine()
 	if err != nil {
@@ -235,7 +272,7 @@ func (hl *HostList) Pagination(ctx context.Context, filter *common.QueryFilter) 
 	return &paginationHostList, nil
 }
 
-func (h *Host) getSystemInfo(ctx context.Context) (systemInfo common.SystemInfo, err error) {
+func (h *Host) GetSystemInfo(ctx context.Context) (systemInfo common.SystemInfo, err error) {
 	hostContext := common.HostContext{
 		IP:       h.IP,
 		Username: h.Username,
