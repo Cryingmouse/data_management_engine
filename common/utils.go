@@ -372,7 +372,7 @@ func GenerateTraceID() string {
 	return traceID
 }
 
-func IsTimeoutError(err error) bool {
+func IsHttpTimeout(err error) bool {
 	urlErr, ok := err.(*url.Error)
 	if !ok {
 		return false

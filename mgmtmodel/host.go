@@ -31,14 +31,13 @@ type Host struct {
 func (h *Host) Register(ctx context.Context) error {
 	systemInfo, err := h.GetSystemInfo(ctx)
 	if err != nil {
-		if common.IsTimeoutError(err) {
+		if common.IsHttpTimeout(err) {
 			definedErr := common.ErrRegisterHostConnectedError
 			definedErr.Params = []string{h.IP}
 			return definedErr
 		} else {
 			return err
 		}
-
 	}
 
 	// Update mgmtmodel with system information
