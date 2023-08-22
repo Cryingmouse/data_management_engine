@@ -36,7 +36,7 @@ type Driver interface {
 
 func GetDriver(storageType string) Driver {
 	drivers := map[string]Driver{
-		"agent": &AgentDriver{},
+		"workstation": &AgentDriver{},
 	}
 
 	driver, ok := drivers[storageType]

@@ -43,7 +43,7 @@ func RegisterHostHandler(c *gin.Context) {
 		IP          string `json:"ip" binding:"required,ip"`
 		Username    string `json:"username" binding:"required"`
 		Password    string `json:"password" binding:"required,validatePassword"`
-		StorageType string `json:"storage_type" binding:"required,oneof=agent ontap magnascale"`
+		StorageType string `json:"storage_type" binding:"required,oneof=workstation ontap magnascale"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {

@@ -202,7 +202,8 @@ func DeepCopy(src, dest interface{}) error {
 		// Copy string directly (strings are immutable)
 		destVal.SetString(srcVal.String())
 	} else {
-		return errors.New("unsupported combination of src and dest types")
+		Logger.Error("unsupported combination of src and dest types")
+		// return errors.New("unsupported combination of src and dest types")
 	}
 
 	return nil
