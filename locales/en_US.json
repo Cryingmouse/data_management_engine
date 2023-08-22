@@ -2,14 +2,17 @@
 	"E0100010000": "Failed to register the host(s).",
 	"E0100010001": "Register host(s): invalid request.",
 	"E0100010002": "The host(s) {{index . 0}} has been registered in the system.",
+	"E0100010004": "Faied to register the host, reason: timeout to connect to the hosts {{index . 0}}.",
 	"E0100020000": "Failed to unregister the host(s).",
-	"E0100020001": "Unregister host(s): invalid request.",
-	"E0100050000": "Failed to get the hosts with the fitler {{index . 0}}, Reason: {{index . 1}}.",
+	"E0100020001": "Unregister host(s): invalid request, reason: the hosts {{index . 0}} do not exist.",
+	"E0100020003": "Failed to unregister the host {{index . 0}}, reason: the directory {{index . 1}} is existed.",
+	"E0100050000": "Failed to get the hosts with the fitler {{index . 0}}, reason: {{index . 1}}.",
 	"E0100050001": "Get the registered host(s): invalid request",
+
 	"E0400030000": "Failed to create the local user(s).",
 	"E0400030001": "Create the local user(s): invalid request.",
 	"E0400040000": "Failed to delete the local user(s).",
 	"E0400040001": "Delete the local user(s): invalid request.",
-	"E0400050000": "Failed to get the local users with the filter {{index . 0}}}, Reason: {{index . 1}}.",
+	"E0400050000": "Failed to get the local users with the filter {{index . 0}}}, reason: {{index . 1}}.",
 	"E0400050001": "Get the local user(s): invalid request."
 }

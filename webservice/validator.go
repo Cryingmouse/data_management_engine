@@ -19,7 +19,7 @@ func PasswordValidator(fl validator.FieldLevel) bool {
 func StorageTypeValidator(fl validator.FieldLevel) bool {
 	storageType := fl.Field().String()
 
-	storageTypeList := []string{StorageTypeAgent, StorageTypeOntap, StorageTypeMagnascale}
+	storageTypeList := []string{StorageTypeWorkstation, StorageTypeOntap, StorageTypeMagnascale}
 
 	return common.In(storageType, storageTypeList)
 }

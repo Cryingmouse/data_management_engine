@@ -9,6 +9,8 @@ import (
 	"errors"
 	"io"
 	mrand "math/rand"
+	"net"
+	"net/url"
 	"reflect"
 	"regexp"
 	"sort"
@@ -368,4 +370,18 @@ func GenerateTraceID() string {
 	traceID = traceID + "_" + strconv.FormatInt(timestamp, 10)
 
 	return traceID
+}
+
+func IsTimeoutError(err error) bool {
+	urlErr, ok := err.(*url.Error)
+	if !ok {
+		return false
+	}
+
+	netErr, ok := urlErr.Err.(net.Error)
+	if !ok {
+		return false
+	}
+
+	return netErr.Timeout()
 }

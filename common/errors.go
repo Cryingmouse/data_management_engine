@@ -71,6 +71,8 @@ var (
 	ErrUnkonwn           = ExtendedCode(0)
 	ErrInvalideRequest   = ExtendedCode(1)
 	ErrAlreadyRegistered = ExtendedCode(2)
+	ErrDirectoryExisted  = ExtendedCode(3)
+	ErrConnectedError    = ExtendedCode(4)
 )
 
 func setExternalError(module Module, code Code, extendedCode ExtendedCode) *Error {
@@ -83,11 +85,14 @@ func setExternalError(module Module, code Code, extendedCode ExtendedCode) *Erro
 }
 
 var (
-	ErrRegisterHostUnknown             = setExternalError(ErrHost, ErrRegister, ErrUnkonwn)            /* E0100010000 */
-	ErrRegisterHostInvalidRequest      = setExternalError(ErrHost, ErrRegister, ErrInvalideRequest)    /* E0100010001 */
-	ErrHostAlreadyRegistered           = setExternalError(ErrHost, ErrRegister, ErrAlreadyRegistered)  /* E0100010002 */
+	ErrRegisterHostUnknown        = setExternalError(ErrHost, ErrRegister, ErrUnkonwn)           /* E0100010000 */
+	ErrRegisterHostInvalidRequest = setExternalError(ErrHost, ErrRegister, ErrInvalideRequest)   /* E0100010001 */
+	ErrHostAlreadyRegistered      = setExternalError(ErrHost, ErrRegister, ErrAlreadyRegistered) /* E0100010002 */
+	ErrRegisterHostConnectedError = setExternalError(ErrHost, ErrRegister, ErrConnectedError)    /* E0100010004 */
+
 	ErrUnregisterHostUnknown           = setExternalError(ErrHost, ErrUnregister, ErrUnkonwn)          /* E0100020000 */
-	ErrUnregisterHostInvalidRequest    = setExternalError(ErrHost, ErrUnregister, ErrInvalideRequest)  /* E0100020001 */
+	ErrUnregisterHostNotExisted        = setExternalError(ErrHost, ErrUnregister, ErrInvalideRequest)  /* E0100020001 */
+	ErrUnregisterHostDirectoryExisted  = setExternalError(ErrHost, ErrUnregister, ErrDirectoryExisted) /* E0100020003 */
 	ErrGetRegisteredHost               = setExternalError(ErrHost, ErrGet, ErrUnkonwn)                 /* E0100050000 */
 	ErrGetRegisteredHostInvalidRequest = setExternalError(ErrHost, ErrGet, ErrInvalideRequest)         /* E0100050001 */
 	ErrCreateDirectoryUnknown          = setExternalError(ErrDirectory, ErrCreate, ErrUnkonwn)         /* E0200030000 */

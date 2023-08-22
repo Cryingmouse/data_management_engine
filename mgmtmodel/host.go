@@ -31,7 +31,14 @@ type Host struct {
 func (h *Host) Register(ctx context.Context) error {
 	systemInfo, err := h.GetSystemInfo(ctx)
 	if err != nil {
-		return err
+		if common.IsTimeoutError(err) {
+			definedErr := common.ErrRegisterHostConnectedError
+			definedErr.Params = []string{h.IP}
+			return definedErr
+		} else {
+			return err
+		}
+
 	}
 
 	// Update mgmtmodel with system information
@@ -81,11 +88,28 @@ func (h *Host) Unregister(ctx context.Context) error {
 		},
 	}
 	if directories, err := directoryList.Get(ctx, &filter); err != nil || len(directories) != 0 {
-		return err
+		definedErr := common.ErrUnregisterHostDirectoryExisted
+
+		var dirNames []string
+		for _, dir := range directoryList.Directories {
+			dirNames = append(dirNames, dir.Name)
+		}
+		definedErr.Params = []string{
+			h.IP,
+			strings.Join(dirNames, ", "),
+		}
+		return definedErr
 	}
 
 	// Delete host from database.
 	host := db.Host{IP: h.IP}
+	if err := host.Get(engine); err != nil {
+		definedErr := common.ErrUnregisterHostNotExisted
+		definedErr.Params = []string{
+			h.IP,
+		}
+		return definedErr
+	}
 	return host.Delete(engine)
 }
 

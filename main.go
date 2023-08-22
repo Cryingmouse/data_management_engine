@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/cryingmouse/data_management_engine/common"
 	"github.com/cryingmouse/data_management_engine/db"
-	"github.com/cryingmouse/data_management_engine/scheduler"
 	"github.com/cryingmouse/data_management_engine/webservice"
 )
 
@@ -29,7 +28,7 @@ func main() {
 		common.Logger.Error("Failed to migration database. Error: %w", err)
 	}
 
-	scheduler.StartScheduler()
+	// scheduler.StartScheduler()
 
 	webservice.Start()
 	common.Logger.Debug("Start web service successfully.")

@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	StorageTypeAgent      = "agent"
-	StorageTypeOntap      = "ontap"
-	StorageTypeMagnascale = "magnascale"
+	StorageTypeWorkstation = "workstation"
+	StorageTypeOntap       = "ontap"
+	StorageTypeMagnascale  = "magnascale"
 )
 
 type HostResponse struct {
@@ -97,9 +97,8 @@ func RegisterHostsHandler(c *gin.Context) {
 		IP          string `json:"ip" binding:"required,ip"`
 		Username    string `json:"username" binding:"required"`
 		Password    string `json:"password" binding:"required,validatePassword"`
-		StorageType string `json:"storage_type" binding:"required,oneof=agent ontap magnascale"`
+		StorageType string `json:"storage_type" binding:"required,oneof=workstation ontap magnascale"`
 	}
-
 	if err := c.ShouldBindJSON(&request); err != nil {
 		common.Logger.WithFields(log.Fields{
 			"TraceID": traceID,
@@ -156,7 +155,7 @@ func UnregisterHostHandler(c *gin.Context) {
 			"error":   err.Error(),
 		}).Error("Invalid request.")
 
-		SetErrorToContext(c, common.ErrUnregisterHostInvalidRequest.Error(), err)
+		SetErrorToContext(c, common.ErrUnregisterHostNotExisted.Error(), err)
 		return
 	}
 
@@ -203,7 +202,7 @@ func UnregisterHostsHandler(c *gin.Context) {
 			"error":   err.Error(),
 		}).Error("Invalid request.")
 
-		SetErrorToContext(c, common.ErrUnregisterHostInvalidRequest.Error(), err)
+		SetErrorToContext(c, common.ErrUnregisterHostNotExisted.Error(), err)
 		return
 	}
 
@@ -243,7 +242,7 @@ func GetRegisteredHostsHandler(c *gin.Context) {
 	hostName := c.Query("name")
 	hostIP := c.Query("ip")
 	fields := c.Query("fields")
-	storageType := c.DefaultQuery("storage_type", StorageTypeAgent)
+	storageType := c.DefaultQuery("storage_type", StorageTypeWorkstation)
 	nameKeyword := c.Query("name-like")
 	osTypeKeyword := c.Query("os_type-like")
 	page, errPage := strconv.Atoi(c.Query("page"))

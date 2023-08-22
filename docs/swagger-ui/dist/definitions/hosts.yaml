@@ -1,0 +1,272 @@
+paths:
+  hosts:
+    get:
+      summary: Get registered hosts
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Filter by host name
+          example: my-host
+        - in: query
+          name: ip
+          schema:
+            type: string
+          description: Filter by host IP
+          example: 192.168.1.100
+        - in: query
+          name: fields
+          schema:
+            type: string
+          description: Select fields to include in the response
+          example: ip,name,os_type
+        - in: query
+          name: storage_type
+          schema:
+            type: string
+          description: Filter by storage type
+          example: workstation
+        - in: query
+          name: name-like
+          schema:
+            type: string
+          description: Filter by partial host name match
+          example: host
+        - in: query
+          name: os_type-like
+          schema:
+            type: string
+          description: Filter by partial OS type match
+          example: Windows
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            format: int32
+          description: Number of items per page
+          example: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HostResponse'
+				  
+  hosts-register:
+    post:
+      summary: Register a new host
+      operationId: registerHost
+      parameters:
+        - name: Accept-Language
+          in: header
+          description: Language preference for the response
+          required: false
+          type: string
+          example: en_US
+      requestBody:
+        description: Host registration information
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ip:
+                  type: string
+                  format: ipv4
+                  description: IP address of the host
+                username:
+                  type: string
+                  description: Username for the host
+                password:
+                  type: string
+                  description: Password for the host
+                storage_type:
+                  type: string
+                  enum: [workstation, ontap, magnascale]
+                  description: Type of storage for the host
+            examples:
+              example1:
+                value:
+                  ip: "192.168.1.100"
+                  username: "admin"
+                  password: "Password123"
+                  storage_type: "workstation"
+      responses:
+        '200':
+          description: Successful registration response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostResponse'
+              examples:
+                example1:
+                  value:
+                    ip: "192.168.1.100"
+                    name: "Host123"
+                    storage_type: "workstation"
+                    os_type: "Windows"
+                    os_arch: "x64"
+                    os_version: "10.0"
+                    build_number: "19042"
+                    username: "admin"
+  
+  hosts-batch-register:
+    post:
+      summary: Batch Register Hosts
+      operationId: batchRegisterHosts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  ip:
+                    type: string
+                    format: ipv4
+                    example: 192.168.1.10
+                  username:
+                    type: string
+                    example: user123
+                  password:
+                    type: string
+                    example: password123
+                  storage_type:
+                    type: string
+                    enum: [workstation, ontap, magnascale]
+                    example: workstation
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ip:
+                      type: string
+                      example: 192.168.1.10
+                    computerName:
+                      type: string
+                      example: host-1
+                    storageType:
+                      type: string
+                      example: workstation
+                    caption:
+                      type: string
+                      example: Windows
+                    osArchitecture:
+                      type: string
+                      example: 64-bit
+                    osVersion:
+                      type: string
+                      example: Windows 10
+                    buildNumber:
+                      type: string
+                      example: 19042
+                    username:
+                      type: string
+                      example: user123
+					  
+  hosts-unregister:
+    post:
+      summary: Unregister a host
+      operationId: unregisterHost
+      parameters:
+        - name: Accept-Language
+          in: header
+          description: Language preference for the response
+          required: false
+          type: string
+          example: en_US
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ip:
+                  type: string
+                  format: ipv4
+              required:
+                - ip
+            example:
+              ip: "192.168.1.10"
+      responses:
+        '200':
+          description: Host unregistration successful
+		  
+  hosts-batch-unregister:
+    post:
+      summary: Batch Unregister Hosts
+      operationId: batchUnregisterHosts
+      responses:
+        '200':
+          description: Successful response
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  ip:
+                    type: string
+                    format: ipv4
+
+components:
+  schemas:
+    HostResponse:
+      type: object
+      properties:
+        ip:
+          type: string
+          description: Host IP
+          example: 192.168.1.100
+        name:
+          type: string
+          description: Host name
+          example: my-host
+        storage_type:
+          type: string
+          description: Storage type
+          example: workstation
+        os_type:
+          type: string
+          description: OS type
+          example: Windows
+        os_arch:
+          type: string
+          description: OS architecture
+          example: x64
+        os_version:
+          type: string
+          description: OS version
+          example: 10.0.19043
+        build_number:
+          type: string
+          description: Build number
+          example: 19043.1234
+        username:
+          type: string
+          description: Username
+          example: user123
